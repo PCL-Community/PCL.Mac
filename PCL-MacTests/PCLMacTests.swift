@@ -45,7 +45,7 @@ struct PCL_MacTests {
     @Test func testMinecraftDirectory() async throws {
         try await Task.sleep(nanoseconds: 1_000_000_000)
         DispatchQueue.main.schedule(after: DispatchQueue.SchedulerTimeType(DispatchTime(uptimeNanoseconds: 2000000000))) {
-            print("22w16a 最合适的 Java 版本是: " + MinecraftInstance.findSuitableJava(MinecraftVersion(displayName: "22w16a"))!.executableUrl.path())
+            print("1.21.6 最合适的 Java 是: " + MinecraftInstance.findSuitableJava(MinecraftVersion(displayName: "1.21.6"))!.executableUrl.path())
         }
     }
     

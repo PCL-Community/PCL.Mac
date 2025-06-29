@@ -27,7 +27,6 @@ public class MinecraftInstance: Identifiable {
     
     public static func create(runningDirectory: URL, config: MinecraftConfig? = nil, _ caller: String = #file, _ line: Int = #line) -> MinecraftInstance? {
         if let cached = cache[runningDirectory] {
-            warn("正在创建被缓存的实例", file: caller, line: line)
             return cached
         }
         
@@ -63,7 +62,7 @@ public class MinecraftInstance: Identifiable {
                 return nil
             }
         } else {
-            self.config = config ?? MinecraftConfig(name: runningDirectory.lastPathComponent)
+            self.config = config ?? MinecraftConfig(name: runningDirectory.lastPathComponent, mainClass: manifest.mainClass)
         }
         
         // 检查 Java 路径是否存在
@@ -149,7 +148,7 @@ public struct MinecraftConfig: Codable {
         }
     }
     
-    public init(name: String, mainClass: String = "net.minecraft.client.main.Main", javaPath: String? = nil) {
+    public init(name: String, mainClass: String, javaPath: String? = nil) {
         self.name = name
         self.mainClass = mainClass
         self.javaPath = javaPath

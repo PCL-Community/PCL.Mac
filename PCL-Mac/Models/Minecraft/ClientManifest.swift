@@ -57,14 +57,22 @@ public class ClientManifest {
 
     public class DownloadInfo {
         public let path: String
-        public let sha1: String
-        public let size: Int
+        public let sha1: String?
+        public let size: Int?
         public var url: String
+        
         public init(json: JSON) {
             path = json["path"].stringValue
-            sha1 = json["sha1"].stringValue
-            size = json["size"].intValue
+            sha1 = json["sha1"].string
+            size = json["size"].int
             url = json["url"].stringValue
+        }
+        
+        init(path: String, sha1: String? = nil, size: Int? = nil, url: String) {
+            self.path = path
+            self.sha1 = sha1
+            self.size = size
+            self.url = url
         }
     }
 
@@ -77,44 +85,46 @@ public class ClientManifest {
         public var classifier: String?
         public let rules: [Rule]
         public let natives: [String: String]
-        public let downloads: [String: DownloadInfo]
         public let artifact: DownloadInfo?
         public let classifiers: [String: DownloadInfo]
 
         public init(json: JSON) {
             name = json["name"].stringValue
-            rules = json["rules"].arrayValue.map { Rule(json: $0) }
-            natives = json["natives"].dictionaryObject as? [String: String] ?? [:]
             split = name.split(separator: ":").map(String.init)
             groupId = split[0]
             artifactId = split[1]
             version = split[2]
             classifier = split.count >= 4 ? split[3] : nil
-            var dls: [String: DownloadInfo] = [:]
-            if let downloadsJson = json["downloads"].dictionary {
-                for (k, v) in downloadsJson {
-                    if v.type == .dictionary {
-                        dls[k] = DownloadInfo(json: v)
-                    }
-                }
-            }
-            downloads = dls
-            artifact = json["downloads"]["artifact"].exists() ? DownloadInfo(json: json["downloads"]["artifact"]) : nil
-            if let cls = json["downloads"]["classifiers"].dictionary {
-                var result: [String: DownloadInfo] = [:]
-                for (k, v) in cls {
-                    result[k] = DownloadInfo(json: v)
-                }
-                classifiers = result
+            
+            if json["url"].exists() { // Fabric 依赖
+                debug("检测到 Fabric 依赖 \(json["name"].stringValue)")
+                self.rules = []
+                self.classifiers = [:]
+                self.natives = [:]
+                let path = Util.toPath(mavenCoordinate: name)
+                self.artifact = DownloadInfo(path: path, url: URL(string: json["url"].stringValue)!.appending(path: path).absoluteString)
             } else {
-                classifiers = [:]
+                rules = json["rules"].arrayValue.map { Rule(json: $0) }
+                natives = json["natives"].dictionaryObject as? [String: String] ?? [:]
+                artifact = json["downloads"]["artifact"].exists() ? DownloadInfo(json: json["downloads"]["artifact"]) : nil
+                if let cls = json["downloads"]["classifiers"].dictionary {
+                    var result: [String: DownloadInfo] = [:]
+                    for (k, v) in cls {
+                        result[k] = DownloadInfo(json: v)
+                    }
+                    classifiers = result
+                } else {
+                    classifiers = [:]
+                }
             }
         }
+        
         public func getNativeArtifact() -> DownloadInfo? {
             let key = natives["osx"]
             guard let key, let nativeDl = classifiers[key] else { return nil }
             return nativeDl
         }
+        
         public static func ==(lhs: Library, rhs: Library) -> Bool { lhs.name == rhs.name }
         public func hash(into hasher: inout Hasher) { hasher.combine(name) }
     }
@@ -258,7 +268,9 @@ public class ClientManifest {
     }
 
     public func getNeededLibraries() -> [Library] {
-        getAllowedLibraries().filter { !$0.name.contains("natives") && $0.artifact != nil }
+        getAllowedLibraries().filter { lib in
+            return !lib.name.contains("natives") && lib.artifact != nil
+        }
     }
     public func getAllowedLibraries() -> [Library] {
         libraries.filter { lib in

@@ -247,7 +247,7 @@ public class MinecraftInstaller {
         }
         
         // 初始化实例
-        let _ = MinecraftInstance.create(runningDirectory: task.versionUrl, config: MinecraftConfig(name: task.name))
+        let _ = MinecraftInstance.create(runningDirectory: task.versionUrl, config: MinecraftConfig(name: task.name, mainClass: task.manifest!.mainClass))
         
         // 修改 GLFW
         if let glfw = task.manifest!.getNeededLibraries().find({ $0.name.contains("lwjgl-glfw") }) {

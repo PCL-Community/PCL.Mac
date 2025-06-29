@@ -82,6 +82,9 @@ public class MinecraftLauncher {
         var latestMap: [String: (version: String, path: String)] = [:]
 
         for library in instance.manifest.getNeededLibraries() {
+            if library.name.contains("fabric-loader") {
+                
+            }
             if let artifact = library.artifact {
                 let coord = Util.parse(mavenCoordinate: library.name)
                 let key = "\(coord.groupId):\(coord.artifactId)"
