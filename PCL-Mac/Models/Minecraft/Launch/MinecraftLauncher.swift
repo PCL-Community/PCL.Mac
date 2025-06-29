@@ -9,14 +9,28 @@ import Foundation
 import Cocoa
 
 public class MinecraftLauncher {
-    public static func launch(_ instance: MinecraftInstance) {
+    private let instance: MinecraftInstance
+    private let account: Account
+    
+    public init?(_ instance: MinecraftInstance) {
+        self.instance = instance
+        if let account = AccountManager.shared.getAccount() {
+            self.account = account
+        } else {
+            err("无法初始化 MinecraftLauncher: 未设置账号")
+            ContentView.setPopup(PopupOverlay("错误", "请先创建一个账号并选择再启动游戏！", [.Ok], .error))
+            return nil
+        }
+    }
+    
+    public func launch() {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: instance.config.javaPath)
         process.environment = ProcessInfo.processInfo.environment
         process.arguments = []
-        process.arguments!.append(contentsOf: buildJvmArguments(instance))
+        process.arguments!.append(contentsOf: buildJvmArguments())
         process.arguments!.append(instance.config.mainClass)
-        process.arguments!.append(contentsOf: buildGameArguments(instance))
+        process.arguments!.append(contentsOf: buildGameArguments())
         debug(process.executableURL!.path + " " + process.arguments!.joined(separator: " "))
         process.currentDirectoryURL = instance.runningDirectory
         
@@ -60,12 +74,12 @@ public class MinecraftLauncher {
         }
     }
     
-    public static func buildJvmArguments(_ instance: MinecraftInstance) -> [String] {
+    public func buildJvmArguments() -> [String] {
         let values: [String: String] = [
             "natives_directory": instance.runningDirectory.appending(path: "natives").path,
             "launcher_name": "PCL Mac",
             "launcher_version": "1.0.0",
-            "classpath": buildClasspath(instance)
+            "classpath": buildClasspath()
         ]
         
         var args: [String] = [
@@ -78,7 +92,7 @@ public class MinecraftLauncher {
         return Util.replaceTemplateStrings(args, with: values)
     }
     
-    private static func buildClasspath(_ instance: MinecraftInstance) -> String {
+    private func buildClasspath() -> String {
         var latestMap: [String: (version: String, path: String)] = [:]
 
         for library in instance.manifest.getNeededLibraries() {
@@ -118,15 +132,15 @@ public class MinecraftLauncher {
         return urls.joined(separator: ":")
     }
     
-    public static func buildGameArguments(_ instance: MinecraftInstance) -> [String] {
+    private func buildGameArguments() -> [String] {
         let values: [String: String] = [
-            "auth_player_name": "PCL_Mac",
+            "auth_player_name": account.name,
             "version_name": instance.version!.displayName,
             "game_directory": instance.runningDirectory.path,
             "assets_root": instance.minecraftDirectory.assetsUrl.path,
             "assets_index_name": instance.manifest.assetIndex.id,
-            "auth_uuid": "a256e7ba1da830119b633a974279e906",
-            "auth_access_token": "9856e9a933b5421cb6cf38f21553bd54",
+            "auth_uuid": account.uuid.uuidString.replacingOccurrences(of: "-", with: "").lowercased(),
+            "auth_access_token": account.getAccessToken(),
             "user_type": "msa",
             "version_type": "PCL Mac",
             "user_properties": "\"{}\""

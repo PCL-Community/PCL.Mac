@@ -128,7 +128,7 @@ public class MinecraftInstance: Identifiable {
                 task.start()
             }
         }
-        MinecraftLauncher.launch(self)
+        MinecraftLauncher(self)?.launch()
     }
     
     public func detectVersion() {

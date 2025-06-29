@@ -123,4 +123,9 @@ struct PCL_MacTests {
             print("\(await summary.title) \(await summary.infoUrl)")
         }
     }
+    
+    @Test func testOfflineAccount() {
+        let account = OfflineAccount("PCL_Mac")
+        print(account.uuid.uuidString.replacingOccurrences(of: "-", with: "").lowercased())
+    }
 }

@@ -8,14 +8,15 @@
 import SwiftUI
 
 fileprivate struct LeftTab: View {
-    @ObservedObject private var dataManager: DataManager = DataManager.shared
+    @ObservedObject private var dataManager: DataManager = .shared
+    @ObservedObject private var accountManager: AccountManager = .shared
     
     @State private var instance: MinecraftInstance?
     
     var body: some View {
         VStack {
             Spacer()
-            Text("PCL_Mac")
+            Text(accountManager.getAccount()?.name ?? "无账号")
                 .font(.custom("PCL English", size: 16))
                 .foregroundStyle(Color("TextColor"))
             Spacer()

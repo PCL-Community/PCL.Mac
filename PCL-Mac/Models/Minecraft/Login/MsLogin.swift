@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import Alamofire
+import UserNotifications
 
 public struct DeviceAuthResponse: Codable {
     let deviceCode: String
@@ -43,6 +44,18 @@ public class MsLogin {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(authResponse.userCode, forType: .string)
             NSWorkspace.shared.open(URL(string: authResponse.verificationUri)!)
+            UNUserNotificationCenter.current().setNotificationCategories([])
+            
+            let content = UNMutableNotificationContent()
+            content.title = "登录"
+            content.body = "请将剪切板中的内容粘贴到输入框中"
+            
+            let request = UNNotificationRequest(
+                identifier: UUID().uuidString,
+                content: content,
+                trigger: nil // 立即触发
+            )
+            try? await UNUserNotificationCenter.current().add(request)
             return authResponse
         }
         return nil
@@ -136,7 +149,8 @@ public class MsLogin {
                 ],
                 "RelyingParty": "http://auth.xboxlive.com",
                 "TokenType": "JWT"
-            ]
+            ],
+            encoding: JSONEncoding.default
         ).serializingResponse(using: .data).value,
            let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let token = dict["Token"] as? String,
@@ -153,7 +167,8 @@ public class MsLogin {
                     ],
                     "RelyingParty": "rp://api.minecraftservices.com/",
                     "TokenType": "JWT"
-                ]
+                ],
+                encoding: JSONEncoding.default
             ).serializingResponse(using: .data).value,
                let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                let token = dict["Token"] as? String {
@@ -162,13 +177,20 @@ public class MsLogin {
                     method: .post,
                     parameters: [
                         "identityToken": "XBL3.0 x=\(uhs);\(token)"
-                    ]
+                    ],
+                    encoding: JSONEncoding.default
                 ).serializingResponse(using: .data).value,
                    let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let accessToken = dict["access_token"] as? String {
                     return accessToken
+                } else {
+                    err("无法获取 Minecraft 访问令牌")
                 }
+            } else {
+                err("XSTS 身份验证失败")
             }
+        } else {
+            err("Xbox Live 身份验证失败")
         }
         return nil
     }
