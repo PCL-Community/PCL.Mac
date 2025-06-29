@@ -27,7 +27,7 @@ public class VersionManifest: Codable {
         }
     }
     
-    public struct GameVersion: Codable {
+    public struct GameVersion: Codable, Hashable {
         public enum VersionType: String, Codable {
             case release = "release"
             case snapshot = "snapshot"

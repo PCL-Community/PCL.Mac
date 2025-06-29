@@ -7,62 +7,62 @@
 
 import SwiftUI
 
+fileprivate struct VersionView: View, Identifiable {
+    let name: String
+    let description: String
+    let icon: String
+    let parent: MinecraftDownloadView
+    let version: VersionManifest.GameVersion
+    
+    let id: UUID = UUID()
+    
+    init(version: VersionManifest.GameVersion, isLatest: Bool = false, parent: MinecraftDownloadView) {
+        self.name = version.id
+        
+        var description = SharedConstants.shared.dateFormatter.string(from: version.releaseTime)
+        if isLatest {
+            description = "最新\(version.type == "release" ? "正式" : "预览")版，发布于 " + description
+        }
+        self.description = description
+        
+        self.icon = version.parse().getIconName()
+        self.parent = parent
+        self.version = version
+    }
+    
+    var body: some View {
+        MyListItemComponent {
+            HStack {
+                Image(self.icon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 35)
+                    .padding(.leading, 5)
+                VStack(alignment: .leading) {
+                    Text(self.name)
+                        .font(.custom("PCL English", size: 14))
+                        .foregroundStyle(Color("TextColor"))
+                        .padding(.top, 5)
+                    Text(self.description)
+                        .font(.custom("PCL English", size: 14))
+                        .foregroundStyle(Color(hex: 0x7F8790))
+                        .padding(.bottom, 5)
+                }
+                Spacer()
+            }
+        }
+        .padding(.top, -8)
+        .onTapGesture {
+            self.parent.onVersionClicked(version)
+        }
+    }
+}
+
 struct MinecraftDownloadView: View {
     @ObservedObject private var dataManager: DataManager = .shared
     
-    @State private var versionViews: [String: [VersionView]] = [:]
+    @State private var versions: [String: [VersionManifest.GameVersion]]? = nil
     @State private var currentDownloadPage: DownloadPage?
-    
-    struct VersionView: View, Identifiable {
-        let name: String
-        let description: String
-        let icon: String
-        let parent: MinecraftDownloadView
-        let version: VersionManifest.GameVersion
-        
-        let id: UUID = UUID()
-        
-        init(version: VersionManifest.GameVersion, isLatest: Bool = false, parent: MinecraftDownloadView) {
-            self.name = version.id
-            
-            var description = SharedConstants.shared.dateFormatter.string(from: version.releaseTime)
-            if isLatest {
-                description = "最新\(version.type == "release" ? "正式" : "预览")版，发布于 " + description
-            }
-            self.description = description
-            
-            self.icon = version.parse().getIconName()
-            self.parent = parent
-            self.version = version
-        }
-        
-        var body: some View {
-            MyListItemComponent {
-                HStack {
-                    Image(self.icon)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 35)
-                        .padding(.leading, 5)
-                    VStack(alignment: .leading) {
-                        Text(self.name)
-                            .font(.custom("PCL English", size: 14))
-                            .foregroundStyle(Color("TextColor"))
-                            .padding(.top, 5)
-                        Text(self.description)
-                            .font(.custom("PCL English", size: 14))
-                            .foregroundStyle(Color(hex: 0x7F8790))
-                            .padding(.bottom, 5)
-                    }
-                    Spacer()
-                }
-            }
-            .padding(.top, -8)
-            .onTapGesture {
-                self.parent.onVersionClicked(version)
-            }
-        }
-    }
     
     var body: some View {
         HStack {
@@ -84,44 +84,13 @@ struct MinecraftDownloadView: View {
                             .padding()
                         }
                         
-                        if let releases = self.versionViews["release"] {
-                            MyCardComponent(title: "正式版 (\(releases.count))") {
-                                LazyVStack {
-                                    ForEach(releases) { view in
-                                        view
-                                    }
-                                }
-                                .padding(.top, 12)
-                            }
-                            .padding()
-                        }
-                        
-                        if let snapshots = self.versionViews["snapshot"] {
-                            MyCardComponent(title: "预览版 (\(snapshots.count))") {
-                                LazyVStack {
-                                    ForEach(snapshots) { view in
-                                        view
-                                    }
-                                }
-                                .padding(.top, 12)
-                            }
-                            .padding()
-                        }
-                        
-                        if let old = self.versionViews["old"] {
-                            MyCardComponent(title: "远古版 (\(old.count))") {
-                                LazyVStack {
-                                    ForEach(old) { view in
-                                        view
-                                    }
-                                }
-                                .padding(.top, 12)
-                            }
-                            .padding()
+                        if let versions = self.versions {
+                            CategoryCard(label: "正式版", versions: versions["release"]!, parent: self)
+                            CategoryCard(label: "预览版", versions: versions["snapshot"]!, parent: self)
+                            CategoryCard(label: "远古版", versions: versions["old"]!, parent: self)
                         }
                         Spacer()
                     }
-                    //.padding()
                 }
                 .zIndex(0)
                 .transition(.move(edge: .leading).combined(with: .opacity))
@@ -130,17 +99,12 @@ struct MinecraftDownloadView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: currentDownloadPage == nil)
         .onAppear {
-            self.versionViews["release"] = createViewsFromVersion(type: "release")
-            self.versionViews["snapshot"] = createViewsFromVersion(type: "snapshot")
-            self.versionViews["old"] = createViewsFromVersion(type: "old_beta").union(createViewsFromVersion(type: "old_alpha"))
+            var versions: [String: [VersionManifest.GameVersion]] = [:]
+            versions["release"] = dataManager.versionManifest!.versions.filter { $0.type == "release" }
+            versions["snapshot"] = dataManager.versionManifest!.versions.filter { $0.type == "snapshot" }
+            versions["old"] = dataManager.versionManifest!.versions.filter { $0.type == "old_beta" || $0.type == "old_alpha" }
+            self.versions = versions
         }
-    }
-    
-    func createViewsFromVersion(type: String) -> [VersionView] {
-        guard let versionManifest = dataManager.versionManifest else {
-            return []
-        }
-        return versionManifest.versions.filter { $0.type == type }.map { VersionView(version: $0, parent: self)}
     }
     
     func onVersionClicked(_ version: VersionManifest.GameVersion) {
@@ -148,6 +112,24 @@ struct MinecraftDownloadView: View {
         self.currentDownloadPage = DownloadPage(version) {
             self.currentDownloadPage = nil
         }
+    }
+}
+
+fileprivate struct CategoryCard: View {
+    let label: String
+    let versions: [VersionManifest.GameVersion]
+    let parent: MinecraftDownloadView
+    
+    var body: some View {
+        MyCardComponent(title: "\(label) (\(versions.count))") {
+            LazyVStack {
+                ForEach(versions, id: \.self) { version in
+                    VersionView(version: version, parent: parent)
+                }
+            }
+            .padding(.top, 12)
+        }
+        .padding()
     }
 }
 
