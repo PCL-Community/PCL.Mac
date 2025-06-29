@@ -184,13 +184,12 @@ public class MinecraftInstaller {
             
             do {
                 try FileManager.default.unzipItem(at: jarUrl, to: nativesUrl)
+                processLibs(nativesUrl)
                 debug("解压 \(native.path) 成功")
             } catch {
                 err("无法解压本地库: \(error.localizedDescription)")
             }
         }
-        processLibs(nativesUrl)
-        
     }
     
     // MARK: 处理解压结果

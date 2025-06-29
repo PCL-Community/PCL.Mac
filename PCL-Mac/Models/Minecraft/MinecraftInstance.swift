@@ -121,10 +121,12 @@ public class MinecraftInstance: Identifiable {
     }
     
     public func launch() async {
-        // 资源补全
-        await withCheckedContinuation { continuation in
-            let task = MinecraftInstaller.createCompleteTask(self, continuation.resume)
-            task.start()
+        if !config.skipResourcesCheck {
+            log("正在进行资源完整性检查")
+            await withCheckedContinuation { continuation in
+                let task = MinecraftInstaller.createCompleteTask(self, continuation.resume)
+                task.start()
+            }
         }
         MinecraftLauncher.launch(self)
     }
@@ -160,6 +162,7 @@ public struct MinecraftConfig: Codable {
     public var additionalLibraries: Set<String> = []
     public var javaPath: String!
     public var clientBrand: ClientBrand
+    public var skipResourcesCheck: Bool = false
     
     public init(_ json: JSON) {
         self.name = json["name"].stringValue
@@ -172,6 +175,7 @@ public struct MinecraftConfig: Codable {
         } else {
             self.clientBrand = .vanilla
         }
+        self.skipResourcesCheck = json["skipResourcesCheck"].boolValue
     }
     
     public init(name: String, mainClass: String, javaPath: String? = nil) {

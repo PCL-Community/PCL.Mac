@@ -245,7 +245,7 @@ public class ClientManifest {
             public init(json: JSON) {
                 isDemoUser = json["is_demo_user"].bool
                 hasCustomResolution = json["has_custom_resolution"].bool
-                hasQuickPlaysSupport = json["has_quick_play_support"].bool
+                hasQuickPlaysSupport = json["has_quick_plays_support"].bool
                 isQuickPlaySingleplayer = json["is_quick_play_singleplayer"].bool
                 isQuickPlayMultiplayer = json["is_quick_play_multiplayer"].bool
                 isQuickPlayRealms = json["is_quick_play_realms"].bool
