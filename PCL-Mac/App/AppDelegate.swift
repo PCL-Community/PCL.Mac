@@ -6,7 +6,6 @@
 //
 
 import Cocoa
-import Zip
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: 注册字体
@@ -44,7 +43,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         log("App 已启动")
         AppSettings.shared.updateColorScheme()
         registerCustomFonts()
-        Zip.addCustomFileExtension("jar")
         DataManager.shared.refreshVersionManifest()
         
         log("正在初始化 Java 列表")

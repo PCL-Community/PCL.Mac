@@ -12,6 +12,7 @@ import SwiftUI
 import Cocoa
 import UserNotifications
 import Alamofire
+import SwiftyJSON
 
 struct PCL_MacTests {
     @Test func testRun() async throws {

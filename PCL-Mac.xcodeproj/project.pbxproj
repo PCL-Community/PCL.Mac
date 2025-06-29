@@ -10,10 +10,10 @@
 		EC01E7E82DDC3BEA006EF529 /* log4j2.xml in Resources */ = {isa = PBXBuildFile; fileRef = EC01E7E62DDC3BEA006EF529 /* log4j2.xml */; };
 		EC01E7E92DDC3BEA006EF529 /* log4j2-1.12-.xml in Resources */ = {isa = PBXBuildFile; fileRef = EC01E7E72DDC3BEA006EF529 /* log4j2-1.12-.xml */; };
 		EC23B6332DE5DC5B00CBEA9C /* PCL.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EC23B6322DE5DC5B00CBEA9C /* PCL.ttf */; };
-		EC2E78572DE9387100876873 /* Zip in Frameworks */ = {isa = PBXBuildFile; productRef = EC2E78562DE9387100876873 /* Zip */; };
 		EC9507372DFCF17700018EE0 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = EC9507362DFCF17700018EE0 /* SwiftyJSON */; };
 		EC9A7DCA2DE150170018815F /* glfw-patcher.jar in Resources */ = {isa = PBXBuildFile; fileRef = EC9A7DC82DE1500F0018815F /* glfw-patcher.jar */; };
 		ECA55A702E0415BE006499CC /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = ECA55A6F2E0415BE006499CC /* Alamofire */; };
+		ECDBF0CC2E1124C500E81482 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = ECDBF0CB2E1124C500E81482 /* ZIPFoundation */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,7 +68,7 @@
 			files = (
 				ECA55A702E0415BE006499CC /* Alamofire in Frameworks */,
 				EC9507372DFCF17700018EE0 /* SwiftyJSON in Frameworks */,
-				EC2E78572DE9387100876873 /* Zip in Frameworks */,
+				ECDBF0CC2E1124C500E81482 /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,9 +140,9 @@
 			);
 			name = "PCL-Mac";
 			packageProductDependencies = (
-				EC2E78562DE9387100876873 /* Zip */,
 				EC9507362DFCF17700018EE0 /* SwiftyJSON */,
 				ECA55A6F2E0415BE006499CC /* Alamofire */,
+				ECDBF0CB2E1124C500E81482 /* ZIPFoundation */,
 			);
 			productName = "PCL-Mac";
 			productReference = EC9EAEC92DD85E48006CEDCC /* PCL-Mac.app */;
@@ -201,9 +201,9 @@
 			mainGroup = EC9EAEC02DD85E48006CEDCC;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				EC2E78552DE9387100876873 /* XCRemoteSwiftPackageReference "Zip" */,
 				EC9507352DFCF17700018EE0 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
 				ECA55A6E2E0415BE006499CC /* XCRemoteSwiftPackageReference "Alamofire" */,
+				ECDBF0CA2E1124C500E81482 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EC9EAECA2DD85E48006CEDCC /* Products */;
@@ -512,14 +512,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		EC2E78552DE9387100876873 /* XCRemoteSwiftPackageReference "Zip" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/marmelroy/Zip.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.1.2;
-			};
-		};
 		EC9507352DFCF17700018EE0 /* XCRemoteSwiftPackageReference "SwiftyJSON" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SwiftyJSON/SwiftyJSON";
@@ -536,14 +528,17 @@
 				minimumVersion = 5.10.2;
 			};
 		};
+		ECDBF0CA2E1124C500E81482 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.19;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		EC2E78562DE9387100876873 /* Zip */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EC2E78552DE9387100876873 /* XCRemoteSwiftPackageReference "Zip" */;
-			productName = Zip;
-		};
 		EC9507362DFCF17700018EE0 /* SwiftyJSON */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = EC9507352DFCF17700018EE0 /* XCRemoteSwiftPackageReference "SwiftyJSON" */;
@@ -553,6 +548,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = ECA55A6E2E0415BE006499CC /* XCRemoteSwiftPackageReference "Alamofire" */;
 			productName = Alamofire;
+		};
+		ECDBF0CB2E1124C500E81482 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ECDBF0CA2E1124C500E81482 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

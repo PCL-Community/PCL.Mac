@@ -1,5 +1,5 @@
 {
-  "originHash" : "6b4a629962e173ea073c6ba1bd53850ce7d01eb5dbac6ddd26cd32f1723032be",
+  "originHash" : "1d90c7ba812c37278921d75e728b770966ef17119d654cfc3fdadb2870e6795d",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -20,12 +20,12 @@
       }
     },
     {
-      "identity" : "zip",
+      "identity" : "zipfoundation",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/marmelroy/Zip.git",
+      "location" : "https://github.com/weichsel/ZIPFoundation",
       "state" : {
-        "revision" : "67fa55813b9e7b3b9acee9c0ae501def28746d76",
-        "version" : "2.1.2"
+        "revision" : "02b6abe5f6eef7e3cbd5f247c5cc24e246efcfe0",
+        "version" : "0.9.19"
       }
     }
   ],

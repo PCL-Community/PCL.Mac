@@ -82,9 +82,6 @@ public class MinecraftLauncher {
         var latestMap: [String: (version: String, path: String)] = [:]
 
         for library in instance.manifest.getNeededLibraries() {
-            if library.name.contains("fabric-loader") {
-                
-            }
             if let artifact = library.artifact {
                 let coord = Util.parse(mavenCoordinate: library.name)
                 let key = "\(coord.groupId):\(coord.artifactId)"
@@ -124,7 +121,7 @@ public class MinecraftLauncher {
     private static func buildGameArguments(_ instance: MinecraftInstance) -> [String] {
         let values: [String: String] = [
             "auth_player_name": "PCL_Mac",
-            "version_name": instance.version.displayName,
+            "version_name": instance.version!.displayName,
             "game_directory": instance.runningDirectory.path,
             "assets_root": instance.minecraftDirectory.assetsUrl.path,
             "assets_index_name": instance.manifest.assetIndex.id,

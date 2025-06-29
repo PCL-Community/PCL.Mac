@@ -21,14 +21,14 @@ struct VersionListView: View {
         
         init(instance: MinecraftInstance) {
             self.name = instance.config.name
-            self.description = instance.version.displayName
+            self.description = instance.version!.displayName
             self.instance = instance
         }
         
         var body: some View {
             MyListItemComponent {
                 HStack {
-                    Image(self.instance.version.getIconName())
+                    Image(self.instance.version!.getIconName())
                         .resizable()
                         .scaledToFit()
                         .frame(width: 35)
@@ -59,7 +59,7 @@ struct VersionListView: View {
             VStack {
                 MyCardComponent(title: "常规版本") {
                     VStack {
-                        ForEach(minecraftDirectory.getInnerInstances().sorted(by: { $0.version > $1.version })) { instance in
+                        ForEach(minecraftDirectory.getInnerInstances().sorted(by: { $0.version! > $1.version! })) { instance in
                             VersionView(instance: instance)
                         }
                     }

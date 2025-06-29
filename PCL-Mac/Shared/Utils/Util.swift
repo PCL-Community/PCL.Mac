@@ -6,21 +6,23 @@
 //
 
 import Foundation
-import Zip
+import ZIPFoundation
 
 public class Util {
     public static func getMainClass(_ jarUrl: URL) -> String? {
         do {
-            try Zip.unzipFile(
-                jarUrl,
-                destination: SharedConstants.shared.applicationTemperatureUrl,
-                overwrite: true,
-                password: nil
-            )
-            let manifest = try String(contentsOf: SharedConstants.shared.applicationTemperatureUrl.appending(path: "META-INF").appending(path: "MANIFEST.MF"), encoding: .utf8)
+            let archive = try Archive(url: jarUrl, accessMode: .read)
+            if let manifest = archive["META-INF/MANIFEST.MF"] {
+                var data = Data()
+                _ = try archive.extract(manifest, consumer: { (chunk) in
+                    data.append(chunk)
+                })
+                
+                let manifest = String(data: data, encoding: .utf8)!
 
-            if let match = manifest.firstMatch(of: /(?m)^Main-Class:\s*([^\r\n]+)/) {
-                return String(match.1)
+                if let match = manifest.firstMatch(of: /(?m)^Main-Class:\s*([^\r\n]+)/) {
+                    return String(match.1)
+                }
             }
         } catch {
             err("无法获取主类: \(error.localizedDescription)")
@@ -81,6 +83,21 @@ public class Util {
                     .replacingOccurrences(of: "{\(key)}", with: value)
             }
             return result
+        }
+    }
+    
+    public static func clearTemp() {
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(
+                at: SharedConstants.shared.applicationTemperatureUrl,
+                includingPropertiesForKeys: nil,
+                options: []
+            )
+            for itemURL in contents {
+                try FileManager.default.removeItem(at: itemURL)
+            }
+        } catch {
+            err("在清理时发生错误: \(error.localizedDescription)")
         }
     }
 }

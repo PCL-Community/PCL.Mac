@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import Zip
 import Alamofire
+import ZIPFoundation
 
 public class ThemeDownloader {
     public static func getThemeList() async -> [Theme] {
@@ -41,7 +41,7 @@ public class ThemeDownloader {
                 try FileManager.default.removeItem(at: zipUrl)
             }
             FileManager.default.createFile(atPath: zipUrl.path, contents: data)
-            try Zip.unzipFile(zipUrl, destination: saveUrl, overwrite: true, password: "20250517114514")
+            try FileManager.default.unzipItem(at: zipUrl, to: saveUrl)
             try? FileManager.default.removeItem(at: zipUrl)
             log("下载主题 \(theme.rawValue) 成功")
         } catch {

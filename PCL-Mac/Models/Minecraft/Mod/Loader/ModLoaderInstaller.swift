@@ -28,7 +28,7 @@
 */
 
 import Foundation
-import Zip
+import ZIPFoundation
 import Alamofire
 
 public class ModLoaderInstaller {
@@ -37,7 +37,7 @@ public class ModLoaderInstaller {
             err("无法安装 Fabric: 实例 \(instance.config.name) 已有 Mod 加载器: \(instance.config.clientBrand.rawValue)")
         }
         if let data = try? await AF.request(
-            "https://meta.fabricmc.net/v2/versions/loader/\(instance.version.displayName)"
+            "https://meta.fabricmc.net/v2/versions/loader/\(instance.version!.displayName)"
         ).serializingResponse(using: .data).value,
            let manifests = try? FabricManifest.parse(data) {
             guard let manifest = manifests.find({ $0.loaderVersion == loaderVersion }) else {
@@ -69,7 +69,7 @@ public class ModLoaderInstaller {
                 return
             }
         if let data = try? await AF.request(
-            "https://bmclapi2.bangbang93.com/neoforge/list/\(instance.version.displayName)"
+            "https://bmclapi2.bangbang93.com/neoforge/list/\(instance.version!.displayName)"
         ).serializingResponse(using: .data).value,
             let manifests = try? NeoforgeManifest.parse(data) {
             guard let manifest = manifests.find({ $0.version == version }) else {
@@ -92,11 +92,7 @@ public class ModLoaderInstaller {
             
             // 2. 解压安装器
             do {
-                try Zip.unzipFile(
-                    installer,
-                    destination: temp,
-                    overwrite: true, password: nil
-                )
+                try FileManager.default.unzipItem(at: installer, to: temp)
             } catch {
                 err("无法解压安装器: \(error.localizedDescription)")
                 return
@@ -163,19 +159,7 @@ public class ModLoaderInstaller {
             }
             
             // 7. 清理
-            do {
-                let contents = try FileManager.default.contentsOfDirectory(
-                    at: SharedConstants.shared.applicationTemperatureUrl,
-                    includingPropertiesForKeys: nil,
-                    options: []
-                )
-                
-                for itemURL in contents {
-                    try FileManager.default.removeItem(at: itemURL)
-                }
-            } catch {
-                err("在清理时发生错误: \(error.localizedDescription)")
-            }
+            Util.clearTemp()
         } else {
             err("无法获取版本列表")
         }

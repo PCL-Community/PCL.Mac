@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftyJSON
+import ZIPFoundation
 
 public class MinecraftInstance: Identifiable {
     private static var cache: [URL : MinecraftInstance] = [:]
@@ -18,7 +19,7 @@ public class MinecraftInstance: Identifiable {
     public let runningDirectory: URL
     public let minecraftDirectory: MinecraftDirectory
     public let configPath: URL
-    public let version: MinecraftVersion
+    public private(set) var version: MinecraftVersion? = nil
     public var process: Process?
     public let manifest: ClientManifest!
     public var config: MinecraftConfig
@@ -46,7 +47,6 @@ public class MinecraftInstance: Identifiable {
         do {
             let handle = try FileHandle(forReadingFrom: runningDirectory.appending(path: runningDirectory.lastPathComponent + ".json"))
             manifest = try ClientManifest.parse(try handle.readToEnd()!)
-            version = MinecraftVersion(displayName: manifest.id)
         } catch {
             err("无法加载客户端 JSON: \(error)")
             return nil
@@ -65,12 +65,13 @@ public class MinecraftInstance: Identifiable {
             self.config = config ?? MinecraftConfig(name: runningDirectory.lastPathComponent, mainClass: manifest.mainClass)
         }
         
-        // 检查 Java 路径是否存在
-        if self.config.javaPath == nil {
-            self.config.javaPath = MinecraftInstance.findSuitableJava(version)?.executableUrl.path
-        }
+        detectVersion()
         
-        saveConfig()
+        self.version = MinecraftVersion(displayName: self.config.version!)
+        if self.config.javaPath == nil {
+            self.config.javaPath = MinecraftInstance.findSuitableJava(self.version!)?.executableUrl.path
+        }
+        self.saveConfig()
     }
     
     public func saveConfig() {
@@ -127,10 +128,34 @@ public class MinecraftInstance: Identifiable {
         }
         MinecraftLauncher.launch(self)
     }
+    
+    public func detectVersion() {
+        guard config.version == nil else {
+            return
+        }
+        
+        do {
+            let archive = try Archive(url: runningDirectory.appending(path: "\(config.name).jar"), accessMode: .read)
+            guard let entry = archive["version.json"] else {
+                throw NSError(domain: "MinecraftInstance", code: 2, userInfo: [NSLocalizedDescriptionKey: "version.json 不存在"])
+            }
+            
+            var data = Data()
+            _ = try archive.extract(entry, consumer: { (chunk) in
+                data.append(chunk)
+            })
+            
+            self.config.version = try JSON(data: data)["id"].stringValue
+        } catch {
+            err("无法检测版本: \(error.localizedDescription)，正在使用清单版本")
+            self.config.version = self.manifest!.id
+        }
+    }
 }
 
 public struct MinecraftConfig: Codable {
     public let name: String
+    public var version: String?
     public var mainClass: String
     public var additionalLibraries: Set<String> = []
     public var javaPath: String!
@@ -138,6 +163,7 @@ public struct MinecraftConfig: Codable {
     
     public init(_ json: JSON) {
         self.name = json["name"].stringValue
+        self.version = json["version"].string
         self.mainClass = json["mainClass"].string ?? "net.minecraft.client.main.Main"
         self.additionalLibraries = .init(json["additionalLibraries"].array?.map { $0.stringValue } ?? [])
         self.javaPath = json["javaPath"].string
