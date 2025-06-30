@@ -92,6 +92,7 @@ struct SubviewTitleBarComponent: View {
         case .installing(_): return "下载管理"
         case .versionList: return "版本选择"
         case .modDownload(let summary): return "资源下载 - \(summary.title)"
+        case .accountManagement, .accountList, .newAccount: return "账号管理"
         default:
             return "发现问题请在 https://github.com/PCL-Community/PCL-Mac/issues/new 上反馈！"
         }

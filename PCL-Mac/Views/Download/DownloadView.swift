@@ -25,9 +25,9 @@ struct DownloadView: View {
             }
         }
         .onAppear {
-            if dataManager.router.getLast() == .download {
-                dataManager.router.append(.minecraftDownload)
-            }
+//            if dataManager.router.getLast() == .download {
+//                dataManager.router.append(.minecraftDownload)
+//            }
             dataManager.leftTab(170) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("Minecraft")
@@ -36,7 +36,7 @@ struct DownloadView: View {
                         .padding(.leading, 12)
                         .padding(.top, 20)
                         .padding(.bottom, 4)
-                    MyListComponent(cases: [.minecraftDownload]) { type, isSelected in
+                    MyListComponent(default: .minecraftDownload, cases: [.minecraftDownload]) { type, isSelected in
                         createListItemView(type)
                             .foregroundStyle(isSelected ? AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(Color("TextColor")))
                     }

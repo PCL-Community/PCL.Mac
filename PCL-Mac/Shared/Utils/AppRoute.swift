@@ -16,6 +16,9 @@ public enum AppRoute: Hashable {
     case others
     
     // 子页面
+    case accountManagement
+    case accountList
+    case newAccount
     case installing(task: InstallTask)
     case versionList
     case modDownload(summary: ModSummary)
@@ -64,6 +67,8 @@ public class AppRouter: ObservableObject {
         switch getLast() {
         case .launch:
             LaunchView()
+        case .accountManagement, .accountList, .newAccount:
+            AccountManagementView()
         case .download, .minecraftDownload, .modSearch:
             DownloadView()
         case .multiplayer:
@@ -105,3 +110,6 @@ public class AppRouter: ObservableObject {
         return path.first!
     }
 }
+
+/// 若该视图为子页面，且有子路由，需要实现此协议以便正常返回。
+protocol SubRouteContainer { }

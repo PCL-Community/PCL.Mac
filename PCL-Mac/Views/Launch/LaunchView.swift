@@ -16,14 +16,26 @@ fileprivate struct LeftTab: View {
     var body: some View {
         VStack {
             Spacer()
-            if let account = accountManager.getAccount() {
-                MinecraftAvatarComponent(type: .username, src: account.name)
-                Text(account.name)
-                    .font(.custom("PCL English", size: 16))
-                    .foregroundStyle(Color("TextColor"))
-            } else {
-                Text("无账号")
+            
+            MyListItemComponent {
+                VStack {
+                    if let account = accountManager.getAccount() {
+                        MinecraftAvatarComponent(type: .username, src: account.name)
+                        Text(account.name)
+                            .font(.custom("PCL English", size: 16))
+                            .foregroundStyle(Color("TextColor"))
+                    } else {
+                        Text("无账号")
+                            .font(.custom("PCL English", size: 16))
+                            .foregroundStyle(Color("TextColor"))
+                    }
+                }
+                .padding(4)
             }
+            .onTapGesture {
+                dataManager.router.append(.accountManagement)
+            }
+            
             Spacer()
             if let instance = self.instance {
                 MyButtonComponent(text: "启动游戏", descriptionText: instance.config.name, foregroundStyle: AppSettings.shared.theme.getTextStyle()) {

@@ -13,7 +13,7 @@ public protocol Account: Codable {
     func getAccessToken() -> String
 }
 
-public enum AnyAccount: Account, Identifiable {
+public enum AnyAccount: Account, Identifiable, Equatable {
     case offline(OfflineAccount)
     case microsoft(MsAccount)
     
@@ -42,6 +42,10 @@ public enum AnyAccount: Account, Identifiable {
         case .microsoft(let msAccount):
             msAccount.name
         }
+    }
+    
+    public static func == (lhs: AnyAccount, rhs: AnyAccount) -> Bool {
+        lhs.id == rhs.id
     }
     
     public func getAccessToken() -> String {

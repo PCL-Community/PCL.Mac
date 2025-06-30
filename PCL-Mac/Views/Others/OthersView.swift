@@ -22,12 +22,9 @@ struct OthersView: View {
             }
         }
         .onAppear {
-            if dataManager.router.getLast() == .others {
-                dataManager.router.append(.about)
-            }
             dataManager.leftTab(140) {
                 VStack(alignment: .leading, spacing: 0) {
-                    MyListComponent(cases: SharedConstants.shared.isDevelopment ? [.about, .debug] : [.about]) { type, isSelected in
+                    MyListComponent(default: .about, cases: SharedConstants.shared.isDevelopment ? [.about, .debug] : [.about]) { type, isSelected in
                         createListItemView(type)
                             .foregroundStyle(isSelected ? AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(Color("TextColor")))
                     }

@@ -22,6 +22,7 @@ struct MyTextFieldComponent: View {
         TextField(self.placeholder, text: self.$text)
             .textFieldStyle(.plain)
             .font(.custom("PCL English", size: 14))
+            .foregroundStyle(Color("TextColor"))
             .padding(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
             .frame(maxHeight: .infinity)
             .overlay(RoundedRectangle(cornerRadius: 5)

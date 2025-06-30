@@ -38,6 +38,9 @@ struct WindowControlButton: View {
         .foregroundStyle(.white)
         .padding(.top, 3)
     ) {
+        if DataManager.shared.router.getLastView() is SubRouteContainer {
+            DataManager.shared.router.removeLast()
+        }
         DataManager.shared.router.removeLast()
     }
     

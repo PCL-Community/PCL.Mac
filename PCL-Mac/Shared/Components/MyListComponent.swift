@@ -15,9 +15,12 @@ struct MyListComponent<Content: View>: View {
     @State private var indicatorHeight: CGFloat = 24
     @State private var hovering: AppRoute? = nil
 
-    init(cases: [AppRoute], @ViewBuilder content: @escaping (AppRoute, Bool) -> Content) {
+    init(`default`: AppRoute? = nil, cases: [AppRoute], @ViewBuilder content: @escaping (AppRoute, Bool) -> Content) {
         self.cases = cases
         self.content = content
+        if let `default` = `default` {
+            dataManager.router.append(`default`)
+        }
     }
     
     var body: some View {

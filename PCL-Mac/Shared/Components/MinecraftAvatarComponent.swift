@@ -16,6 +16,7 @@ enum AvatarInputType {
 struct MinecraftAvatarComponent: View {
     let type: AvatarInputType
     let src: String
+    private(set) var size: CGFloat = 58
     
     @State private var imageData: Data?
 
@@ -33,11 +34,9 @@ struct MinecraftAvatarComponent: View {
     var body: some View {
         ZStack {
             if let data = imageData {
-                SkinLayerView(imageData: data, startX: 8, startY: 16, width: 8, height: 8)
-                    .scaleEffect(5.4)
+                SkinLayerView(imageData: data, startX: 8, startY: 16, width: 8 * 5.4 / 58 * size, height: 8 * 5.4 / 58 * size)
                     .shadow(color: Color.black.opacity(0.2), radius: 1)
-                SkinLayerView(imageData: data, startX: 40, startY: 16, width: 7.99, height: 7.99)
-                    .scaleEffect(6.1)
+                SkinLayerView(imageData: data, startX: 40, startY: 16, width: 7.99 * 6.1 / 58 * size, height: 7.99 * 6.1 / 58 * size)
             }
         }
         .onAppear {
@@ -46,7 +45,7 @@ struct MinecraftAvatarComponent: View {
                     self.imageData = response.data
                 }
         }
-        .frame(width: 58, height: 58)
+        .frame(width: size, height: size)
         .clipped()
         .padding(6)
     }
