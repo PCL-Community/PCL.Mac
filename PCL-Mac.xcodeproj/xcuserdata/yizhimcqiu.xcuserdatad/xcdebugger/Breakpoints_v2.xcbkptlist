@@ -20,51 +20,5 @@
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "293B5236-703A-4643-AAB8-577A3DFF4BD0"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "PCL-Mac/Models/Minecraft/Login/MsLogin.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "208"
-            endingLineNumber = "208"
-            landmarkName = "getMinecraftAccessToken(id:_:)"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "293B5236-703A-4643-AAB8-577A3DFF4BD0 - 22c92505e965efd2"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(7) suspend resume partial function for static PCL_Mac.MsLogin.getMinecraftAccessToken(id: Swift.Optional&lt;Foundation.UUID&gt;, _: Swift.String) async -&gt; Swift.Optional&lt;Swift.String&gt;"
-                  moduleName = "PCL-Mac.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/yizhimcqiu/Documents/PCL-Mac/PCL-Mac/Models/Minecraft/Login/MsLogin.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "208"
-                  endingLineNumber = "208">
-               </Location>
-               <Location
-                  uuid = "293B5236-703A-4643-AAB8-577A3DFF4BD0 - 805f0b63afc65826"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(10) suspend resume partial function for static PCL_Mac.MsLogin.getMinecraftAccessToken(id: Swift.Optional&lt;Foundation.UUID&gt;, _: Swift.String) async -&gt; Swift.Optional&lt;Swift.String&gt;"
-                  moduleName = "PCL-Mac.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/yizhimcqiu/Documents/PCL-Mac/PCL-Mac/Models/Minecraft/Login/MsLogin.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "208"
-                  endingLineNumber = "208">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
    </Breakpoints>
 </Bucket>

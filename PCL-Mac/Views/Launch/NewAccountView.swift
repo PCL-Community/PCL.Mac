@@ -228,14 +228,6 @@ fileprivate struct NewMicrosoftAccountView: View {
                         }
                     }
                     .frame(height: 40)
-                    
-                    if let authToken = state.authToken.object,
-                       let accessToken = authToken.minecraftAccessToken {
-                        Text(accessToken)
-                            .textSelection(.enabled)
-                            .font(.custom("PCL English", size: 14))
-                            .foregroundStyle(Color("TextColor"))
-                    }
                 }
             }
             .padding()

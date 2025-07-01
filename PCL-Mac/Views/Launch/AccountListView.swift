@@ -97,6 +97,7 @@ fileprivate struct AccountView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: isHovered)
+        .animation(.easeInOut(duration: 0.2), value: accountManager.accountId)
         .onHover { hover in
             isHovered = hover
         }
