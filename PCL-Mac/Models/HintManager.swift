@@ -13,11 +13,13 @@ class HintManager: ObservableObject {
     @Published var hints: [Hint] = []
     
     func add(_ hint: Hint) {
-        withAnimation(.linear(duration: 0.2)) {
-            hints.append(hint)
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            self.remove(hint)
+        DispatchQueue.main.async {
+            withAnimation(.linear(duration: 0.2)) {
+                self.hints.append(hint)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                self.remove(hint)
+            }
         }
     }
     

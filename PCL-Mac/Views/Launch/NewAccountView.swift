@@ -42,6 +42,8 @@ class NewAccountViewState: ObservableObject {
     
     @Published var type: PageType? = nil
     @Published var playerName: String = ""
+    @Published var authToken: Holder<AuthToken> = .init(object: nil)
+    @Published var isSigningIn: Bool = false
 }
 
 struct NewAccountView: View {
@@ -52,7 +54,7 @@ struct NewAccountView: View {
         case .offline:
             NewOfflineAccountView()
         case .microsoft:
-            Spacer()
+            NewMicrosoftAccountView()
         default:
             VStack {
                 StaticMyCardComponent(title: "登录方式") {
@@ -109,6 +111,7 @@ fileprivate struct AuthMethodComponent: View {
     }
 }
 
+// MARK: - 添加离线账号页面
 fileprivate struct NewOfflineAccountView: View {
     @ObservedObject private var dataManager: DataManager = .shared
     @ObservedObject private var accountManager: AccountManager = .shared
@@ -130,6 +133,11 @@ fileprivate struct NewOfflineAccountView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     HStack {
                         Spacer()
+                        MyButtonComponent(text: "购买 Minecraft") {
+                            NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!)
+                        }
+                        .fixedSize()
+                        
                         MyButtonComponent(text: "取消") {
                             state.type = nil
                         }
@@ -183,3 +191,56 @@ fileprivate struct NewOfflineAccountView: View {
     }
 }
 
+// MARK: - 添加正版账号页面
+fileprivate struct NewMicrosoftAccountView: View {
+    @ObservedObject private var state: NewAccountViewState = StateManager.shared.newAccount
+    
+    var body: some View {
+        VStack {
+            StaticMyCardComponent(title: "正版账号") {
+                VStack {
+                    MyButtonComponent(text: "登录") {
+                        if state.isSigningIn { return }
+                        state.isSigningIn = true
+                        Task {
+                            guard let authToken = await MsLogin.signIn() else {
+                                HintManager.default.add(.init(text: "登录失败！", type: .critical))
+                                return
+                            }
+                            
+                            DispatchQueue.main.async {
+                                state.authToken.setObject(authToken)
+                            }
+                            
+                            HintManager.default.add(.init(text: "登录成功！正在检测你是否拥有 Minecraft……", type: .finish))
+                            if await MsLogin.hasMinecraftGame(authToken) {
+                                HintManager.default.add(.init(text: "你购买了 Minecraft！正在保存账号数据……", type: .finish))
+                                if let msAccount = await MsAccount.create(authToken) {
+                                    DispatchQueue.main.async { AccountManager.shared.accounts.append(.microsoft(msAccount)) }
+                                    HintManager.default.add(.init(text: "登录成功！", type: .finish))
+                                } else {
+                                    HintManager.default.add(.init(text: "在创建账号实例时发生错误", type: .critical))
+                                }
+                                DispatchQueue.main.async { StateManager.shared.newAccount = .init() }
+                            } else {
+                                HintManager.default.add(.init(text: "你还没有购买 Minecraft！", type: .critical))
+                            }
+                        }
+                    }
+                    .frame(height: 40)
+                    
+                    if let authToken = state.authToken.object,
+                       let accessToken = authToken.minecraftAccessToken {
+                        Text(accessToken)
+                            .textSelection(.enabled)
+                            .font(.custom("PCL English", size: 14))
+                            .foregroundStyle(Color("TextColor"))
+                    }
+                }
+            }
+            .padding()
+            
+            Spacer()
+        }
+    }
+}

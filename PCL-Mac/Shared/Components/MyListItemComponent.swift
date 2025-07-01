@@ -8,11 +8,13 @@
 import SwiftUI
 
 struct MyListItemComponent<Content: View>: View {
+    let isSelected: Bool
     let content: () -> Content
     
     @State private var isHovered: Bool = false
     
-    init(@ViewBuilder content: @escaping () -> Content) {
+    init(isSelected: Bool = false, @ViewBuilder content: @escaping () -> Content) {
+        self.isSelected = isSelected
         self.content = content
     }
     
@@ -26,6 +28,19 @@ struct MyListItemComponent<Content: View>: View {
             .animation(.easeInOut(duration: 0.2), value: self.isHovered)
             .onHover { hover in
                 self.isHovered = hover
+            }
+            .background {
+                HStack {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 5)
+                            .foregroundStyle(AnyShapeStyle(AppSettings.shared.theme.getTextStyle()))
+                            .frame(width: 4, height: .infinity)
+                            .offset(x: -4)
+                    } else {
+                        Color.clear
+                    }
+                    Spacer()
+                }
             }
     }
 }

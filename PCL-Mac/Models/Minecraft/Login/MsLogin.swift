@@ -9,6 +9,18 @@ import Foundation
 import SwiftUI
 import Alamofire
 import UserNotifications
+import SwiftyJSON
+
+public class AuthToken: ObservableObject {
+    @Published fileprivate(set) var minecraftAccessToken: String?
+    @Published private(set) var accessToken: String
+    @Published private(set) var refreshToken: String
+    
+    init(accessToken: String, refreshToken: String) {
+        self.accessToken = accessToken
+        self.refreshToken = refreshToken
+    }
+}
 
 public struct DeviceAuthResponse: Codable {
     let deviceCode: String
@@ -56,13 +68,20 @@ public class MsLogin {
                 trigger: nil // 立即触发
             )
             try? await UNUserNotificationCenter.current().add(request)
+            await ContentView.setPopup(.init("登录 Minecraft", """
+登录网页将自动开启，请在网页中输入 \(authResponse.userCode)（已自动复制）。
+
+如果网络环境不佳，网页可能一直加载不出来，届时请使用使用加速器或 VPN 以改善网络环境。
+你也可以用其他设备打开 {\(authResponse.verificationUri)} 并输入上述代码。
+""", [.Ok]))
+            
             return authResponse
         }
         return nil
     }
     
     // MARK: 轮询获取 Access Token
-    public static func getAccessToken(_ deviceAuthResponse: DeviceAuthResponse) async -> String? {
+    public static func getAccessToken(_ deviceAuthResponse: DeviceAuthResponse) async -> AuthToken? {
         return await withCheckedContinuation { continuation in
             let queue = DispatchQueue(label: "io.pcl-community.timer")
             let timer = DispatchSource.makeTimerSource(queue: queue)
@@ -71,11 +90,11 @@ public class MsLogin {
             let totalRequests = Int(Double(deviceAuthResponse.expiresIn) / interval)
             var isFinished = false
 
-            func finish(_ token: String?) {
+            func finish(_ authToken: AuthToken?) {
                 if !isFinished {
                     isFinished = true
                     timer.cancel()
-                    continuation.resume(returning: token)
+                    continuation.resume(returning: authToken)
                 }
             }
 
@@ -96,15 +115,14 @@ public class MsLogin {
                        let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let accessToken = dict["access_token"] as? String,
                        let refreshToken = dict["refresh_token"] as? String {
-                        AppSettings.shared.refreshToken = refreshToken
-                        finish(accessToken)
+                        finish(.init(accessToken: accessToken, refreshToken: refreshToken))
                         return
                     }
                 }
                 
                 debug("轮询第 \(requestCount) / \(totalRequests) 次")
                 if requestCount >= totalRequests {
-                    debug("无结果")
+                    err("轮询已结束，但没有获取到 Access Token")
                     finish(nil)
                 }
             }
@@ -114,7 +132,7 @@ public class MsLogin {
     }
     
     // MARK: 刷新 Access Token
-    public static func refreshAccessToken(_ refreshToken: String) async -> String? {
+    public static func refreshAccessToken(_ refreshToken: String) async -> AuthToken? {
         if let data = try? await AF.request(
             "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
             method: .post,
@@ -128,16 +146,18 @@ public class MsLogin {
            let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let accessToken = dict["access_token"] as? String,
            let refreshToken = dict["refresh_token"] as? String {
-            AppSettings.shared.refreshToken = refreshToken
-            AppSettings.shared.lastRefreshToken = Date()
-            return accessToken
+            return .init(accessToken: accessToken, refreshToken: refreshToken)
         }
         
         return nil
     }
     
     // MARK: 获取 Minecraft Access Token
-    public static func getMinecraftAccessToken(_ accessToken: String) async -> String? {
+    public static func getMinecraftAccessToken(id: UUID? = nil, _ accessToken: String) async -> String? {
+        if let id = id,
+           let accessToken = AccessTokenStorage.shared.getTokenInfo(for: id)?.accessToken {
+            return accessToken
+        }
         if let data = try? await AF.request(
             "https://user.auth.xboxlive.com/user/authenticate",
             method: .post,
@@ -182,6 +202,9 @@ public class MsLogin {
                 ).serializingResponse(using: .data).value,
                    let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let accessToken = dict["access_token"] as? String {
+                    if let id = id {
+                        AccessTokenStorage.shared.add(id: id, accessToken: accessToken, expiriesIn: dict["expires_in"] as! Int)
+                    }
                     return accessToken
                 } else {
                     err("无法获取 Minecraft 访问令牌")
@@ -195,25 +218,57 @@ public class MsLogin {
         return nil
     }
     
-    /// 数据直接存到 LocalStorage 里，不返回
-    public static func login() async {
-        var accessToken: String!
+    // MARK: 检测是否拥有 Minecraft
+    public static func hasMinecraftGame(_ authToken: AuthToken) async -> Bool {
+        guard let accessToken = authToken.minecraftAccessToken else { return false }
         
-        if let refreshToken = AppSettings.shared.refreshToken {
-            if abs(Date().timeIntervalSince(AppSettings.shared.lastRefreshToken)) < 86400 {
-                log("无需刷新 Access Token")
-                return
-            }
-            accessToken = await refreshAccessToken(refreshToken)
-        } else {
-            if let deviceCode = await getDeviceCode() {
-                accessToken = await getAccessToken(deviceCode)
-            } else {
-                err("无法获取设备码")
-            }
+        if let data = try? await AF.request(
+            "https://api.minecraftservices.com/entitlements/mcstore",
+            method: .get,
+            encoding: JSONEncoding.default,
+            headers: .init(
+                [.authorization("Bearer \(accessToken)")]
+            )
+        ).serializingResponse(using: .data).value,
+           let json = try? JSON(data: data) {
+            return json["items"].arrayValue.contains(where: { $0["name"].stringValue == "product_minecraft" })
         }
         
-        AppSettings.shared.accessToken = await getMinecraftAccessToken(accessToken)
-        log("已刷新 Access Token")
+        return false
     }
+    
+    /// 登录并获取 Access Token
+    public static func signIn() async -> AuthToken? {
+        log("正在获取设备码")
+        guard let deviceCode = await getDeviceCode() else {
+            err("无法获取设备码")
+            return nil
+        }
+        
+        guard let authToken = await getAccessToken(deviceCode) else { return nil }
+        authToken.minecraftAccessToken = await getMinecraftAccessToken(authToken.accessToken)
+        return authToken
+    }
+    
+    /// 数据直接存到 LocalStorage 里，不返回
+//    public static func login() async {
+//        var accessToken: String!
+//        
+//        if let refreshToken = AppSettings.shared.refreshToken {
+//            if abs(Date().timeIntervalSince(AppSettings.shared.lastRefreshToken)) < 86400 {
+//                log("无需刷新 Access Token")
+//                return
+//            }
+//            accessToken = await refreshAccessToken(refreshToken)
+//        } else {
+//            if let deviceCode = await getDeviceCode() {
+//                accessToken = await getAccessToken(deviceCode)
+//            } else {
+//                err("无法获取设备码")
+//            }
+//        }
+//        
+//        AppSettings.shared.accessToken = await getMinecraftAccessToken(accessToken)
+//        log("已刷新 Access Token")
+//    }
 }

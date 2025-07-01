@@ -11,7 +11,7 @@ struct HintOverlay: View {
     @ObservedObject private var hintManager: HintManager = .default
     
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 10) {
             ForEach(hintManager.hints.suffix(10)) { hint in
                 HintComponent(hint: hint)
             }

@@ -51,8 +51,8 @@ struct PCL_MacTests {
     }
     
     @Test func testMsLogin() async throws {
-        await MsLogin.login()
-        print(AppSettings.shared.accessToken!)
+        try await Task.sleep(nanoseconds: 5_000_000_000)
+        print(AccountManager.shared.getAccount()!.getAccessToken())
     }
     
     @Test func testNotifaction() async throws {

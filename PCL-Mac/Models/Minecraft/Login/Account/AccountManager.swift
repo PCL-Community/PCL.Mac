@@ -113,4 +113,12 @@ public class AccountManager: ObservableObject {
         accountId = nil
         return nil
     }
+    
+    private init() {
+        for account in accounts {
+            if case .microsoft(let msAccount) = account {
+                msAccount.refreshAccessToken()
+            }
+        }
+    }
 }

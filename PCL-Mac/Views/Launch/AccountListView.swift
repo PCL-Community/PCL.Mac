@@ -55,7 +55,7 @@ fileprivate struct AccountView: View {
     let account: AnyAccount
     
     var body: some View {
-        MyListItemComponent {
+        MyListItemComponent(isSelected: accountManager.accountId == account.id) {
             HStack {
                 MinecraftAvatarComponent(type: .username, src: account.name, size: 40)
                 VStack(alignment: .leading) {
@@ -99,6 +99,9 @@ fileprivate struct AccountView: View {
         .animation(.easeInOut(duration: 0.2), value: isHovered)
         .onHover { hover in
             isHovered = hover
+        }
+        .onTapGesture {
+            accountManager.accountId = account.id
         }
     }
 }
