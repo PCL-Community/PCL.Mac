@@ -41,7 +41,7 @@ struct AccountManagementView: View, SubRouteContainer {
         
         switch type {
         case .accountList:
-            image = Image(systemName: "person")
+            image = Image(systemName: "person.crop.circle")
             text = "账号列表"
         case .newAccount:
             image = Image(systemName: "plus.circle")

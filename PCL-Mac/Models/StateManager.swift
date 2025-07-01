@@ -12,4 +12,5 @@ class StateManager: ObservableObject {
     static let shared = StateManager()
     
     @Published var modSearch: ModSearchViewState = .init()
+    @Published var newAccount: NewAccountViewState = .init()
 }

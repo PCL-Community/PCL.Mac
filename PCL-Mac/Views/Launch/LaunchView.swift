@@ -25,10 +25,20 @@ fileprivate struct LeftTab: View {
                             .font(.custom("PCL English", size: 16))
                             .foregroundStyle(Color("TextColor"))
                     } else {
+                        Image("Missingno")
+                            .interpolation(.none)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 58)
+                            .padding(6)
                         Text("无账号")
                             .font(.custom("PCL English", size: 16))
                             .foregroundStyle(Color("TextColor"))
                     }
+                    Text("点击头像进入账号管理")
+                        .font(.custom("PCL English", size: 10))
+                        .foregroundStyle(Color(hex: 0x8C8C8C))
+                        .padding(.top, 2)
                 }
                 .padding(4)
             }

@@ -10,14 +10,29 @@ import SwiftUI
 struct AccountListView: View {
     @ObservedObject private var dataManager: DataManager = .shared
     @ObservedObject private var accountManager: AccountManager = .shared
+    @ObservedObject private var settings: AppSettings = .shared
     
     var body: some View {
         ScrollView {
             VStack {
                 StaticMyCardComponent(title: "账号列表") {
                     VStack(spacing: 0) {
-                        ForEach(accountManager.accounts) { account in
-                            AccountView(account: account)
+                        if accountManager.accounts.isEmpty {
+                            Group {
+                                Text("账号列表为空")
+                                Text("去添加一个")
+                                    .foregroundStyle(settings.theme.getTextStyle())
+                                    .onTapGesture {
+                                        dataManager.router.removeLast()
+                                        dataManager.router.append(.newAccount)
+                                    }
+                            }
+                            .font(.custom("PCL English", size: 14))
+                            .foregroundStyle(Color("TextColor"))
+                        } else {
+                            ForEach(accountManager.accounts) { account in
+                                AccountView(account: account)
+                            }
                         }
                     }
                 }
@@ -52,6 +67,7 @@ fileprivate struct AccountView: View {
                         Text(account.uuid.uuidString.lowercased())
                             .font(.custom("PCL English", size: 12))
                             .foregroundStyle(Color(hex: 0x8C8C8C))
+                            .textSelection(.enabled)
                             .offset(x: 200)
                     }
                     

@@ -97,7 +97,13 @@ public class AccountManager: ObservableObject {
     @CodableAppStorage("accountId") public var accountId: UUID? = nil
     
     public func getAccount() -> Account? {
-        if accountId == nil { return nil }
+        if accountId == nil {
+            if let id = accounts.first?.id {
+                accountId = id
+            } else {
+                return nil
+            }
+        }
         
         if let account = accounts.first(where: { $0.id == accountId }) {
             return account
