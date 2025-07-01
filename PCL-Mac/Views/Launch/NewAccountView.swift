@@ -40,7 +40,7 @@ class NewAccountViewState: ObservableObject {
         case offline, microsoft
     }
     
-    @Published var type: PageType = .offline
+    @Published var type: PageType? = nil
     @Published var playerName: String = ""
 }
 
@@ -48,22 +48,63 @@ struct NewAccountView: View {
     @ObservedObject private var state: NewAccountViewState = StateManager.shared.newAccount
     
     var body: some View {
-        VStack {
-            TitlelessMyCardComponent {
-                HStack {
-                    MenuItemComponent(value: .offline)
-                    MenuItemComponent(value: .microsoft)
+        switch state.type {
+        case .offline:
+            NewOfflineAccountView()
+        case .microsoft:
+            Spacer()
+        default:
+            VStack {
+                StaticMyCardComponent(title: "登录方式") {
+                    VStack {
+                        AuthMethodComponent(type: .microsoft)
+                        AuthMethodComponent(type: .offline)
+                    }
                 }
-                .frame(maxWidth: .infinity)
-            }
-            .padding()
-            
-            switch state.type {
-            case .offline:
-                NewOfflineAccountView()
-            case .microsoft:
+                .padding()
                 Spacer()
             }
+        }
+    }
+}
+
+fileprivate struct AuthMethodComponent: View {
+    let type: NewAccountViewState.PageType
+    
+    var body: some View {
+        MyListItemComponent {
+            HStack {
+                Image("\(String(describing: type).capitalized)LoginIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 25)
+                VStack(alignment: .leading) {
+                    let title = switch type {
+                    case .offline:
+                        "离线验证"
+                    case .microsoft:
+                        "正版验证"
+                    }
+                    let desc = switch type {
+                    case .offline:
+                        "可自定义玩家名，可能无法加入部分服务器"
+                    case .microsoft:
+                        "需要购买 Minecraft"
+                    }
+                    
+                    Text(title)
+                        .foregroundStyle(Color("TextColor"))
+                    Text(desc)
+                        .foregroundStyle(Color(hex: 0x8C8C8C))
+                }
+                .font(.custom("PCL English", size: 14))
+                Spacer()
+            }
+            .frame(height: 32)
+            .padding(5)
+        }
+        .onTapGesture {
+            StateManager.shared.newAccount.type = type
         }
     }
 }
@@ -83,42 +124,18 @@ fileprivate struct NewOfflineAccountView: View {
                         .foregroundStyle(Color(hex: 0xFF2B00))
                     MyTextFieldComponent(text: $state.playerName, placeholder: "玩家名")
                         .onChange(of: state.playerName) { name in
-                            if name.count < 3 || name.count > 16 {
-                                warningText = "玩家名长度需在 3~16 个字符之间！"
-                                return
-                            }
-                            
-                            if name.wholeMatch(of: /^(?:[A-Za-z0-9_]+)$/) == nil {
-                                warningText = "玩家名仅可包含数字、大小写字母和下划线！"
-                                return
-                            }
-                            
-                            warningText = ""
+                            warningText = checkPlayerName(name)
                         }
+                        .onSubmit(addAccount)
                         .fixedSize(horizontal: false, vertical: true)
                     HStack {
                         Spacer()
-                        MyButtonComponent(text: "添加") {
-                            if warningText != "" {
-                                HintManager.default.add(.init(text: warningText, type: .critical))
-                                return
-                            }
-                            
-                            accountManager.accounts.removeAll(where: { account in
-                                if case .offline(let offlineAccount) = account {
-                                    return offlineAccount.name == state.playerName
-                                }
-                                return false
-                            })
-                            
-                            let account: AnyAccount = .offline(.init(state.playerName))
-                            accountManager.accounts.append(account)
-                            accountManager.accountId = account.id
-                            
-                            HintManager.default.add(.init(text: "添加成功", type: .finish))
-                            dataManager.router.removeLast()
-                            dataManager.router.append(.accountList)
+                        MyButtonComponent(text: "取消") {
+                            state.type = nil
                         }
+                        .fixedSize()
+                        
+                        MyButtonComponent(text: "添加", action: addAccount)
                         .fixedSize()
                     }
                 }
@@ -128,6 +145,41 @@ fileprivate struct NewOfflineAccountView: View {
             .padding()
             Spacer()
         }
+    }
+    
+    private func addAccount() {
+        warningText = checkPlayerName(state.playerName)
+        if warningText != "" {
+            HintManager.default.add(.init(text: warningText, type: .critical))
+            return
+        }
+        
+        accountManager.accounts.removeAll(where: { account in
+            if case .offline(let offlineAccount) = account {
+                return offlineAccount.name == state.playerName
+            }
+            return false
+        })
+        
+        let account: AnyAccount = .offline(.init(state.playerName))
+        accountManager.accounts.append(account)
+        accountManager.accountId = account.id
+        
+        HintManager.default.add(.init(text: "添加成功", type: .finish))
+        dataManager.router.removeLast()
+        dataManager.router.append(.accountList)
+        StateManager.shared.newAccount = .init()
+    }
+    
+    private func checkPlayerName(_ name: String) -> String {
+        if name.count < 3 || name.count > 16 {
+            return "玩家名长度需在 3~16 个字符之间！"
+        }
+        
+        if name.wholeMatch(of: /^(?:[A-Za-z0-9_]+)$/) == nil {
+            return "玩家名仅可包含数字、大小写字母和下划线！"
+        }
+        return ""
     }
 }
 
