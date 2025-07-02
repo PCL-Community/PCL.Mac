@@ -28,6 +28,7 @@ struct OthersView: View {
                         createListItemView(type)
                             .foregroundStyle(isSelected ? AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(Color("TextColor")))
                     }
+                    .id("OthersList")
                     .padding(.top, 10)
                     Spacer()
                 }

@@ -25,9 +25,6 @@ struct DownloadView: View {
             }
         }
         .onAppear {
-//            if dataManager.router.getLast() == .download {
-//                dataManager.router.append(.minecraftDownload)
-//            }
             dataManager.leftTab(170) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("Minecraft")
@@ -40,6 +37,7 @@ struct DownloadView: View {
                         createListItemView(type)
                             .foregroundStyle(isSelected ? AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(Color("TextColor")))
                     }
+                    .id("DownloadList")
                     Text("社区资源")
                         .font(.custom("PCL English", size: 12))
                         .foregroundStyle(Color(hex: 0x8C8C8C))
@@ -50,6 +48,7 @@ struct DownloadView: View {
                         createListItemView(type)
                             .foregroundStyle(isSelected ? AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(Color("TextColor")))
                     }
+                    .id("DownloadList")
                     Spacer()
                 }
             }

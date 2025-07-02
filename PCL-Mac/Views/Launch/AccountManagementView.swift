@@ -28,6 +28,7 @@ struct AccountManagementView: View, SubRouteContainer {
                         createListItemView(type)
                             .foregroundStyle(isSelected ? AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(Color("TextColor")))
                     }
+                    .id("AccountManagementList")
                     .padding(.top, 10)
                     Spacer()
                 }

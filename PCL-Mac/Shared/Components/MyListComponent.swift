@@ -33,7 +33,7 @@ struct MyListComponent<Content: View>: View {
                 .opacity(appeared.contains(item) ? 1 : 0)
                 .onAppear {
                     if !appeared.contains(item) {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.09) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.038) {
                             let item1 = item
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                                 _ = appeared.insert(item1)
