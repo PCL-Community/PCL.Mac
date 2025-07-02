@@ -50,23 +50,29 @@ struct NewAccountView: View {
     @ObservedObject private var state: NewAccountViewState = StateManager.shared.newAccount
     
     var body: some View {
-        switch state.type {
-        case .offline:
-            NewOfflineAccountView()
-        case .microsoft:
-            NewMicrosoftAccountView()
-        default:
-            VStack {
-                StaticMyCardComponent(title: "登录方式") {
-                    VStack {
-                        AuthMethodComponent(type: .microsoft)
-                        AuthMethodComponent(type: .offline)
+        Group {
+            switch state.type {
+            case .offline:
+                NewOfflineAccountView()
+                    .transition(.move(edge: .trailing))
+            case .microsoft:
+                NewMicrosoftAccountView()
+                    .transition(.move(edge: .trailing))
+            default:
+                VStack {
+                    StaticMyCardComponent(title: "登录方式") {
+                        VStack {
+                            AuthMethodComponent(type: .microsoft)
+                            AuthMethodComponent(type: .offline)
+                        }
                     }
+                    .padding()
+                    Spacer()
                 }
-                .padding()
-                Spacer()
+                .transition(.move(edge: .leading))
             }
         }
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: state.type)
     }
 }
 
