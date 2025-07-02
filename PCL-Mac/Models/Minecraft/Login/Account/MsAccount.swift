@@ -33,6 +33,11 @@ public class MsAccount: Codable, Identifiable, Account {
     public var uuid: UUID { profile.uuid }
     
     public func refreshAccessToken() {
+        if AccessTokenStorage.shared.getTokenInfo(for: id) != nil {
+            debug("无需刷新 Access Token")
+            return
+        }
+        
         Task {
             if let authToken = await MsLogin.refreshAccessToken(self.refreshToken) {
                 if let _ = await MsLogin.getMinecraftAccessToken(id: id, authToken.accessToken) {

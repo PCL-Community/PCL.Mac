@@ -216,6 +216,11 @@ fileprivate struct NewMicrosoftAccountView: View {
                             NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!)
                         }
                         MyButtonComponent(text: "登录") {
+                            if !NetworkTest.shared.hasNetworkConnection() {
+                                HintManager.default.add(.init(text: "请先联网！", type: .critical))
+                                return
+                            }
+                            
                             if state.isSigningIn { return }
                             state.isSigningIn = true
                             Task {
