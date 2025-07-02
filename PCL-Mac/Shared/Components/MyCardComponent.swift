@@ -11,16 +11,16 @@ struct BaseCardContainer<Content: View>: View {
     @State private var isHovered: Bool = false
     @State private var isAppeared: Bool = false
     
-    let content: () -> Content
+    let content: (Binding<Bool>) -> Content
     let index: Int
     
-    init(index: Int, content: @escaping () -> Content) {
+    init(index: Int, content: @escaping (Binding<Bool>) -> Content) {
         self.index = index
         self.content = content
     }
 
     var body: some View {
-        content()
+        content($isHovered)
             .foregroundStyle(isHovered ? AppSettings.shared.theme.getTextStyle() : .init(Color("TextColor")))
             .padding()
             .background(
@@ -74,12 +74,11 @@ struct MyCardComponent<Content: View>: View {
     }
 
     var body: some View {
-        BaseCardContainer(index: index) {
+        BaseCardContainer(index: index) { isHovered in
             VStack(spacing: 0) {
                 ZStack {
                     HStack {
-                        Text(title)
-                            .font(.custom("PCL English", size: 14))
+                        MaskedTextRectangle(text: title)
                         Spacer()
                         Image("FoldController")
                             .resizable()
@@ -153,13 +152,9 @@ struct StaticMyCardComponent<Content: View>: View {
     }
 
     var body: some View {
-        BaseCardContainer(index: index) {
+        BaseCardContainer(index: index) { _ in
             VStack {
-                HStack {
-                    Text(title)
-                        .font(.custom("PCL English", size: 14))
-                    Spacer()
-                }
+                MaskedTextRectangle(text: title)
                 content()
             }
         }
@@ -176,10 +171,36 @@ struct TitlelessMyCardComponent<Content: View>: View {
     }
 
     var body: some View {
-        BaseCardContainer(index: index) {
+        BaseCardContainer(index: index) { _ in
             VStack {
                 content()
             }
+        }
+    }
+}
+
+fileprivate struct MaskedTextRectangle: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 0) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .mask(
+                            HStack {
+                                Text(text)
+                                    .font(.custom("PCL English", size: 14))
+                                    .frame(height: geo.size.height)
+                                    .fixedSize()
+                                Spacer()
+                            }
+                        )
+                }
+            }
+            .frame(height: 14)
+            Spacer()
         }
     }
 }
