@@ -20,32 +20,31 @@ struct BaseCardContainer<Content: View>: View {
     }
 
     var body: some View {
-        VStack {
-            content()
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color("MyCardBackgroundColor"))
-                .shadow(
-                    color: isHovered ? Color(hex: 0x0B5BCB) : .gray,
-                    radius: 2, x: 0.5, y: 0.5
-                )
-        )
-        .padding(.top, -23)
-        .opacity(isAppeared ? 1 : 0)
-        .offset(y: isAppeared ? 25 : 0)
-        .animation(.easeInOut(duration: 0.2), value: isHovered)
-        .onHover { hover in
-            isHovered = hover
-        }
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.04) {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
-                    isAppeared = true
+        content()
+            .foregroundStyle(isHovered ? AppSettings.shared.theme.getTextStyle() : .init(Color("TextColor")))
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color("MyCardBackgroundColor"))
+                    .shadow(
+                        color: isHovered ? Color(hex: 0x0B5BCB) : .gray,
+                        radius: 2, x: 0.5, y: 0.5
+                    )
+            )
+            .padding(.top, -23)
+            .opacity(isAppeared ? 1 : 0)
+            .offset(y: isAppeared ? 25 : 0)
+            .animation(.easeInOut(duration: 0.2), value: isHovered)
+            .onHover { hover in
+                isHovered = hover
+            }
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.04) {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
+                        isAppeared = true
+                    }
                 }
             }
-        }
     }
 }
 
@@ -62,7 +61,6 @@ struct MyCardComponent<Content: View>: View {
     let title: String
     let index: Int
     private let content: Content
-    @State private var isHovered: Bool = false
     @State private var isUnfolded: Bool = false // 带动画
     @State private var showContent: Bool = false // 无动画
     @State private var internalContentHeight: CGFloat = .zero
@@ -82,7 +80,6 @@ struct MyCardComponent<Content: View>: View {
                     HStack {
                         Text(title)
                             .font(.custom("PCL English", size: 14))
-                            .foregroundStyle(isHovered ? AppSettings.shared.theme.getTextStyle() : .init(Color("TextColor")))
                         Spacer()
                         Image("FoldController")
                             .resizable()
@@ -90,32 +87,10 @@ struct MyCardComponent<Content: View>: View {
                             .frame(width: 20, height: 20)
                             .offset(x: -8, y: 4)
                             .rotationEffect(.degrees(isUnfolded ? 180 : 0), anchor: .center)
+                            .foregroundStyle(Color("TextColor"))
                     }
-                    .foregroundStyle(Color("TextColor"))
                     Color.clear
                         .contentShape(Rectangle())
-                        .onTapGesture {
-                            if Date().timeIntervalSince(lastClick) < 0.2 {
-                                return
-                            }
-                            lastClick = Date()
-                            if !showContent {
-                                showContent = true
-                                withAnimation(.linear(duration: 0.2)) {
-                                    isUnfolded = true
-                                    contentHeight = internalContentHeight
-                                }
-                            } else {
-                                contentHeight = min(2000, contentHeight)
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.85, blendDuration: 0)) {
-                                    isUnfolded = false
-                                    contentHeight = 0
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    showContent = false
-                                }
-                            }
-                        }
                 }
                 .frame(height: 9)
 
@@ -139,15 +114,33 @@ struct MyCardComponent<Content: View>: View {
                 if h > 0 { internalContentHeight = h }
             }
         }
-        .onHover { hover in
-            isHovered = hover
+        .onTapGesture {
+            if Date().timeIntervalSince(lastClick) < 0.2 {
+                return
+            }
+            lastClick = Date()
+            if !showContent {
+                showContent = true
+                withAnimation(.linear(duration: 0.2)) {
+                    isUnfolded = true
+                    contentHeight = internalContentHeight
+                }
+            } else {
+                contentHeight = min(2000, contentHeight)
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.85, blendDuration: 0)) {
+                    isUnfolded = false
+                    contentHeight = 0
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    showContent = false
+                }
+            }
         }
     }
 }
 
 struct StaticMyCardComponent<Content: View>: View {
     @ObservedObject private var dataManager: DataManager = .shared
-    @State private var isHovered: Bool = false
 
     let index: Int
     let title: String
@@ -165,14 +158,10 @@ struct StaticMyCardComponent<Content: View>: View {
                 HStack {
                     Text(title)
                         .font(.custom("PCL English", size: 14))
-                        .foregroundStyle(isHovered ? AppSettings.shared.theme.getTextStyle() : .init(Color("TextColor")))
                     Spacer()
                 }
                 content()
             }
-        }
-        .onHover { hover in
-            isHovered = hover
         }
     }
 }
