@@ -112,8 +112,8 @@ public class MsLogin {
                         ]
                     ).serializingResponse(using: .data).value,
                        let json = try? JSON(data: data),
-                       let accessToken = json["accessToken"].string,
-                       let refreshToken = json["refreshToken"].string {
+                       let accessToken = json["access_token"].string,
+                       let refreshToken = json["refresh_token"].string {
                         finish(.init(accessToken: accessToken, refreshToken: refreshToken))
                         return
                     }
@@ -143,8 +143,8 @@ public class MsLogin {
             ]
         ).serializingResponse(using: .data).value,
            let json = try? JSON(data: data),
-           let accessToken = json["accessToken"].string,
-           let refreshToken = json["refreshToken"].string {
+           let accessToken = json["access_token"].string,
+           let refreshToken = json["refresh_token"].string {
             return .init(accessToken: accessToken, refreshToken: refreshToken)
         }
         
@@ -157,6 +157,7 @@ public class MsLogin {
            let accessToken = AccessTokenStorage.shared.getTokenInfo(for: id)?.accessToken {
             return accessToken
         }
+        
         if let data = try? await AF.request(
             "https://user.auth.xboxlive.com/user/authenticate",
             method: .post,
@@ -172,7 +173,7 @@ public class MsLogin {
             encoding: JSONEncoding.default
         ).serializingResponse(using: .data).value,
            let json = try? JSON(data: data),
-           let token = json["token"].string,
+           let token = json["Token"].string,
            let uhs = json["DisplayClaims"]["xui"].array?.first?["uhs"].string {
             if let data = try? await AF.request(
                 "https://xsts.auth.xboxlive.com/xsts/authorize",
@@ -200,7 +201,7 @@ public class MsLogin {
                     encoding: JSONEncoding.default
                 ).serializingResponse(using: .data).value,
                    let json = try? JSON(data: data),
-                   let accessToken = json["accessToken"].string {
+                   let accessToken = json["access_token"].string {
                     if let id = id {
                         AccessTokenStorage.shared.add(id: id, accessToken: accessToken, expiriesIn: json["expires_in"].intValue)
                     }

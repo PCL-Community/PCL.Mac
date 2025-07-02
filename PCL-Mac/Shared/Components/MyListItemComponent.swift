@@ -34,7 +34,7 @@ struct MyListItemComponent<Content: View>: View {
                     if isSelected {
                         RoundedRectangle(cornerRadius: 5)
                             .foregroundStyle(AnyShapeStyle(AppSettings.shared.theme.getTextStyle()))
-                            .frame(width: 4, height: .infinity)
+                            .frame(width: 4)
                             .offset(x: -4)
                     } else {
                         Color.clear
