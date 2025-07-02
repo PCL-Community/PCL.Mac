@@ -104,7 +104,7 @@ struct LaunchView: View {
     var body: some View {
         ScrollView {
             if SharedConstants.shared.isDevelopment {
-                StaticMyCardComponent(title: "警告") {
+                StaticMyCardComponent(index: 0, title: "警告") {
                     VStack(spacing: 4) {
                         Text("你正在使用开发版本的 PCL-Mac！")
                             .font(.custom("PCL English", size: 14))
@@ -123,7 +123,7 @@ struct LaunchView: View {
                 }
                 .padding()
                 
-                StaticMyCardComponent(title: "日志") {
+                StaticMyCardComponent(index: 1, title: "日志") {
                     VStack {
                         ScrollView(.horizontal) {
                             VStack(alignment: .leading, spacing: 4) {

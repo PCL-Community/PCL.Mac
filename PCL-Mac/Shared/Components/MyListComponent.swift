@@ -29,13 +29,13 @@ struct MyListComponent<Content: View>: View {
                 let item = cases[index]
                 RouteView(content: content, item: item)
                 // 动画部分
-                .offset(x: appeared.contains(item) ? 0 : -40)
+                .offset(x: appeared.contains(item) ? 0 : -dataManager.leftTabWidth / 2)
                 .opacity(appeared.contains(item) ? 1 : 0)
                 .onAppear {
                     if !appeared.contains(item) {
                         DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.038) {
                             let item1 = item
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.65)) {
                                 _ = appeared.insert(item1)
                             }
                         }

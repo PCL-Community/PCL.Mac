@@ -7,96 +7,45 @@
 
 import SwiftUI
 
-struct MyCardComponent<Content: View>: View {
-    @ObservedObject private var dataManager: DataManager = .shared
-    
-    let title: String
-    private let content: Content
+struct BaseCardContainer<Content: View>: View {
     @State private var isHovered: Bool = false
-    @State private var isUnfolded: Bool = false // 带动画
-    @State private var showContent: Bool = false // 无动画
-    @State private var internalContentHeight: CGFloat = .zero
-    @State private var contentHeight: CGFloat = .zero
-    @State private var lastClick: Date = Date()
-
-    init(title: String, @ViewBuilder content: @escaping () -> Content) {
-        self.title = title
-        self.content = content()
-    }
+    @State private var isAppeared: Bool = false
     
-    var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                HStack {
-                    Text(title)
-                        .font(.custom("PCL English", size: 14))
-                    Spacer()
-                    Image("FoldController")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 20, height: 20)
-                        .offset(x: -8, y: 4)
-                        .rotationEffect(.degrees(isUnfolded ? 180 : 0), anchor: .center)
-                }
-                .foregroundStyle(isHovered ? AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(Color("TextColor")))
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if Date().timeIntervalSince(lastClick) < 0.2 {
-                            return
-                        }
-                        lastClick = Date()
-                        if !showContent {
-                            showContent = true
-                            withAnimation(.linear(duration: 0.2)) {
-                                isUnfolded = true
-                                contentHeight = internalContentHeight
-                            }
-                        } else {
-                            contentHeight = min(2000, contentHeight)
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.85, blendDuration: 0)) {
-                                isUnfolded = false
-                                contentHeight = 0
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                showContent = false
-                            }
-                        }
-                    }
-            }
-            .frame(height: 9)
+    let content: () -> Content
+    let index: Int
+    
+    init(index: Int, content: @escaping () -> Content) {
+        self.index = index
+        self.content = content
+    }
 
-            ZStack(alignment: .top) {
-                content
-                    .background(
-                        GeometryReader { proxy in
-                            Color.clear
-                                .preference(key: ContentHeightKey.self, value: proxy.size.height)
-                        }
-                    )
-                    .opacity(showContent ? 1 : 0)
-            }
-            .frame(height: contentHeight, alignment: .top)
-            .clipped()
-            .padding(.top, showContent ? 10 : 0)
-            .animation(.easeInOut(duration: 0.3), value: isUnfolded)
-            .animation(.easeInOut(duration: 0.3), value: contentHeight)
+    var body: some View {
+        VStack {
+            content()
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color("MyCardBackgroundColor"))
-                .shadow(color: isHovered ? Color(hex: 0x0B5BCB) : .gray, radius: 2, x: 0.5, y: 0.5)
+                .shadow(
+                    color: isHovered ? Color(hex: 0x0B5BCB) : .gray,
+                    radius: 2, x: 0.5, y: 0.5
+                )
         )
+        .padding(.top, -23)
+        .opacity(isAppeared ? 1 : 0)
+        .offset(y: isAppeared ? 25 : 0)
         .animation(.easeInOut(duration: 0.2), value: isHovered)
         .onHover { hover in
             isHovered = hover
         }
-        .onPreferenceChange(ContentHeightKey.self) { h in
-            if h > 0 { internalContentHeight = h }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.04) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
+                    isAppeared = true
+                }
+            }
         }
-        .padding(.top, 4)
-        .padding(.bottom, -28)
     }
 }
 
@@ -106,58 +55,143 @@ fileprivate struct ContentHeightKey: PreferenceKey {
         value = max(value, nextValue())
     }
 }
-struct StaticMyCardComponent<Content: View>: View {
+
+struct MyCardComponent<Content: View>: View {
     @ObservedObject private var dataManager: DataManager = .shared
-    
+
     let title: String
-    let content: () -> Content
+    let index: Int
+    private let content: Content
     @State private var isHovered: Bool = false
-    
+    @State private var isUnfolded: Bool = false // 带动画
+    @State private var showContent: Bool = false // 无动画
+    @State private var internalContentHeight: CGFloat = .zero
+    @State private var contentHeight: CGFloat = .zero
+    @State private var lastClick: Date = Date()
+
+    init(index: Int = 0, title: String, @ViewBuilder content: @escaping () -> Content) {
+        self.index = index
+        self.title = title
+        self.content = content()
+    }
+
     var body: some View {
-        VStack {
-            HStack {
-                Text(title)
-                    .font(.custom("PCL English", size: 14))
-                    .foregroundStyle(isHovered ? AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(Color("TextColor")))
-                Spacer()
+        BaseCardContainer(index: index) {
+            VStack(spacing: 0) {
+                ZStack {
+                    HStack {
+                        Text(title)
+                            .font(.custom("PCL English", size: 14))
+                            .foregroundStyle(isHovered ? AppSettings.shared.theme.getTextStyle() : .init(Color("TextColor")))
+                        Spacer()
+                        Image("FoldController")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 20)
+                            .offset(x: -8, y: 4)
+                            .rotationEffect(.degrees(isUnfolded ? 180 : 0), anchor: .center)
+                    }
+                    .foregroundStyle(Color("TextColor"))
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if Date().timeIntervalSince(lastClick) < 0.2 {
+                                return
+                            }
+                            lastClick = Date()
+                            if !showContent {
+                                showContent = true
+                                withAnimation(.linear(duration: 0.2)) {
+                                    isUnfolded = true
+                                    contentHeight = internalContentHeight
+                                }
+                            } else {
+                                contentHeight = min(2000, contentHeight)
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.85, blendDuration: 0)) {
+                                    isUnfolded = false
+                                    contentHeight = 0
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                    showContent = false
+                                }
+                            }
+                        }
+                }
+                .frame(height: 9)
+
+                ZStack(alignment: .top) {
+                    content
+                        .background(
+                            GeometryReader { proxy in
+                                Color.clear
+                                    .preference(key: ContentHeightKey.self, value: proxy.size.height)
+                            }
+                        )
+                        .opacity(showContent ? 1 : 0)
+                }
+                .frame(height: contentHeight, alignment: .top)
+                .clipped()
+                .padding(.top, showContent ? 10 : 0)
+                .animation(.easeInOut(duration: 0.3), value: isUnfolded)
+                .animation(.easeInOut(duration: 0.3), value: contentHeight)
             }
-            content()
+            .onPreferenceChange(ContentHeightKey.self) { h in
+                if h > 0 { internalContentHeight = h }
+            }
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color("MyCardBackgroundColor"))
-                .shadow(color: isHovered ? Color(hex: 0x0B5BCB) : .gray, radius: isHovered ? 2 : 2, x: 0.5, y: 0.5)
-        )
-        .animation(.easeInOut(duration: 0.2), value: isHovered)
         .onHover { hover in
             isHovered = hover
         }
-        .padding(.top, 4)
-        .padding(.bottom, -28)
+    }
+}
+
+struct StaticMyCardComponent<Content: View>: View {
+    @ObservedObject private var dataManager: DataManager = .shared
+    @State private var isHovered: Bool = false
+
+    let index: Int
+    let title: String
+    let content: () -> Content
+    
+    init(index: Int = 0, title: String, content: @escaping () -> Content) {
+        self.index = index
+        self.title = title
+        self.content = content
+    }
+
+    var body: some View {
+        BaseCardContainer(index: index) {
+            VStack {
+                HStack {
+                    Text(title)
+                        .font(.custom("PCL English", size: 14))
+                        .foregroundStyle(isHovered ? AppSettings.shared.theme.getTextStyle() : .init(Color("TextColor")))
+                    Spacer()
+                }
+                content()
+            }
+        }
+        .onHover { hover in
+            isHovered = hover
+        }
     }
 }
 
 struct TitlelessMyCardComponent<Content: View>: View {
     let content: () -> Content
-    @State private var isHovered: Bool = false
+    let index: Int
     
+    init(index: Int = 0, @ViewBuilder content: @escaping () -> Content) {
+        self.content = content
+        self.index = index
+    }
+
     var body: some View {
-        VStack {
-            content()
+        BaseCardContainer(index: index) {
+            VStack {
+                content()
+            }
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color("MyCardBackgroundColor"))
-                .shadow(color: isHovered ? Color(hex: 0x0B5BCB) : .gray, radius: isHovered ? 2 : 2, x: 0.5, y: 0.5)
-        )
-        .animation(.easeInOut(duration: 0.2), value: isHovered)
-        .onHover { hover in
-            isHovered = hover
-        }
-        .padding(.top, 4)
-        .padding(.bottom, -28)
     }
 }
 

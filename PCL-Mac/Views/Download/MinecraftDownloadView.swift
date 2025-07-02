@@ -74,7 +74,7 @@ struct MinecraftDownloadView: View {
                 ScrollView(.vertical, showsIndicators: true) {
                     VStack {
                         if let manifest = dataManager.versionManifest {
-                            StaticMyCardComponent(title: "最新版本") {
+                            StaticMyCardComponent(index: 0, title: "最新版本") {
                                 VStack {
                                     VersionView(version: manifest.getLatestRelease(), isLatest: true, parent: self)
                                     VersionView(version: manifest.getLatestSnapshot(), isLatest: true, parent: self)
@@ -85,9 +85,9 @@ struct MinecraftDownloadView: View {
                         }
                         
                         if let versions = self.versions {
-                            CategoryCard(label: "正式版", versions: versions["release"]!, parent: self)
-                            CategoryCard(label: "预览版", versions: versions["snapshot"]!, parent: self)
-                            CategoryCard(label: "远古版", versions: versions["old"]!, parent: self)
+                            CategoryCard(index: 1, label: "正式版", versions: versions["release"]!, parent: self)
+                            CategoryCard(index: 2, label: "预览版", versions: versions["snapshot"]!, parent: self)
+                            CategoryCard(index: 3, label: "远古版", versions: versions["old"]!, parent: self)
                         }
                         Spacer()
                     }
@@ -117,12 +117,13 @@ struct MinecraftDownloadView: View {
 }
 
 fileprivate struct CategoryCard: View {
+    let index: Int
     let label: String
     let versions: [VersionManifest.GameVersion]
     let parent: MinecraftDownloadView
     
     var body: some View {
-        MyCardComponent(title: "\(label) (\(versions.count))") {
+        MyCardComponent(index: index, title: "\(label) (\(versions.count))") {
             LazyVStack {
                 ForEach(versions, id: \.self) { version in
                     VersionView(version: version, parent: parent)

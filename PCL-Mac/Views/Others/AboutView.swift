@@ -43,7 +43,7 @@ struct AboutView: View {
     @ObservedObject private var dataManager: DataManager = .shared
     var body: some View {
         ScrollView {
-            StaticMyCardComponent(title: "关于") {
+            StaticMyCardComponent(index: 0, title: "关于") {
                 VStack(spacing: 10) {
                     ProfileCard(
                         imageName: "LtCatt",
@@ -74,7 +74,7 @@ struct AboutView: View {
             }
             .padding()
             
-            StaticMyCardComponent(title: "特别鸣谢") {
+            StaticMyCardComponent(index: 1, title: "特别鸣谢") {
                 VStack(spacing: 10) {
                     ProfileCard(
                         imageName: "PCLCommunity",
@@ -97,7 +97,7 @@ struct AboutView: View {
             }
             .padding()
             
-            StaticMyCardComponent(title: "许可与版权声明") {
+            StaticMyCardComponent(index: 2, title: "许可与版权声明") {
                 VStack(spacing: 0) {
                     ForEach(
                         [
