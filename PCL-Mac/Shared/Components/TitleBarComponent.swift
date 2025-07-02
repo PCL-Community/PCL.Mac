@@ -21,6 +21,11 @@ class DraggableHelperView: NSView {
     override func mouseDown(with event: NSEvent) {
         window?.performDrag(with: event)
     }
+    
+    override func mouseUp(with event: NSEvent) {
+        self.window?.defaultButtonCell?.performClick(self)
+    }
+    
     override func hitTest(_ point: NSPoint) -> NSView? {
         return self
     }
@@ -35,6 +40,7 @@ struct GenericTitleBarComponent<Content: View>: View {
             ZStack {
                 DraggableArea()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
                 HStack(alignment: .center) {
                     content()
                     Spacer()
@@ -131,11 +137,14 @@ struct MenuItemButton: View {
         .frame(width: 75, height: 27)
         .animation(.easeInOut(duration: 0.2), value: isHovered)
         .animation(.easeInOut(duration: 0.2), value: dataManager.router.getRoot() == route)
-        .onTapGesture {
-            if dataManager.router.getRoot() != route {
-                dataManager.router.setRoot(route)
-            }
-        }
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    if dataManager.router.getRoot() != route {
+                        dataManager.router.setRoot(route)
+                    }
+                }
+        )
         .onHover { hover in
             isHovered = hover
         }
