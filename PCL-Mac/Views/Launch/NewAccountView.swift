@@ -198,32 +198,49 @@ fileprivate struct NewMicrosoftAccountView: View {
     var body: some View {
         VStack {
             StaticMyCardComponent(title: "正版账号") {
-                VStack {
-                    MyButtonComponent(text: "登录") {
-                        if state.isSigningIn { return }
-                        state.isSigningIn = true
-                        Task {
-                            guard let authToken = await MsLogin.signIn() else {
-                                HintManager.default.add(.init(text: "登录失败！", type: .critical))
-                                return
-                            }
-                            
-                            DispatchQueue.main.async {
-                                state.authToken.setObject(authToken)
-                            }
-                            
-                            HintManager.default.add(.init(text: "登录成功！正在检测你是否拥有 Minecraft……", type: .finish))
-                            if await MsLogin.hasMinecraftGame(authToken) {
-                                HintManager.default.add(.init(text: "你购买了 Minecraft！正在保存账号数据……", type: .finish))
-                                if let msAccount = await MsAccount.create(authToken) {
-                                    DispatchQueue.main.async { AccountManager.shared.accounts.append(.microsoft(msAccount)) }
-                                    HintManager.default.add(.init(text: "登录成功！", type: .finish))
-                                } else {
-                                    HintManager.default.add(.init(text: "在创建账号实例时发生错误", type: .critical))
+                VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("点击登录后会自动跳转到微软登录页面")
+                        Text("请将剪切板中的内容粘贴至页面的输入框内，并登录您购买 Minecraft 时的微软账号")
+                        Text("登录后出现“PCL-CE”而非“PCL-Mac”是正常的，因为 PCL-Mac 还没有自己的 Client ID qwq")
+                    }
+                    .font(.custom("PCL English", size: 14))
+                    .foregroundStyle(Color("TextColor"))
+                    .padding()
+                    
+                    HStack {
+                        MyButtonComponent(text: "取消") {
+                            state.type = nil
+                        }
+                        MyButtonComponent(text: "购买 Minecraft") {
+                            NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!)
+                        }
+                        MyButtonComponent(text: "登录") {
+                            if state.isSigningIn { return }
+                            state.isSigningIn = true
+                            Task {
+                                guard let authToken = await MsLogin.signIn() else {
+                                    HintManager.default.add(.init(text: "登录失败！", type: .critical))
+                                    return
                                 }
-                                DispatchQueue.main.async { StateManager.shared.newAccount = .init() }
-                            } else {
-                                HintManager.default.add(.init(text: "你还没有购买 Minecraft！", type: .critical))
+                                
+                                DispatchQueue.main.async {
+                                    state.authToken.setObject(authToken)
+                                }
+                                
+                                HintManager.default.add(.init(text: "登录成功！正在检测你是否拥有 Minecraft……", type: .finish))
+                                if await MsLogin.hasMinecraftGame(authToken) {
+                                    HintManager.default.add(.init(text: "你购买了 Minecraft！正在保存账号数据……", type: .finish))
+                                    if let msAccount = await MsAccount.create(authToken) {
+                                        DispatchQueue.main.async { AccountManager.shared.accounts.append(.microsoft(msAccount)) }
+                                        HintManager.default.add(.init(text: "登录成功！", type: .finish))
+                                    } else {
+                                        HintManager.default.add(.init(text: "在创建账号实例时发生错误", type: .critical))
+                                    }
+                                    DispatchQueue.main.async { StateManager.shared.newAccount = .init() }
+                                } else {
+                                    HintManager.default.add(.init(text: "你还没有购买 Minecraft！", type: .critical))
+                                }
                             }
                         }
                     }

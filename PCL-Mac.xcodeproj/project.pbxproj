@@ -130,6 +130,7 @@
 				EC9EAEC52DD85E48006CEDCC /* Sources */,
 				EC9EAEC62DD85E48006CEDCC /* Frameworks */,
 				EC9EAEC72DD85E48006CEDCC /* Resources */,
+				EC10129C2E14D13F00BD8D8B /* Run Script */,
 			);
 			buildRules = (
 			);
@@ -236,6 +237,29 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		EC10129C2E14D13F00BD8D8B /* Run Script */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.env.local",
+			);
+			name = "Run Script";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/PCL-Mac/Info.plist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "PLIST=\"${SRCROOT}/PCL-Mac/Info.plist\"\nENV_FILE=\"$SCRIPT_INPUT_FILE_0\"\n\nif [ -f \"$ENV_FILE\" ]; then\n  CLIENT_ID=$(grep CLIENT_ID \"$ENV_FILE\" | cut -d '=' -f2- | tr -d '\\r')\n  \n  if [ -n \"$CLIENT_ID\" ]; then\n    /usr/libexec/PlistBuddy -c \"Set :CLIENT_ID $CLIENT_ID\" \"$PLIST\"\n    echo \"CLIENT_ID updated in Info.plist\"\n  else\n    echo \"CLIENT_ID not found in $ENV_FILE, skip replace\"\n  fi\nelse\n  echo \"$ENV_FILE not found, skip CLIENT_ID replace\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		EC9EAEC52DD85E48006CEDCC /* Sources */ = {
