@@ -10,6 +10,8 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject private var dataManager: DataManager = .shared
     
+    @State private var isLeftTabVisible: Bool = true
+    
     var body: some View {
         ZStack {
             createViewFromRouter()
@@ -73,10 +75,18 @@ struct ContentView: View {
                         .fill(Color("BackgroundColor"))
                         .shadow(radius: 2)
                     dataManager.leftTabContent
+                        .scaleEffect(isLeftTabVisible ? 1 : 0.9 , anchor: .center)
+                        .opacity(isLeftTabVisible ? 1 : 0)
+                        .onChange(of: dataManager.leftTabId) { _ in
+                            isLeftTabVisible = false
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) {
+                                isLeftTabVisible = true
+                            }
+                        }
                 }
                 .frame(width: dataManager.leftTabWidth)
                 .zIndex(1)
-                .animation(.easeInOut(duration: 0.15), value: dataManager.leftTabWidth)
+                .animation(.easeInOut(duration: 0.05), value: dataManager.leftTabWidth)
                 
                 AnyView(dataManager.router.getLastView())
                     .foregroundStyle(Color("TextColor"))

@@ -21,6 +21,7 @@ class DataManager: ObservableObject {
     @Published var router: AppRouter = .init()
     @Published var leftTabWidth: CGFloat = 310
     @Published var leftTabContent: AnyView = AnyView(EmptyView())
+    @Published var leftTabId: UUID = .init()
     @Published var downloadSpeed: Double = 0
     @Published var currentStagePercentage: Double = 0
     @Published var inprogressInstallTask: InstallTask?
@@ -61,6 +62,7 @@ class DataManager: ObservableObject {
         DispatchQueue.main.async {
             self.leftTabWidth = width
             self.leftTabContent = AnyView(content())
+            self.leftTabId = .init()
         }
     }
 }
