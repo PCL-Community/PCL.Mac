@@ -24,7 +24,7 @@ struct PCL_MacTests {
     
     @Test func testLoadClientManifest() async throws {
         let handle = try FileHandle(forReadingFrom: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions/1.12.2/1.12.2.json"))
-        let manifest = try ClientManifest.parse(try handle.readToEnd()!)
+        let manifest = try ClientManifest.parse(try handle.readToEnd()!, instanceUrl: nil)
         ArtifactVersionMapper.map(manifest)
         print(manifest.getNeededNatives().map { "\($0.key.name): \($0.value.url)" })
     }
@@ -109,8 +109,11 @@ struct PCL_MacTests {
     }
     
     @Test func testModLoader() async throws {
-        let instance = MinecraftInstance.create(runningDirectory: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions/1.21.5 NeoForge"))!
-        await ModLoaderInstaller.installNeoforge(instance, "21.5.0-beta")
+        let instance = MinecraftInstance.create(runningDirectory: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions/1.21.7"))!
+        await ModLoaderInstaller.installFabric(instance, "0.16.14")
+        let data = try FileHandle(forReadingFrom: instance.runningDirectory.appending(path: "\(instance.config.name).json")).readToEnd()!
+        let manifest: ClientManifest = .createFromFabricManifest(.init(try JSON(data: data)), instance.runningDirectory)
+        print(manifest.mainClass)
     }
     
     @Test func testMavenCoord() async {

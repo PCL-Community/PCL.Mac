@@ -1,11 +1,4 @@
 //
-//  NewClientManifest.swift
-//  PCL-Mac
-//
-//  Created by YiZhiMCQiu on 2025/6/14.
-//
-
-//
 //  ClientManifest.swift
 //  PCL-Mac
 //
@@ -17,15 +10,26 @@ import SwiftyJSON
 
 public class ClientManifest {
     public let id: String
-    public let mainClass: String
+    public var mainClass: String
     public let type: String
     public let assetIndex: AssetIndex
     public let assets: String
-    public let downloads: [String: DownloadInfo]
     public var libraries: [Library]
     public let arguments: Arguments?
     public let minecraftArguments: String?
     public let javaVersion: Int?
+    
+    private init(id: String, mainClass: String, type: String, assetIndex: AssetIndex, assets: String, libraries: [Library], arguments: Arguments?, minecraftArguments: String?, javaVersion: Int?) {
+        self.id = id
+        self.mainClass = mainClass
+        self.type = type
+        self.assetIndex = assetIndex
+        self.assets = assets
+        self.libraries = libraries
+        self.arguments = arguments
+        self.minecraftArguments = minecraftArguments
+        self.javaVersion = javaVersion
+    }
 
     private init(json: JSON) {
         self.id = json["id"].stringValue
@@ -33,7 +37,6 @@ public class ClientManifest {
         self.type = json["type"].stringValue
         self.assets = json["assets"].stringValue
         self.assetIndex = AssetIndex(json: json["assetIndex"])
-        self.downloads = json["downloads"].dictionaryValue.mapValues(DownloadInfo.init(json:))
         self.libraries = json["libraries"].arrayValue.map(Library.init(json:))
         self.arguments = json["arguments"].exists() ? Arguments(json: json["arguments"]) : nil
         self.minecraftArguments = json["minecraftArguments"].string
@@ -261,6 +264,33 @@ public class ClientManifest {
             }
         }
     }
+    
+    public static func createFromFabricManifest(_ fabricManifest: FabricManifest, _ instanceUrl: URL) -> ClientManifest {
+        let manifest: ClientManifest = .init(
+            id: fabricManifest.loaderVersion,
+            mainClass: fabricManifest.mainClass,
+            type: "fabric",
+            assetIndex: .init(json: .null),
+            assets: "",
+            libraries: fabricManifest.libraries,
+            arguments: nil,
+            minecraftArguments: nil,
+            javaVersion: nil
+        )
+        
+        let parent: ClientManifest
+        let parentUrl = instanceUrl.appending(path: ".pcl_mac").appending(path: "\(fabricManifest.minecraftVersion).json")
+        
+        do {
+            let data = try FileHandle(forReadingFrom: parentUrl).readToEnd()!
+            parent = try .parse(data, instanceUrl: instanceUrl)
+        } catch {
+            err("无法解析 inheritsFrom: \(error)")
+            return manifest
+        }
+        
+        return merge(parent: parent, manifest: manifest)
+    }
 
     public static func parse(_ data: Data, instanceUrl: URL?) throws -> ClientManifest {
         let json = try JSON(data: data)
@@ -268,7 +298,7 @@ public class ClientManifest {
     checkParent:
         if let inheritsFrom = json["inheritsForm"].string,
            let instanceUrl = instanceUrl {
-            let parentUrl = instanceUrl.appending(path: "\(inheritsFrom).json")
+            let parentUrl = instanceUrl.appending(path: ".pcl_mac").appending(path: "\(inheritsFrom).json")
             
             guard FileManager.default.fileExists(atPath: parentUrl.path) else {
                 err("\(instanceUrl.lastPathComponent) 的客户端清单中有 inheritsFrom 字段，但其对应的 JSON 不存在")
@@ -285,13 +315,18 @@ public class ClientManifest {
                 break checkParent
             }
             
-            manifest.libraries.append(contentsOf: parent.libraries)
-            manifest.arguments?.game.insert(contentsOf: parent.arguments?.game ?? [], at: 0)
-            manifest.arguments?.jvm.insert(contentsOf: parent.arguments?.jvm ?? [], at: 0)
-            
-            return manifest
+            return merge(parent: parent, manifest: manifest)
         }
         return ClientManifest(json: json)
+    }
+    
+    private static func merge(parent: ClientManifest, manifest: ClientManifest) -> ClientManifest {
+        parent.libraries.insert(contentsOf: manifest.libraries, at: 0)
+        parent.arguments?.game.append(contentsOf: manifest.arguments?.game ?? [])
+        parent.arguments?.jvm.append(contentsOf: manifest.arguments?.jvm ?? [])
+        parent.mainClass = manifest.mainClass
+        
+        return parent
     }
 
     public func getNeededLibraries() -> [Library] {

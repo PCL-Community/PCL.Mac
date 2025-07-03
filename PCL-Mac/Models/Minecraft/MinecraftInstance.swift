@@ -44,14 +44,6 @@ public class MinecraftInstance: Identifiable {
         self.minecraftDirectory = MinecraftDirectory(rootUrl: runningDirectory.parent().parent())
         self.configPath = runningDirectory.appending(path: ".PCL_Mac.json")
         
-        do {
-            let handle = try FileHandle(forReadingFrom: runningDirectory.appending(path: runningDirectory.lastPathComponent + ".json"))
-            manifest = try ClientManifest.parse(try handle.readToEnd()!, instanceUrl: runningDirectory)
-        } catch {
-            err("无法加载客户端 JSON: \(error)")
-            return nil
-        }
-        
         if FileManager.default.fileExists(atPath: configPath.path) {
             do {
                 let handle = try FileHandle(forReadingFrom: configPath)
@@ -62,7 +54,20 @@ public class MinecraftInstance: Identifiable {
                 return nil
             }
         } else {
-            self.config = config ?? MinecraftConfig(name: runningDirectory.lastPathComponent, mainClass: manifest.mainClass)
+            self.config = config ?? MinecraftConfig(name: runningDirectory.lastPathComponent, mainClass: "")
+        }
+        
+        do {
+            let data = try FileHandle(forReadingFrom: runningDirectory.appending(path: runningDirectory.lastPathComponent + ".json")).readToEnd()!
+            manifest = switch self.config.clientBrand {
+            case .fabric:
+                ClientManifest.createFromFabricManifest(.init(try JSON(data: data)), runningDirectory)
+            default:
+                try ClientManifest.parse(data, instanceUrl: runningDirectory)
+            }
+        } catch {
+            err("无法加载客户端清单: \(error)")
+            return nil
         }
         
         detectVersion()
