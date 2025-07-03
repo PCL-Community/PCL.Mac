@@ -14,15 +14,21 @@ struct MinecraftLaunchIntent: AppIntent {
     
     @Parameter(title: "实例名")
     var instanceName: String
+    
+    @Parameter(title: "跳过资源完整性校验")
+    var skipResourceCheck: Bool
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        let before: DispatchTime = .now()
         let instance = MinecraftInstance.create(runningDirectory: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions").appending(path: instanceName))
         guard let instance = instance else {
-            return .result(dialog: .init("错误：实例不存在"))
+            return .result(dialog: .init("实例不存在。"))
         }
+        
         Task {
-            await instance.launch(skipResourceCheck: true)
+            await instance.launch(skipResourceCheck: skipResourceCheck)
         }
-        return .result(dialog: .init("启动成功"))
+        
+        return .result(dialog: .init("在 \((DispatchTime.now().uptimeNanoseconds - before.uptimeNanoseconds) / 1_000_000)ms 内成功创建进程。"))
     }
 }
