@@ -22,12 +22,12 @@ public class ClientManifest {
     public let assetIndex: AssetIndex
     public let assets: String
     public let downloads: [String: DownloadInfo]
-    public let libraries: [Library]
+    public var libraries: [Library]
     public let arguments: Arguments?
     public let minecraftArguments: String?
     public let javaVersion: Int?
 
-    public init(json: JSON) {
+    private init(json: JSON) {
         self.id = json["id"].stringValue
         self.mainClass = json["mainClass"].stringValue
         self.type = json["type"].stringValue
@@ -130,8 +130,8 @@ public class ClientManifest {
     }
 
     public class Arguments {
-        public let game: [GameArgument]
-        public let jvm: [JvmArgument]
+        public var game: [GameArgument]
+        public var jvm: [JvmArgument]
 
         public init(json: JSON) {
             game = json["game"].arrayValue.map { GameArgument(json: $0) }
@@ -262,8 +262,35 @@ public class ClientManifest {
         }
     }
 
-    public static func parse(_ data: Data) throws -> ClientManifest {
+    public static func parse(_ data: Data, instanceUrl: URL?) throws -> ClientManifest {
         let json = try JSON(data: data)
+        
+    checkParent:
+        if let inheritsFrom = json["inheritsForm"].string,
+           let instanceUrl = instanceUrl {
+            let parentUrl = instanceUrl.appending(path: "\(inheritsFrom).json")
+            
+            guard FileManager.default.fileExists(atPath: parentUrl.path) else {
+                err("\(instanceUrl.lastPathComponent) 的客户端清单中有 inheritsFrom 字段，但其对应的 JSON 不存在")
+                break checkParent
+            }
+            
+            let parent: ClientManifest
+            let manifest = ClientManifest(json: json)
+            do {
+                let data = try FileHandle(forReadingFrom: parentUrl).readToEnd()!
+                parent = try .parse(data, instanceUrl: instanceUrl)
+            } catch {
+                err("无法解析 inheritsFrom: \(error)")
+                break checkParent
+            }
+            
+            manifest.libraries.append(contentsOf: parent.libraries)
+            manifest.arguments?.game.insert(contentsOf: parent.arguments?.game ?? [], at: 0)
+            manifest.arguments?.jvm.insert(contentsOf: parent.arguments?.jvm ?? [], at: 0)
+            
+            return manifest
+        }
         return ClientManifest(json: json)
     }
 

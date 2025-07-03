@@ -45,7 +45,7 @@ public class MinecraftInstaller {
                 completion: {
                 // 解析 JSON
                 if let data = try? Data(contentsOf: clientJsonUrl),
-                   let manifest: ClientManifest = try? .parse(data) {
+                   let manifest: ClientManifest = try? .parse(data, instanceUrl: nil) {
                     task.manifest = manifest
                     ArtifactVersionMapper.map(task.manifest!)
                 } else {

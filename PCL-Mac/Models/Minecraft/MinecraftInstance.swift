@@ -46,7 +46,7 @@ public class MinecraftInstance: Identifiable {
         
         do {
             let handle = try FileHandle(forReadingFrom: runningDirectory.appending(path: runningDirectory.lastPathComponent + ".json"))
-            manifest = try ClientManifest.parse(try handle.readToEnd()!)
+            manifest = try ClientManifest.parse(try handle.readToEnd()!, instanceUrl: runningDirectory)
         } catch {
             err("无法加载客户端 JSON: \(error)")
             return nil
