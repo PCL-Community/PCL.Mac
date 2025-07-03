@@ -59,11 +59,17 @@ public class MinecraftInstance: Identifiable {
         
         do {
             let data = try FileHandle(forReadingFrom: runningDirectory.appending(path: runningDirectory.lastPathComponent + ".json")).readToEnd()!
-            manifest = switch self.config.clientBrand {
-            case .fabric:
-                ClientManifest.createFromFabricManifest(.init(try JSON(data: data)), runningDirectory)
-            default:
-                try ClientManifest.parse(data, instanceUrl: runningDirectory)
+            let json = try JSON(data: data)
+            if !json["inheritsFrom"].exists() && !json["launcherMeta"].exists() {
+                manifest = try ClientManifest.parse(data, instanceUrl: runningDirectory)
+            } else {
+                switch self.config.clientBrand {
+                case .fabric:
+                    manifest = ClientManifest.createFromFabricManifest(.init(json), runningDirectory)
+                default:
+                    warn("发现不受支持的加载器: \(self.config.name) \(self.config.clientBrand.rawValue)")
+                    manifest = try ClientManifest.parse(data, instanceUrl: runningDirectory)
+                }
             }
         } catch {
             err("无法加载客户端清单: \(error)")
@@ -125,8 +131,8 @@ public class MinecraftInstance: Identifiable {
         return suitableJava
     }
     
-    public func launch() async {
-        if !config.skipResourcesCheck {
+    public func launch(skipResourceCheck: Bool = false) async {
+        if !config.skipResourcesCheck && !skipResourceCheck {
             log("正在进行资源完整性检查")
             await withCheckedContinuation { continuation in
                 let task = MinecraftInstaller.createCompleteTask(self, continuation.resume)

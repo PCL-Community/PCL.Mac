@@ -15,7 +15,7 @@ public class NeoforgeInstallProfile {
     
     public init(_ json: JSON) {
         self.data = json["data"].dictionaryValue.mapValues(Data.init).mapValues { $0.client }
-        self.processors = json["processors"].arrayValue.map(Processor.init)
+        self.processors = json["processors"].arrayValue.map(Processor.init).filter { $0.sides.isEmpty || $0.sides.contains("client") }
         self.libraries = json["libraries"].arrayValue.map(Library.init)
     }
     
@@ -32,11 +32,13 @@ public class NeoforgeInstallProfile {
         public let jarPath: String
         public let classpath: [String]
         public let args: [String]
+        public let sides: [String]
         
         public init(_ json: JSON) {
             self.jarPath = Util.toPath(mavenCoordinate: json["jar"].stringValue)
             self.classpath = json["classpath"].arrayValue.map { Util.toPath(mavenCoordinate: $0.stringValue) }
             self.args = json["args"].arrayValue.map { $0.stringValue }
+            self.sides = json["sides"].arrayValue.map { $0.stringValue }
         }
     }
     

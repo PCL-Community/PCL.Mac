@@ -79,7 +79,10 @@ public class MinecraftLauncher {
             "natives_directory": instance.runningDirectory.appending(path: "natives").path,
             "launcher_name": "PCL Mac",
             "launcher_version": "1.0.0",
-            "classpath": buildClasspath()
+            "classpath": buildClasspath(),
+            "classpath_separator": ":",
+            "library_directory": instance.minecraftDirectory.librariesUrl.path,
+            "version_name": instance.config.name
         ]
         
         var args: [String] = [

@@ -296,7 +296,7 @@ public class ClientManifest {
         let json = try JSON(data: data)
         
     checkParent:
-        if let inheritsFrom = json["inheritsForm"].string,
+        if let inheritsFrom = json["inheritsFrom"].string,
            let instanceUrl = instanceUrl {
             let parentUrl = instanceUrl.appending(path: ".pcl_mac").appending(path: "\(inheritsFrom).json")
             

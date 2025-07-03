@@ -55,7 +55,7 @@ struct VersionListView: View {
     }
     
     var body: some View {
-        ScrollView(.vertical, showsIndicators: true) {
+        ScrollView(.vertical) {
             VStack {
                 MyCardComponent(title: "常规版本") {
                     VStack {
@@ -68,6 +68,7 @@ struct VersionListView: View {
                 .padding()
             }
         }
+        .scrollIndicators(.never)
         .onAppear {
             dataManager.leftTab(350) {
                 EmptyView()

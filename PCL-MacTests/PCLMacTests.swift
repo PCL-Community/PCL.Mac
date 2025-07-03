@@ -109,11 +109,9 @@ struct PCL_MacTests {
     }
     
     @Test func testModLoader() async throws {
-        let instance = MinecraftInstance.create(runningDirectory: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions/1.21.7"))!
-        await ModLoaderInstaller.installFabric(instance, "0.16.14")
-        let data = try FileHandle(forReadingFrom: instance.runningDirectory.appending(path: "\(instance.config.name).json")).readToEnd()!
-        let manifest: ClientManifest = .createFromFabricManifest(.init(try JSON(data: data)), instance.runningDirectory)
-        print(manifest.mainClass)
+        Util.clearTemp()
+        let instance = MinecraftInstance.create(runningDirectory: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions/1.21.7 NeoForge"))!
+        await ModLoaderInstaller.installNeoforge(instance, "21.7.2-beta")
     }
     
     @Test func testMavenCoord() async {

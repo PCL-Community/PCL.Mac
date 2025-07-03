@@ -151,12 +151,13 @@ public class ModLoaderInstaller {
             )  { (current, _) in current }
             
             // 6. 执行处理器任务
+            log("正在执行 \(profile.processors.count) 个处理器任务")
             for processor in profile.processors {
-                let jarPath = instance.minecraftDirectory.librariesUrl.appending(path: processor.jarPath)
+                let jarPath = temp.appending(path: processor.jarPath)
                 let process = Process()
                 process.executableURL = URL(fileURLWithPath: "/usr/bin/java")
                 process.arguments = [
-                    "-cp", processor.classpath.map { instance.minecraftDirectory.librariesUrl.appending(path: $0).path }.union([installer.path]).joined(separator: ":"),
+                    "-cp", processor.classpath.map { temp.appending(path: $0).path }.union([installer.path]).joined(separator: ":"),
                     Util.getMainClass(jarPath)!
                 ].union(Util.replaceTemplateStrings(processor.args.map{ parse($0, in: instance.minecraftDirectory) }, with: values))
                 process.environment = ProcessInfo.processInfo.environment
@@ -165,11 +166,27 @@ public class ModLoaderInstaller {
                     try process.run()
                     process.waitUntilExit()
                 } catch {
-                    err("无法调用处理器: \(error.localizedDescription)")
+                    err("无法执行处理器任务: \(error.localizedDescription)")
                 }
             }
             
-            // 7. 清理
+            // 7. 处理子版本
+            do {
+                try? FileManager.default.createDirectory(at: instance.runningDirectory.appending(path: ".pcl_mac"), withIntermediateDirectories: true)
+                try FileManager.default.moveItem(
+                    at: instance.runningDirectory.appending(path: "\(instance.config.name).json"),
+                    to: instance.runningDirectory.appending(path: ".pcl_mac").appending(path: "\(instance.version!.displayName).json")
+                )
+                
+                try FileManager.default.copyItem(
+                    at: temp.appending(path: "version.json"),
+                    to: instance.runningDirectory.appending(path: "\(instance.config.name).json")
+                )
+            } catch {
+                err("无法保存 NeoForge 清单: \(error.localizedDescription)")
+            }
+            
+            // 8. 清理
             Util.clearTemp()
         } else {
             err("无法获取版本列表")
