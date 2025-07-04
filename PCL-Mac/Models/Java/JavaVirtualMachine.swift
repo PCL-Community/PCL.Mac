@@ -67,7 +67,7 @@ public class JavaVirtualMachine: Identifiable, Equatable {
         }
         
         // 设置架构及调用方式
-        let arch = getArchOfFile(executableUrl)
+        let arch: ExecArchitectury = .getArchOfFile(executableUrl)
         let callMethod: CallMethod?
         if arch == ExecArchitectury.SystemArch || arch == .fatFile {
             callMethod = .direct
@@ -157,27 +157,6 @@ public class JavaVirtualMachine: Identifiable, Equatable {
         return (0, "未知")
     }
     
-    private static func getArchOfFile(_ executableUrl: URL) -> ExecArchitectury {
-        guard let fh = try? FileHandle(forReadingFrom: executableUrl) else { return .unknown }
-        defer { try? fh.close() }
-
-        guard let magicData = try? fh.read(upToCount: 4), magicData.count == 4 else { return .unknown }
-        let magic = magicData.withUnsafeBytes { $0.load(as: UInt32.self) }
-        
-        if magic == 0xBEBAFECA || magic == 0xBFBAFECA {
-            return .fatFile
-        }
-        
-        guard let cputypeData = try? fh.read(upToCount: 4), cputypeData.count == 4 else { return .unknown }
-        let cputype = cputypeData.withUnsafeBytes { $0.load(as: UInt32.self) }
-
-        switch cputype {
-        case 0x1000007: return .x64
-        case 0x100000C: return .arm64
-        default: return .unknown
-        }
-    }
-    
     public static func == (jvm1: JavaVirtualMachine, jvm2: JavaVirtualMachine) -> Bool {
         return jvm1.executableUrl == jvm2.executableUrl
     }
@@ -199,6 +178,28 @@ public enum ExecArchitectury {
             return _systemArch!
         }
     }
+    
+    public static func getArchOfFile(_ executableUrl: URL) -> ExecArchitectury {
+        guard let fh = try? FileHandle(forReadingFrom: executableUrl) else { return .unknown }
+        defer { try? fh.close() }
+
+        guard let magicData = try? fh.read(upToCount: 4), magicData.count == 4 else { return .unknown }
+        let magic = magicData.withUnsafeBytes { $0.load(as: UInt32.self) }
+        
+        if magic == 0xBEBAFECA || magic == 0xBFBAFECA {
+            return .fatFile
+        }
+        
+        guard let cputypeData = try? fh.read(upToCount: 4), cputypeData.count == 4 else { return .unknown }
+        let cputype = cputypeData.withUnsafeBytes { $0.load(as: UInt32.self) }
+
+        switch cputype {
+        case 0x1000007: return .x64
+        case 0x100000C: return .arm64
+        default: return .unknown
+        }
+    }
+    
     private static var _systemArch: ExecArchitectury? = nil
     case arm64, x64, fatFile, unknown
 }

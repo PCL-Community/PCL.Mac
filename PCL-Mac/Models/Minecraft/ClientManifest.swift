@@ -59,7 +59,7 @@ public class ClientManifest {
     }
 
     public class DownloadInfo {
-        public let path: String
+        public var path: String
         public let sha1: String?
         public let size: Int?
         public var url: String
@@ -347,7 +347,12 @@ public class ClientManifest {
             } else if let artifact = lib.artifact,
                       lib.name.hasPrefix("org.lwjgl"),
                       lib.name.contains("natives") {
-                result[lib] = artifact
+//                if lib.classifier!.hasSuffix("arm64") && ExecArchitectury.SystemArch == .arm64
+//                    || !lib.classifier!.hasSuffix("arm64") && ExecArchitectury.SystemArch == .x64 {
+                    result[lib] = artifact
+//                } else {
+//                    debug("已筛出与系统架构不匹配的本地库: \(lib.name)")
+//                }
             }
         }
         return result

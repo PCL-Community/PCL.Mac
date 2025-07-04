@@ -21,7 +21,7 @@ public class MinecraftInstance: Identifiable {
     public let configPath: URL
     public private(set) var version: MinecraftVersion? = nil
     public var process: Process?
-    public let manifest: ClientManifest!
+    public let manifest: ClientManifest
     public var config: MinecraftConfig
     
     public let id: UUID = UUID()
@@ -71,6 +71,7 @@ public class MinecraftInstance: Identifiable {
                     manifest = try ClientManifest.parse(data, instanceUrl: runningDirectory)
                 }
             }
+            ArtifactVersionMapper.map(manifest)
         } catch {
             err("无法加载客户端清单: \(error)")
             return nil
@@ -161,7 +162,7 @@ public class MinecraftInstance: Identifiable {
             self.config.version = try JSON(data: data)["id"].stringValue
         } catch {
             err("无法检测版本: \(error.localizedDescription)，正在使用清单版本")
-            self.config.version = self.manifest!.id
+            self.config.version = self.manifest.id
         }
     }
 }

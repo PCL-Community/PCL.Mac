@@ -100,6 +100,29 @@ public class Util {
             err("在清理时发生错误: \(error.localizedDescription)")
         }
     }
+    
+    public static func unzip(archiveUrl: URL, destination: URL, replace: Bool = true) {
+        let archive: Archive
+        do {
+            archive = try Archive(url: archiveUrl, accessMode: .read)
+        } catch {
+            err("无法读取文件: \(error.localizedDescription)")
+            return
+        }
+        
+        for entry in archive {
+            do {
+                let destinationFileURL = destination.appendingPathComponent(entry.path)
+                if FileManager.default.fileExists(atPath: destinationFileURL.path) && replace {
+                    try FileManager.default.removeItem(at: destinationFileURL)
+                    debug("已删除重复文件 \(destinationFileURL.lastPathComponent)")
+                }
+                _ = try archive.extract(entry, to: destinationFileURL)
+            } catch {
+                err("无法解压文件: \(error.localizedDescription)")
+            }
+        }
+    }
 }
 
 public struct MavenCoordinate {

@@ -181,14 +181,9 @@ public class MinecraftInstaller {
         let nativesUrl: URL = task.versionUrl.appending(path: "natives")
         for (_, native) in task.manifest!.getNeededNatives() {
             let jarUrl: URL = task.minecraftDirectory.librariesUrl.appending(path: native.path)
-            
-            do {
-                try FileManager.default.unzipItem(at: jarUrl, to: nativesUrl)
-                processLibs(nativesUrl)
-                debug("解压 \(native.path) 成功")
-            } catch {
-                err("无法解压本地库: \(error.localizedDescription)")
-            }
+            Util.unzip(archiveUrl: jarUrl, destination: nativesUrl, replace: true)
+            processLibs(nativesUrl)
+            debug("解压 \(native.path) 成功")
         }
     }
     
@@ -203,6 +198,18 @@ public class MinecraftInstaller {
             guard fileURL.pathExtension == "dylib" || fileURL.pathExtension == "jnilib",
                   let resourceValues = try? fileURL.resourceValues(forKeys: [.isDirectoryKey]),
                   !resourceValues.isDirectory! else { continue }
+            
+            // 验证架构
+            if fileURL.pathExtension == "dylib" {
+                let arch = ExecArchitectury.getArchOfFile(fileURL)
+                guard arch == .SystemArch || arch == .fatFile else {
+                    try? fileManager.removeItem(at: fileURL)
+                    log("已清除架构不匹配的可执行文件: \(fileURL.lastPathComponent)")
+                    continue
+                }
+            }
+            
+            // 拷贝到 natives 根目录
             do {
                 let destinationURL = nativesUrl.appendingPathComponent(fileURL.lastPathComponent)
                 if destinationURL == fileURL { continue }
@@ -215,8 +222,8 @@ public class MinecraftInstaller {
             }
         }
         
+        // 清理非 dylib 文件
         do {
-            let fileManager = FileManager.default
             let contents = try fileManager.contentsOfDirectory(at: nativesUrl, includingPropertiesForKeys: nil)
             for fileURL in contents {
                 if !fileURL.pathExtension.lowercased().hasSuffix("dylib") && !fileURL.pathExtension.lowercased().hasSuffix("jnilib") {

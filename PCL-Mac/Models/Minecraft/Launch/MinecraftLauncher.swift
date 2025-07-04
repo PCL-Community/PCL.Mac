@@ -29,7 +29,7 @@ public class MinecraftLauncher {
         process.environment = ProcessInfo.processInfo.environment
         process.arguments = []
         process.arguments!.append(contentsOf: buildJvmArguments())
-        process.arguments!.append(instance.manifest!.mainClass)
+        process.arguments!.append(instance.manifest.mainClass)
         process.arguments!.append(contentsOf: buildGameArguments())
         debug(process.executableURL!.path + " " + process.arguments!.joined(separator: " "))
         process.currentDirectoryURL = instance.runningDirectory

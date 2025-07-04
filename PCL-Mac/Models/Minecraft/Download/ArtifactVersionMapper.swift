@@ -17,7 +17,7 @@ public struct ArtifactVersionMapper {
         for library in manifest.getNeededLibraries() {
             switch library.groupId {
             case "org.lwjgl":
-                if library.version.starts(with: "3.") {
+                if library.version.starts(with: "3.") && library.version != "3.3.3" {
                     library.version = "3.3.1"
                 }
                 library.artifact?.url = "https://libraries.minecraft.net/org/lwjgl/\(library.artifactId)/\(library.version)/\(library.artifactId)-\(library.version).jar"
@@ -32,16 +32,18 @@ public struct ArtifactVersionMapper {
             default:
                 continue
             }
+            
+            library.artifact?.path = URL(string: library.artifact!.url)!.path
         }
         
         // MARK: - 替换本地库版本
         for (library, artifact) in manifest.getNeededNatives() {
             switch library.groupId {
             case "org.lwjgl":
-                if library.version.starts(with: "3.") {
+                if library.version.starts(with: "3.") && library.version != "3.3.3" {
                     library.version = "3.3.1"
                 }
-                library.artifact?.url = "https://libraries.minecraft.net/org/lwjgl/\(library.artifactId)/\(library.version)/\(library.artifactId)-\(library.version)-natives-macos-arm64.jar"
+                artifact.url = "https://libraries.minecraft.net/org/lwjgl/\(library.artifactId)/\(library.version)/\(library.artifactId)-\(library.version)-natives-macos-arm64.jar"
             case "org.lwjgl.lwjgl":
                 if library.artifactId == "lwjgl-platform" {
                     artifact.url = "https://repo1.maven.org/maven2/org/glavo/hmcl/lwjgl2-natives/2.9.3-rc1-osx-arm64/lwjgl2-natives-2.9.3-rc1-osx-arm64.jar" // 再次感谢 Glavo
@@ -53,6 +55,8 @@ public struct ArtifactVersionMapper {
             default:
                 continue
             }
+            
+            artifact.path = URL(string: artifact.url)!.path
         }
     }
 }
