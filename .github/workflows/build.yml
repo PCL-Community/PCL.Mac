@@ -28,8 +28,10 @@ jobs:
         run: |
             echo "CLIENT_ID = $CLIENT_ID" > Secrets.xcconfig
             echo "IS_DEVELOPMENT = false" >> Secrets.xcconfig
+            echo "BRANCH = $BRANCH" >> Secrets.xcconfig
         env:
           CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          BRANCH: ${{ github.ref_name }}
 
       - name: Build Universal Binary (xcodebuild)
         run: |

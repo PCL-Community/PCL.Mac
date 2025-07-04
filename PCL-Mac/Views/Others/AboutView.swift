@@ -64,7 +64,7 @@ struct AboutView: View {
                     ProfileCard(
                         imageName: "Icon",
                         name: "PCL-Mac",
-                        description: "当前版本：不知道",
+                        description: "当前版本：早期开发-\(SharedConstants.shared.branch)",
                         buttonName: "查看源代码",
                         buttonUrl: "https://github.com/PCL-Community/PCL-Mac"
                     )

@@ -102,14 +102,10 @@ struct PCL_MacTests {
     }
     
     @Test func testCompleteResource() async {
-        let instance = MinecraftInstance.create(runningDirectory: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions/1.21.5-Fabric"))!
-        for library in instance.manifest.getNeededLibraries() {
-            print(library.artifact?.url)
+        await withCheckedContinuation { continuation in
+            let task = MinecraftInstaller.createCompleteTask(MinecraftInstance.create(runningDirectory: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions/1.21.5"))!, continuation.resume)
+            task.start()
         }
-//        await withCheckedContinuation { continuation in
-//            let task = MinecraftInstaller.createCompleteTask(MinecraftInstance.create(runningDirectory: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions/1.21.5"))!, continuation.resume)
-//            task.start()
-//        }
     }
     
     @Test func testModLoader() async throws {

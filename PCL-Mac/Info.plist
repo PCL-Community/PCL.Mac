@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BRANCH</key>
+	<string>$(BRANCH)</string>
 	<key>CLIENT_ID</key>
 	<string>c14b0370-8d75-42f8-b329-5b60d39e319f</string>
 	<key>IS_DEVELOPMENT</key>

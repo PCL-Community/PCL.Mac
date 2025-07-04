@@ -19,6 +19,7 @@ public struct SharedConstants {
     public let dateFormatter = DateFormatter()
     
     public let isDevelopment: Bool
+    public let branch: String
     
     private init() {
         self.applicationContentsUrl = Bundle.main.bundleURL.appending(path: "Contents")
@@ -30,5 +31,7 @@ public struct SharedConstants {
         self.dateFormatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
         
         self.isDevelopment = (Bundle.main.object(forInfoDictionaryKey: "IS_DEVELOPMENT") as! String) == "false" ? false : true
+        let branch = Bundle.main.object(forInfoDictionaryKey: "BRANCH") as! String
+        self.branch = branch.isEmpty ? "本地构建" : branch
     }
 }
