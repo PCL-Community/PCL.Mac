@@ -1,0 +1,181 @@
+//
+//  InstallTask.swift
+//  PCL-Mac
+//
+//  Created by YiZhiMCQiu on 2025/7/7.
+//
+
+import Foundation
+
+public class InstallTask: ObservableObject, Identifiable, Hashable, Equatable {
+    @Published public var stage: InstallStage = .before
+    @Published public var remainingFiles: Int = -1
+    @Published public var totalFiles: Int = -1
+    @Published public var currentStagePercentage: Double = 0
+    
+    public let id: UUID = UUID()
+    
+    public static func == (lhs: InstallTask, rhs: InstallTask) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    public func complete() { }
+    public func completeOneFile() { }
+    public func start() { }
+    public func getInstallStates() -> [InstallStage : InstallState] { [:] }
+    public func getTitle() -> String { "" }
+    
+    public func updateStage(_ stage: InstallStage) {
+        debug("切换阶段: \(stage.getDisplayName())")
+        DispatchQueue.main.async {
+            self.stage = stage
+            self.currentStagePercentage = 0
+        }
+    }
+    
+    public func getProgress() -> Double {
+        Double(totalFiles - remainingFiles) / Double(totalFiles)
+    }
+}
+
+public class InstallTasks: ObservableObject, Identifiable, Hashable, Equatable {
+    @Published public var tasks: [InstallTask]
+    
+    public let id: UUID = .init()
+    public static func == (lhs: InstallTasks, rhs: InstallTasks) -> Bool {
+        lhs.id == rhs.id
+    }
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(tasks)
+    }
+    
+    public var totalFiles: Int {
+        var totalFiles = 0
+        tasks.forEach { totalFiles += $0.totalFiles }
+        return totalFiles
+    }
+    
+    public var remainingFiles: Int {
+        var remainingFiles = 0
+        tasks.forEach { remainingFiles += $0.remainingFiles }
+        return remainingFiles
+    }
+    
+    public func getProgress() -> Double {
+        Double(totalFiles - remainingFiles) / Double(totalFiles)
+    }
+    
+    init(_ tasks: [InstallTask]) {
+        self.tasks = tasks
+    }
+    
+    public static func single(_ task: InstallTask) -> InstallTasks {
+        .init([task])
+    }
+}
+
+// MARK: - Minecraft 安装任务定义
+public class MinecraftInstallTask: InstallTask {
+    public var manifest: ClientManifest?
+    public var assetIndex: AssetIndex?
+    public var name: String
+    public let versionUrl: URL
+    public let minecraftVersion: MinecraftVersion
+    public let minecraftDirectory: MinecraftDirectory
+    public let startTask: (MinecraftInstallTask) async -> Void
+    
+    public init(minecraftVersion: MinecraftVersion, minecraftDirectory: MinecraftDirectory, name: String, startTask: @escaping (MinecraftInstallTask) async -> Void) {
+        self.minecraftVersion = minecraftVersion
+        self.minecraftDirectory = minecraftDirectory
+        self.versionUrl = minecraftDirectory.versionsUrl.appending(path: name)
+        self.name = name
+        self.startTask = startTask
+    }
+    
+    public override func complete() {
+        log("下载任务完成")
+        self.updateStage(.end)
+        DispatchQueue.main.async {
+            DataManager.shared.inprogressInstallTask = nil
+        }
+    }
+    
+    public override func start() {
+        Task {
+            await startTask(self)
+        }
+    }
+    
+    public override func completeOneFile() {
+        DispatchQueue.main.async {
+            self.remainingFiles -= 1
+        }
+    }
+    
+    public override func getInstallStates() -> [InstallStage : InstallState] {
+        let allStages: [InstallStage] = [.clientJson, .clientIndex, .clientJar, .clientResources, .clientLibraries, .natives]
+        var result: [InstallStage: InstallState] = [:]
+        var foundCurrent = false
+        for stage in allStages {
+            if foundCurrent {
+                result[stage] = .waiting
+            } else if self.stage == stage {
+                result[stage] = .inprogress
+                foundCurrent = true
+            } else {
+                result[stage] = .finished
+            }
+        }
+        return result
+    }
+    
+    public override func getTitle() -> String {
+        "\(minecraftVersion.displayName) 安装"
+    }
+}
+
+// MARK: - 安装进度定义
+public enum InstallStage: Int {
+    case before = 0
+    case clientJson = 1
+    case clientIndex = 2
+    case clientJar = 3
+    case installFabric = 4
+    case clientResources = 5
+    case clientLibraries = 6
+    case natives = 7
+    case end = 8
+    public func getDisplayName() -> String {
+        switch self {
+        case .before: "未启动"
+        case .clientJson: "下载原版 json 文件"
+        case .clientJar: "下载原版 jar 文件"
+        case .installFabric: "安装 Fabric"
+        case .clientIndex: "下载资源索引文件"
+        case .clientResources: "下载散列资源文件"
+        case .clientLibraries: "下载依赖项文件"
+        case .natives: "下载本地库文件"
+        case .end: "结束"
+        }
+    }
+}
+
+// MARK: - 安装进度状态定义
+public enum InstallState {
+    case waiting, inprogress, finished, failed
+    public func getImageName() -> String {
+        switch self {
+        case .waiting:
+            "InstallWaiting"
+        case .finished:
+            "InstallFinished"
+        default:
+            "Missingno"
+        }
+    }
+}

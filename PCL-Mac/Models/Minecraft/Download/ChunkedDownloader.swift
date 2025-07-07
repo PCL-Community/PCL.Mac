@@ -255,7 +255,7 @@ public class ChunkedDownloader {
                 
                 DispatchQueue.main.async {
                     DataManager.shared.downloadSpeed = speed
-                    DataManager.shared.currentStagePercentage = progress
+                    self.task.currentStagePercentage = progress
                 }
                 
                 // 检查是否所有分块都已下载完成

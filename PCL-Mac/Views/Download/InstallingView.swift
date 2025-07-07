@@ -9,14 +9,15 @@ import SwiftUI
 
 struct InstallingView: View {
     private struct LeftTabView: View {
-        @ObservedObject private var dataManager: DataManager = DataManager.shared
-        @ObservedObject private(set) var task: InstallTask
+        @ObservedObject private var dataManager: DataManager = .shared
+        @ObservedObject private(set) var tasks: InstallTasks
+        
         var body: some View {
             VStack {
                 Spacer()
                 PanelView(
                     title: "总进度",
-                    value: task.totalFiles == -1 ? "未知" : String(format: "%.1f %%", task.getProgress() * 100)
+                    value: tasks.totalFiles == -1 ? "未知" : String(format: "%.1f %%", tasks.getProgress() * 100)
                 )
                 PanelView(
                     title: "下载速度",
@@ -24,7 +25,7 @@ struct InstallingView: View {
                 )
                 PanelView(
                     title: "剩余文件",
-                    value: task.totalFiles == -1 ? "未知" : String(describing: task.remainingFiles)
+                    value: String(describing: tasks.remainingFiles)
                 )
                 Spacer()
             }
@@ -48,31 +49,33 @@ struct InstallingView: View {
     }
     
     @ObservedObject private var dataManager: DataManager = DataManager.shared
-    @ObservedObject var task: InstallTask
+    @ObservedObject var tasks: InstallTasks
     
     var body: some View {
         HStack {
             VStack {
-                StaticMyCardComponent(title: "\(task.minecraftVersion.displayName) 安装") {
-                    getEntries()
+                ForEach(tasks.tasks) { task in
+                    StaticMyCardComponent(title: task.getTitle()) {
+                        getEntries(task)
+                    }
+                    .padding()
                 }
-                .padding()
                 Spacer()
             }
         }
         .onAppear {
             dataManager.leftTab(220) {
-                LeftTabView(task: task)
+                LeftTabView(tasks: tasks)
             }
         }
     }
     
-    private func getEntries() -> some View {
+    private func getEntries(_ task: InstallTask) -> some View {
         return VStack {
             ForEach(Array(task.getInstallStates()).sorted(by: { $0.key.rawValue < $1.key.rawValue }), id: \.key) { stage, state in
                 HStack {
                     if state == .inprogress {
-                        Text(String(format: "%.0f%%", dataManager.currentStagePercentage * 100))
+                        Text(String(format: "%.0f%%", task.currentStagePercentage * 100))
                             .font(.custom("PCL English", size: 14))
                             .foregroundStyle(Color(hex: 0x1370F3))
                             .padding(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 10))
@@ -114,5 +117,9 @@ private struct PanelView: View {
 }
 
 #Preview {
-    InstallingView(task: MinecraftInstaller.createTask(MinecraftVersion(displayName: "1.21.5"), "测试", MinecraftDirectory(rootUrl: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft"))))
+    InstallingView(tasks: InstallTasks.init([MinecraftInstaller.createTask(
+        MinecraftVersion(displayName: "1.21.5"),
+        "测试",
+        MinecraftDirectory(rootUrl: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft"))
+    )]))
 }

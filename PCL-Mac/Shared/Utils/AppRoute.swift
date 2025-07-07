@@ -19,7 +19,7 @@ public enum AppRoute: Hashable {
     case accountManagement
     case accountList
     case newAccount
-    case installing(task: InstallTask)
+    case installing(tasks: InstallTasks)
     case versionList
     case modDownload(summary: ModSummary)
     case announcementHistory
@@ -78,8 +78,8 @@ public class AppRouter: ObservableObject {
             SettingsView()
         case .others, .about, .debug:
             OthersView()
-        case .installing(let task):
-            InstallingView(task: task)
+        case .installing(let tasks):
+            InstallingView(tasks: tasks)
         case .versionList:
             VersionListView()
         case .modDownload(let summary):

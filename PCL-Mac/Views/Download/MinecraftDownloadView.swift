@@ -207,7 +207,7 @@ fileprivate struct DownloadPage: View {
                             }
                         })
                         DataManager.shared.inprogressInstallTask = self.currentTask.object!
-                        DataManager.shared.router.append(.installing(task: self.currentTask.object!))
+                        DataManager.shared.router.append(.installing(tasks: .single(self.currentTask.object!)))
                         self.currentTask.object!.start()
                     }
                     .foregroundStyle(.white)

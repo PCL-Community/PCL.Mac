@@ -115,7 +115,7 @@ public final class ProgressiveDownloader: NSObject, URLSessionDownloadDelegate {
         DispatchQueue.main.async {
             self.progressCallback?(self.finishedCount, self.urls.count, progress, speed)
             DataManager.shared.downloadSpeed = speed
-            DataManager.shared.currentStagePercentage = progress
+            self.task?.currentStagePercentage = progress
         }
     }
 

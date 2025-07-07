@@ -33,7 +33,7 @@ public class MinecraftInstaller {
     private init() {}
     
     // MARK: 下载客户端清单
-    private static func downloadClientManifest(_ task: InstallTask) async {
+    private static func downloadClientManifest(_ task: MinecraftInstallTask) async {
         task.updateStage(.clientJson)
         let minecraftVersion = task.minecraftVersion.displayName
         let clientJsonUrl = task.versionUrl.appending(path: "\(task.name).json")
@@ -58,7 +58,7 @@ public class MinecraftInstaller {
     }
     
     // MARK: 下载客户端本体
-    private static func downloadClientJar(_ task: InstallTask, skipIfExists: Bool = false) async {
+    private static func downloadClientJar(_ task: MinecraftInstallTask, skipIfExists: Bool = false) async {
         task.updateStage(.clientJar)
         let clientJarUrl = task.versionUrl.appending(path: "\(task.name).jar")
         await withCheckedContinuation { continuation in
@@ -75,7 +75,7 @@ public class MinecraftInstaller {
     }
     
     // MARK: 下载资源索引
-    private static func downloadAssetIndex(_ task: InstallTask) async {
+    private static func downloadAssetIndex(_ task: MinecraftInstallTask) async {
         task.updateStage(.clientIndex)
         let assetIndexUrl: URL = URL(string: task.manifest!.assetIndex.url)!
         let destUrl: URL = task.minecraftDirectory.assetsUrl.appending(component: "indexes").appending(component: "\(task.manifest!.assetIndex.id).json")
@@ -99,7 +99,7 @@ public class MinecraftInstaller {
     }
     
     // MARK: 下载散列资源文件
-    private static func downloadHashResourcesFiles(_ task: InstallTask) async {
+    private static func downloadHashResourcesFiles(_ task: MinecraftInstallTask) async {
         task.updateStage(.clientResources)
         let objects = task.assetIndex!.objects
         
@@ -125,7 +125,7 @@ public class MinecraftInstaller {
     }
     
     // MARK: 下载依赖项
-    private static func downloadLibraries(_ task: InstallTask) async {
+    private static func downloadLibraries(_ task: MinecraftInstallTask) async {
         task.updateStage(.clientLibraries)
         
         var urls: [URL] = []
@@ -150,7 +150,7 @@ public class MinecraftInstaller {
     }
     
     // MARK: 下载本地库
-    private static func downloadNatives(_ task: InstallTask) async {
+    private static func downloadNatives(_ task: MinecraftInstallTask) async {
         task.updateStage(.natives)
         
         var urls: [URL] = []
@@ -177,7 +177,7 @@ public class MinecraftInstaller {
     }
     
     // MARK: 解压本地库
-    private static func unzipNatives(_ task: InstallTask) {
+    private static func unzipNatives(_ task: MinecraftInstallTask) {
         let nativesUrl: URL = task.versionUrl.appending(path: "natives")
         for (_, native) in task.manifest!.getNeededNatives() {
             let jarUrl: URL = task.minecraftDirectory.librariesUrl.appending(path: native.path)
@@ -237,7 +237,7 @@ public class MinecraftInstaller {
     }
     
     // MARK: 收尾
-    private static func finalWork(_ task: InstallTask) {
+    private static func finalWork(_ task: MinecraftInstallTask) {
         let _1_12_2 = MinecraftVersion(displayName: "1.12.2")
         // 拷贝 log4j2.xml
         let targetUrl: URL = task.versionUrl.appending(path: "log4j2.xml")
@@ -272,7 +272,7 @@ public class MinecraftInstaller {
     }
     
     // MARK: 获取进度
-    public static func updateProgress(_ task: InstallTask) {
+    public static func updateProgress(_ task: MinecraftInstallTask) {
         DispatchQueue.main.async {
             task.totalFiles = 3 + task.assetIndex!.objects.count + task.manifest!.getNeededLibraries().count + task.manifest!.getNeededNatives().count
             log("总文件数: \(task.totalFiles)")
@@ -282,152 +282,35 @@ public class MinecraftInstaller {
     
     // MARK: 创建任务
     public static func createTask(_ minecraftVersion: MinecraftVersion, _ name: String, _ minecraftDirectory: MinecraftDirectory, _ callback: (() -> Void)? = nil) -> InstallTask {
-        let task = InstallTask(minecraftVersion: minecraftVersion, minecraftDirectory: MinecraftDirectory(rootUrl: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft")), name: name) { task in
-            Task {
-                await downloadClientManifest(task)
-                await downloadAssetIndex(task)
-                updateProgress(task)
-                await downloadClientJar(task)
-                await downloadHashResourcesFiles(task)
-                await downloadLibraries(task)
-                await downloadNatives(task)
-                unzipNatives(task)
-                finalWork(task)
-                callback?()
-            }
+        let task = MinecraftInstallTask(minecraftVersion: minecraftVersion, minecraftDirectory: MinecraftDirectory(rootUrl: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft")), name: name) { task in
+            await downloadClientManifest(task)
+            await downloadAssetIndex(task)
+            updateProgress(task)
+            await downloadClientJar(task)
+            await downloadHashResourcesFiles(task)
+            await downloadLibraries(task)
+            await downloadNatives(task)
+            unzipNatives(task)
+            finalWork(task)
+            callback?()
         }
         return task
     }
     
     // MARK: 创建补全资源任务
     public static func createCompleteTask(_ instance: MinecraftInstance, _ callback: (() -> Void)? = nil) -> InstallTask {
-        let task = InstallTask(minecraftVersion: instance.version!, minecraftDirectory: instance.minecraftDirectory, name: instance.config.name) { task in
-            Task {
-                task.manifest = instance.manifest
-                await downloadAssetIndex(task)
-                await downloadClientJar(task, skipIfExists: true)
-                await downloadHashResourcesFiles(task)
-                await downloadLibraries(task)
-                await downloadNatives(task)
-                unzipNatives(task)
-                finalWork(task)
-                task.complete()
-                callback?()
-            }
+        let task = MinecraftInstallTask(minecraftVersion: instance.version!, minecraftDirectory: instance.minecraftDirectory, name: instance.config.name) { task in
+            task.manifest = instance.manifest
+            await downloadAssetIndex(task)
+            await downloadClientJar(task, skipIfExists: true)
+            await downloadHashResourcesFiles(task)
+            await downloadLibraries(task)
+            await downloadNatives(task)
+            unzipNatives(task)
+            finalWork(task)
+            task.complete()
+            callback?()
         }
         return task
-    }
-}
-
-// MARK: 安装任务定义
-public class InstallTask: ObservableObject, Identifiable, Hashable, Equatable {
-    public let id: UUID = UUID()
-    public static func == (lhs: InstallTask, rhs: InstallTask) -> Bool {
-        lhs.id == rhs.id
-    }
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
-    @Published public var stage: InstallStage = .before
-    @Published public var remainingFiles: Int = -1
-    @Published public var totalFiles: Int = -1
-    
-    public var manifest: ClientManifest?
-    public var assetIndex: AssetIndex?
-    public var name: String
-    public var versionUrl: URL {
-        get {
-            return URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions").appending(path: self.name)
-        }
-    }
-    public let minecraftVersion: MinecraftVersion
-    public let minecraftDirectory: MinecraftDirectory
-    public let startTask: (InstallTask) -> Void
-    
-    public init(minecraftVersion: MinecraftVersion, minecraftDirectory: MinecraftDirectory, name: String, startTask: @escaping (InstallTask) -> Void) {
-        self.minecraftVersion = minecraftVersion
-        self.minecraftDirectory = minecraftDirectory
-        self.name = name
-        self.startTask = startTask
-    }
-    
-    public func complete() {
-        log("下载任务完成")
-        self.updateStage(.end)
-        DispatchQueue.main.async {
-            DataManager.shared.inprogressInstallTask = nil
-        }
-    }
-    
-    public func start() {
-        startTask(self)
-    }
-    
-    public func updateStage(_ stage: InstallStage) {
-        debug("切换阶段: \(stage.getDisplayName())")
-        DispatchQueue.main.async {
-            self.stage = stage
-            DataManager.shared.currentStagePercentage = 0
-        }
-    }
-    
-    public func completeOneFile() {
-        DispatchQueue.main.async {
-            self.remainingFiles -= 1
-        }
-    }
-    
-    public func getProgress() -> Double {
-        Double(totalFiles - remainingFiles) / Double(totalFiles)
-    }
-    
-    public func getInstallStates() -> [InstallStage : InstallState] {
-        let allStages: [InstallStage] = [.clientJson, .clientIndex, .clientJar, .clientResources, .clientLibraries, .natives]
-        var result: [InstallStage: InstallState] = [:]
-        var foundCurrent = false
-        for stage in allStages {
-            if foundCurrent {
-                result[stage] = .waiting
-            } else if self.stage == stage {
-                result[stage] = .inprogress
-                foundCurrent = true
-            } else {
-                result[stage] = .finished
-            }
-        }
-        return result
-    }
-}
-
-// MARK: 安装进度定义
-public enum InstallStage: Int {
-    case before = 0
-    case clientJson = 1
-    case clientIndex = 2
-    case clientJar = 3
-    case clientResources = 4
-    case clientLibraries = 5
-    case natives = 6
-    case end = 7
-    public func getDisplayName() -> String {
-        switch self {
-        case .before: "未启动"
-        case .clientJson: "下载原版 json 文件"
-        case .clientJar: "下载原版 jar 文件"
-        case .clientIndex: "下载资源索引文件"
-        case .clientResources: "下载散列资源文件"
-        case .clientLibraries: "下载依赖项文件"
-        case .natives: "下载本地库文件"
-        case .end: "结束"
-        }
-    }
-}
-
-// MARK: 安装进度状态定义
-public enum InstallState {
-    case waiting, inprogress, finished, failed
-    public func getImageName() -> String {
-        return "Install\(String(describing: self).capitalized)"
     }
 }

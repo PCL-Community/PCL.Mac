@@ -29,7 +29,7 @@ struct ContentView: View {
                                     .scaledToFit()
                                     .frame(width: 20)
                             } onClick: {
-                                dataManager.router.append(.installing(task: task))
+                                dataManager.router.append(.installing(tasks: .single(task)))
                             }
                             .padding()
                         }
