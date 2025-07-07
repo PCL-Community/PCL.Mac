@@ -22,6 +22,7 @@ public enum AppRoute: Hashable {
     case installing(task: InstallTask)
     case versionList
     case modDownload(summary: ModSummary)
+    case announcementHistory
     
     // MyList 导航
     case minecraftDownload
@@ -83,6 +84,8 @@ public class AppRouter: ObservableObject {
             VersionListView()
         case .modDownload(let summary):
             ModDownloadView(summary: summary)
+        case .announcementHistory:
+            AnnouncementHistoryView()
         }
     }
     

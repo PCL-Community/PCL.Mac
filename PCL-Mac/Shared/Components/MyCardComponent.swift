@@ -86,12 +86,34 @@ struct MyCardComponent<Content: View>: View {
                             .frame(width: 20, height: 20)
                             .offset(x: -8, y: 4)
                             .rotationEffect(.degrees(isUnfolded ? 180 : 0), anchor: .center)
-                            .foregroundStyle(Color("TextColor"))
+                            .foregroundStyle(.primary)
                     }
                     Color.clear
                         .contentShape(Rectangle())
                 }
                 .frame(height: 9)
+                .onTapGesture {
+                    if Date().timeIntervalSince(lastClick) < 0.2 {
+                        return
+                    }
+                    lastClick = Date()
+                    if !showContent {
+                        showContent = true
+                        withAnimation(.linear(duration: 0.2)) {
+                            isUnfolded = true
+                            contentHeight = internalContentHeight
+                        }
+                    } else {
+                        contentHeight = min(2000, contentHeight)
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.85, blendDuration: 0)) {
+                            isUnfolded = false
+                            contentHeight = 0
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            showContent = false
+                        }
+                    }
+                }
 
                 ZStack(alignment: .top) {
                     content
@@ -112,28 +134,6 @@ struct MyCardComponent<Content: View>: View {
             }
             .onPreferenceChange(ContentHeightKey.self) { h in
                 if h > 0 { internalContentHeight = h }
-            }
-        }
-        .onTapGesture {
-            if Date().timeIntervalSince(lastClick) < 0.2 {
-                return
-            }
-            lastClick = Date()
-            if !showContent {
-                showContent = true
-                withAnimation(.linear(duration: 0.2)) {
-                    isUnfolded = true
-                    contentHeight = internalContentHeight
-                }
-            } else {
-                contentHeight = min(2000, contentHeight)
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.85, blendDuration: 0)) {
-                    isUnfolded = false
-                    contentHeight = 0
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    showContent = false
-                }
             }
         }
     }
@@ -195,7 +195,7 @@ fileprivate struct MaskedTextRectangle: View {
                             HStack {
                                 Text(text)
                                     .font(.custom("PCL English", size: 14))
-                                    .frame(height: geo.size.height)
+                                    //.frame(height: geo.size.height)
                                     .fixedSize()
                                 Spacer()
                             }

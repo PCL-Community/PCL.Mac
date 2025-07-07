@@ -14,25 +14,41 @@ public class AnnouncementManager: ObservableObject {
     public static let shared: AnnouncementManager = .init()
     
     @Published var latest: Announcement? = nil
+    @Published var history: [Announcement] = []
+    
+    public func loadHistory() {
+        history.removeAll()
+        AF.request(AnnouncementManager.root.appending(path: "latest.json"))
+            .responseData { response in
+                let latestNumber = try! JSON(data: response.data!)["number"].intValue
+                
+                Task {
+                    for i in stride(from: latestNumber, through: max(latestNumber - 9, 0), by: -1) {
+                        let data: Data
+                        do {
+                            data = try await AF.request(AnnouncementManager.root.appending(path: "history").appending(path: "\(i).json"))
+                                .serializingResponse(using: .data).value
+                        } catch {
+                            err("无法发送请求: \(error.localizedDescription)")
+                            continue
+                        }
+                        
+                        await MainActor.run {
+                            self.history.append(.init(try! JSON(data: data)))
+                        }
+                    }
+                }
+            }
+    }
     
     private init() {
         AF.request(AnnouncementManager.root.appending(path: "latest.json"))
             .responseData { response in
-                guard let data = response.data else {
-                    err("无法获取数据")
-                    return
-                }
-                
-                let latest = try! JSON(data: data)
+                let latest = try! JSON(data: response.data!)
                 
                 AF.request(AnnouncementManager.root.appending(path: latest["path"].stringValue))
                     .responseData { response in
-                        guard let data = response.data else {
-                            err("无法获取数据")
-                            return
-                        }
-                        
-                        self.latest = .init(try! JSON(data: data))
+                        self.latest = .init(try! JSON(data: response.data!))
                     }
             }
     }

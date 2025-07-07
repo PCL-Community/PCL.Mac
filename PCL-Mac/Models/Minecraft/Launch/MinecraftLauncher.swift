@@ -31,7 +31,8 @@ public class MinecraftLauncher {
         process.arguments!.append(contentsOf: buildJvmArguments())
         process.arguments!.append(instance.manifest.mainClass)
         process.arguments!.append(contentsOf: buildGameArguments())
-        debug(process.executableURL!.path + " " + process.arguments!.joined(separator: " "))
+        debug(process.executableURL!.path + " " + process.arguments!.joined(separator: " ")
+            .replacingOccurrences(of: #"--accessToken\s+\S+"#, with: "--accessToken 🎉", options: .regularExpression))
         process.currentDirectoryURL = instance.runningDirectory
         
         instance.process = process

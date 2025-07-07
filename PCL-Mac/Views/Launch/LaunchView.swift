@@ -105,7 +105,7 @@ struct LaunchView: View {
     var body: some View {
         ScrollView {
             if let announcement = announcementManager.latest {
-                announcement.createView()
+                announcement.createView(showHistoryButton: true)
                     .padding()
             }
             

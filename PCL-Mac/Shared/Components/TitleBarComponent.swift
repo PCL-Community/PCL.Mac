@@ -99,6 +99,7 @@ struct SubviewTitleBarComponent: View {
         case .versionList: return "版本选择"
         case .modDownload(let summary): return "资源下载 - \(summary.title)"
         case .accountManagement, .accountList, .newAccount: return "账号管理"
+        case .announcementHistory: return "历史公告"
         default:
             return "发现问题请在 https://github.com/PCL-Community/PCL-Mac/issues/new 上反馈！"
         }
