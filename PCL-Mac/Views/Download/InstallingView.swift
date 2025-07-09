@@ -54,7 +54,7 @@ struct InstallingView: View {
     var body: some View {
         HStack {
             VStack {
-                ForEach(tasks.tasks) { task in
+                ForEach(tasks.getTasks()) { task in
                     StaticMyCardComponent(title: task.getTitle()) {
                         getEntries(task)
                     }
@@ -114,12 +114,4 @@ private struct PanelView: View {
         .padding(.top, 20)
         .padding(.bottom, 20)
     }
-}
-
-#Preview {
-    InstallingView(tasks: InstallTasks.init([MinecraftInstaller.createTask(
-        MinecraftVersion(displayName: "1.21.5"),
-        "测试",
-        MinecraftDirectory(rootUrl: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft"))
-    )]))
 }

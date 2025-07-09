@@ -33,12 +33,19 @@ import Alamofire
 
 public class ModLoaderInstaller {
     public static func installFabric(_ instance: MinecraftInstance, _ loaderVersion: String) async {
+        await installFabric(version: instance.version!, minecraftDirectory: instance.minecraftDirectory, runningDirectory: instance.runningDirectory, loaderVersion)
+        
+        instance.config.clientBrand = .fabric
+        instance.saveConfig()
+    }
+    
+    public static func installFabric(version: MinecraftVersion, minecraftDirectory: MinecraftDirectory, runningDirectory: URL, _ loaderVersion: String) async {
 //        if instance.config.clientBrand != .vanilla {
 //            err("无法安装 Fabric: 实例 \(instance.config.name) 已有 Mod 加载器: \(instance.config.clientBrand.rawValue)")
 //        }
         
         if let data = try? await AF.request(
-            "https://meta.fabricmc.net/v2/versions/loader/\(instance.version!.displayName)"
+            "https://meta.fabricmc.net/v2/versions/loader/\(version.displayName)"
         ).serializingResponse(using: .data).value,
            let manifests = try? FabricManifest.parse(data) {
             guard let manifest = manifests.find({ $0.loaderVersion == loaderVersion }) else {
@@ -49,7 +56,7 @@ public class ModLoaderInstaller {
             await withCheckedContinuation { continuation in
                 let downloader = ProgressiveDownloader(
                     urls: manifest.libraries.map { URL(string: $0.artifact!.url)! },
-                    destinations: manifest.libraries.map { instance.minecraftDirectory.librariesUrl.appending(path: $0.artifact!.path)},
+                    destinations: manifest.libraries.map { minecraftDirectory.librariesUrl.appending(path: $0.artifact!.path)},
                     skipIfExists: true,
                     completion: continuation.resume
                 )
@@ -57,20 +64,17 @@ public class ModLoaderInstaller {
             }
             
             do {
-                try? FileManager.default.createDirectory(at: instance.runningDirectory.appending(path: ".pcl_mac"), withIntermediateDirectories: true)
+                try? FileManager.default.createDirectory(at: runningDirectory.appending(path: ".pcl_mac"), withIntermediateDirectories: true)
                 try FileManager.default.copyItem(
-                    at: instance.runningDirectory.appending(path: "\(instance.config.name).json"),
-                    to: instance.runningDirectory.appending(path: ".pcl_mac").appending(path: "\(manifest.minecraftVersion).json")
+                    at: runningDirectory.appending(path: "\(runningDirectory.lastPathComponent).json"),
+                    to: runningDirectory.appending(path: ".pcl_mac").appending(path: "\(manifest.minecraftVersion).json")
                 )
-                let handle = try FileHandle(forWritingTo: instance.runningDirectory.appending(path: "\(instance.config.name).json"))
+                let handle = try FileHandle(forWritingTo: runningDirectory.appending(path: "\(runningDirectory.lastPathComponent).json"))
                 handle.truncateFile(atOffset: 0)
                 try handle.write(contentsOf: manifest.jsonString.data(using: .utf8)!)
             } catch {
                 err("无法保存 Fabric 清单: \(error.localizedDescription)")
             }
-            
-            instance.config.clientBrand = .fabric
-            instance.saveConfig()
         }
     }
     

@@ -15,7 +15,7 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             createViewFromRouter()
-            if let task = dataManager.inprogressInstallTask {
+            if let tasks = dataManager.inprogressInstallTasks {
                 if case .installing = dataManager.router.getLast() {
                     EmptyView()
                 } else {
@@ -29,7 +29,7 @@ struct ContentView: View {
                                     .scaledToFit()
                                     .frame(width: 20)
                             } onClick: {
-                                dataManager.router.append(.installing(tasks: .single(task)))
+                                dataManager.router.append(.installing(tasks: tasks))
                             }
                             .padding()
                         }

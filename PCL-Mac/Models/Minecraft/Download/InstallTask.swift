@@ -14,6 +14,7 @@ public class InstallTask: ObservableObject, Identifiable, Hashable, Equatable {
     @Published public var currentStagePercentage: Double = 0
     
     public let id: UUID = UUID()
+    public var callback: (() -> Void)? = nil
     
     public static func == (lhs: InstallTask, rhs: InstallTask) -> Bool {
         lhs.id == rhs.id
@@ -23,11 +24,12 @@ public class InstallTask: ObservableObject, Identifiable, Hashable, Equatable {
         hasher.combine(id)
     }
     
-    public func complete() { }
-    public func completeOneFile() { }
     public func start() { }
     public func getInstallStates() -> [InstallStage : InstallState] { [:] }
     public func getTitle() -> String { "" }
+    public func onComplete(_ callback: @escaping () -> Void) {
+        self.callback = callback
+    }
     
     public func updateStage(_ stage: InstallStage) {
         debug("切换阶段: \(stage.getDisplayName())")
@@ -40,10 +42,25 @@ public class InstallTask: ObservableObject, Identifiable, Hashable, Equatable {
     public func getProgress() -> Double {
         Double(totalFiles - remainingFiles) / Double(totalFiles)
     }
+    
+    public func complete() {
+        log("下载任务完成")
+        self.updateStage(.end)
+        DispatchQueue.main.async {
+            DataManager.shared.inprogressInstallTasks = nil
+            self.callback?()
+        }
+    }
+    
+    public func completeOneFile() {
+        DispatchQueue.main.async {
+            self.remainingFiles -= 1
+        }
+    }
 }
 
 public class InstallTasks: ObservableObject, Identifiable, Hashable, Equatable {
-    @Published public var tasks: [InstallTask]
+    @Published public var tasks: [String : InstallTask]
     
     public let id: UUID = .init()
     public static func == (lhs: InstallTasks, rhs: InstallTasks) -> Bool {
@@ -56,13 +73,13 @@ public class InstallTasks: ObservableObject, Identifiable, Hashable, Equatable {
     
     public var totalFiles: Int {
         var totalFiles = 0
-        tasks.forEach { totalFiles += $0.totalFiles }
+        tasks.values.forEach { totalFiles += $0.totalFiles }
         return totalFiles
     }
     
     public var remainingFiles: Int {
         var remainingFiles = 0
-        tasks.forEach { remainingFiles += $0.remainingFiles }
+        tasks.values.forEach { remainingFiles += $0.remainingFiles }
         return remainingFiles
     }
     
@@ -70,13 +87,21 @@ public class InstallTasks: ObservableObject, Identifiable, Hashable, Equatable {
         Double(totalFiles - remainingFiles) / Double(totalFiles)
     }
     
-    init(_ tasks: [InstallTask]) {
+    public func getTasks() -> [InstallTask] {
+        Array(tasks.values)
+    }
+    
+    public func addTask(key: String, task: InstallTask) {
+        tasks[key] = task
+    }
+    
+    init(_ tasks: [String : InstallTask]) {
         self.tasks = tasks
     }
     
-    public static func single(_ task: InstallTask) -> InstallTasks {
-        .init([task])
-    }
+    public static func single(_ task: InstallTask, key: String = "minecraft") -> InstallTasks { .init([key : task]) }
+    
+    public static func empty() -> InstallTasks { .init([:]) }
 }
 
 // MARK: - Minecraft 安装任务定义
@@ -97,23 +122,10 @@ public class MinecraftInstallTask: InstallTask {
         self.startTask = startTask
     }
     
-    public override func complete() {
-        log("下载任务完成")
-        self.updateStage(.end)
-        DispatchQueue.main.async {
-            DataManager.shared.inprogressInstallTask = nil
-        }
-    }
-    
     public override func start() {
         Task {
             await startTask(self)
-        }
-    }
-    
-    public override func completeOneFile() {
-        DispatchQueue.main.async {
-            self.remainingFiles -= 1
+            complete()
         }
     }
     
@@ -136,6 +148,43 @@ public class MinecraftInstallTask: InstallTask {
     
     public override func getTitle() -> String {
         "\(minecraftVersion.displayName) 安装"
+    }
+}
+
+// MARK: - Fabric 安装任务定义
+public class FabricInstallTask: InstallTask {
+    public let loaderVersion: String
+    
+    init(loaderVersion: String) {
+        self.loaderVersion = loaderVersion
+    }
+    
+    public func start(_ task: MinecraftInstallTask) {
+        Task {
+            await ModLoaderInstaller.installFabric(version: task.minecraftVersion, minecraftDirectory: task.minecraftDirectory, runningDirectory: task.versionUrl, self.loaderVersion)
+            callback?()
+        }
+    }
+    
+    public override func getInstallStates() -> [InstallStage : InstallState] {
+        let allStages: [InstallStage] = [.installFabric]
+        var result: [InstallStage: InstallState] = [:]
+        var foundCurrent = false
+        for stage in allStages {
+            if foundCurrent {
+                result[stage] = .waiting
+            } else if self.stage == stage {
+                result[stage] = .inprogress
+                foundCurrent = true
+            } else {
+                result[stage] = .finished
+            }
+        }
+        return result
+    }
+    
+    public override func getTitle() -> String {
+        "Fabric \(loaderVersion) 安装"
     }
 }
 

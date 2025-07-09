@@ -252,7 +252,11 @@ public class MinecraftInstaller {
         }
         
         // 初始化实例
-        let _ = MinecraftInstance.create(runningDirectory: task.versionUrl, config: MinecraftConfig(name: task.name, mainClass: task.manifest!.mainClass))
+        let instance = MinecraftInstance.create(runningDirectory: task.versionUrl, config: MinecraftConfig(name: task.name, mainClass: task.manifest!.mainClass))
+        if let _ = DataManager.shared.inprogressInstallTasks?.tasks["fabric"] {
+            instance?.config.clientBrand = .fabric
+        }
+        instance?.saveConfig()
         
         // 修改 GLFW
         if let glfw = task.manifest!.getNeededLibraries().find({ $0.name.contains("lwjgl-glfw") }) {
@@ -286,6 +290,9 @@ public class MinecraftInstaller {
             await downloadClientManifest(task)
             await downloadAssetIndex(task)
             updateProgress(task)
+            if let fabricTask = DataManager.shared.inprogressInstallTasks?.tasks["fabric"] as? FabricInstallTask {
+                fabricTask.start(task)
+            }
             await downloadClientJar(task)
             await downloadHashResourcesFiles(task)
             await downloadLibraries(task)

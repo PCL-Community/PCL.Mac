@@ -13,13 +13,13 @@ struct DownloadPage: View {
     let back: () -> Void
     
     @State private var name: String
-    
-    @ObservedObject private var currentTask: Holder<InstallTask> = Holder()
+    @State private var tasks: InstallTasks = .empty()
     
     init(_ version: MinecraftVersion, _ back: @escaping () -> Void) {
         self.version = version
         self.name = version.displayName
         self.back = back
+        self.tasks.addTask(key: "minecraft", task: MinecraftInstaller.createTask(version, version.displayName, MinecraftDirectory(rootUrl: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft"))))
     }
     
     var body: some View {
@@ -46,7 +46,7 @@ struct DownloadPage: View {
                     }
                 }
                 .padding()
-                FabricLoaderCard(version: version)
+                FabricLoaderCard(tasks: $tasks, version: version)
                     .padding()
                     .padding(.top, 20)
                 Spacer()
@@ -73,18 +73,22 @@ struct DownloadPage: View {
                             return
                         }
                         
-                        if DataManager.shared.inprogressInstallTask != nil { return }
-                        self.currentTask.setObject(MinecraftInstaller.createTask(version, name, MinecraftDirectory(rootUrl: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft"))) {
-                            DispatchQueue.main.async {
-                                HintManager.default.add(.init(text: "\(name) 下载完成！", type: .finish))
-                                AppSettings.shared.defaultInstance = name
-                                DataManager.shared.router.removeLast()
-                                DataManager.shared.inprogressInstallTask = nil
+                        if DataManager.shared.inprogressInstallTasks != nil { return }
+                        
+                        if let task = tasks.getTasks().first! as? MinecraftInstallTask {
+                            task.name = self.name
+                            task.onComplete {
+                                DispatchQueue.main.async {
+                                    HintManager.default.add(.init(text: "\(name) 下载完成！", type: .finish))
+                                    AppSettings.shared.defaultInstance = name
+                                    DataManager.shared.router.removeLast()
+                                }
                             }
-                        })
-                        DataManager.shared.inprogressInstallTask = self.currentTask.object!
-                        DataManager.shared.router.append(.installing(tasks: .single(self.currentTask.object!)))
-                        self.currentTask.object!.start()
+                        }
+                        
+                        DataManager.shared.inprogressInstallTasks = self.tasks
+                        DataManager.shared.router.append(.installing(tasks: tasks))
+                        self.tasks.getTasks().first!.start()
                     }
                     .foregroundStyle(.white)
                     .padding()
@@ -100,8 +104,14 @@ fileprivate struct FabricLoaderCard: View {
     @State private var height: CGFloat = .zero
     @State private var showText: Bool = true
     @State private var selected: FabricManifest? = nil
+    @Binding private var tasks: InstallTasks
     
     let version: MinecraftVersion
+    
+    init(tasks: Binding<InstallTasks>, version: MinecraftVersion) {
+        self._tasks = tasks
+        self.version = version
+    }
     
     var body: some View {
         ZStack {
@@ -114,6 +124,7 @@ fileprivate struct FabricLoaderCard: View {
                                     .animation(.easeInOut(duration: 0.2), value: selected?.id)
                                     .onTapGesture {
                                         selected = version
+                                        tasks.addTask(key: "fabric", task: FabricInstallTask(loaderVersion: selected!.loaderVersion))
                                     }
                             }
                         }
