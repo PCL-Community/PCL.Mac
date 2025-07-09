@@ -75,7 +75,7 @@ struct DownloadPage: View {
                         
                         if DataManager.shared.inprogressInstallTasks != nil { return }
                         
-                        if let task = tasks.getTasks().first! as? MinecraftInstallTask {
+                        if let task = tasks.tasks["minecraft"] as? MinecraftInstallTask {
                             task.name = self.name
                             task.onComplete {
                                 DispatchQueue.main.async {

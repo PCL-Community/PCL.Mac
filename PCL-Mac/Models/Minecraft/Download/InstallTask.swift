@@ -109,7 +109,7 @@ public class MinecraftInstallTask: InstallTask {
     public var manifest: ClientManifest?
     public var assetIndex: AssetIndex?
     public var name: String
-    public let versionUrl: URL
+    public var versionUrl: URL { minecraftDirectory.versionsUrl.appending(path: name) }
     public let minecraftVersion: MinecraftVersion
     public let minecraftDirectory: MinecraftDirectory
     public let startTask: (MinecraftInstallTask) async -> Void
@@ -117,7 +117,6 @@ public class MinecraftInstallTask: InstallTask {
     public init(minecraftVersion: MinecraftVersion, minecraftDirectory: MinecraftDirectory, name: String, startTask: @escaping (MinecraftInstallTask) async -> Void) {
         self.minecraftVersion = minecraftVersion
         self.minecraftDirectory = minecraftDirectory
-        self.versionUrl = minecraftDirectory.versionsUrl.appending(path: name)
         self.name = name
         self.startTask = startTask
     }
