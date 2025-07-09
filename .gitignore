@@ -6,5 +6,5 @@ _MACOSX
 PCL-Mac.xcodeproj/xcuserdata
 PCL-Mac.xcodeproj/project.xcworkspace/xcuserdata
 
-# Local
-.env.local
+# Secrets
+Secrets.xcconfig

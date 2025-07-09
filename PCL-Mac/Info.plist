@@ -5,7 +5,7 @@
 	<key>BRANCH</key>
 	<string>$(BRANCH)</string>
 	<key>CLIENT_ID</key>
-	<string>c14b0370-8d75-42f8-b329-5b60d39e319f</string>
+	<string>$(CLIENT_ID)</string>
 	<key>IS_DEVELOPMENT</key>
 	<string>$(IS_DEVELOPMENT)</string>
 	<key>NSAppTransportSecurity</key>

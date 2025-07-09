@@ -12,6 +12,7 @@
 		EC23B6332DE5DC5B00CBEA9C /* PCL.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EC23B6322DE5DC5B00CBEA9C /* PCL.ttf */; };
 		EC9507372DFCF17700018EE0 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = EC9507362DFCF17700018EE0 /* SwiftyJSON */; };
 		EC9A7DCA2DE150170018815F /* glfw-patcher.jar in Resources */ = {isa = PBXBuildFile; fileRef = EC9A7DC82DE1500F0018815F /* glfw-patcher.jar */; };
+		EC9EF35B2E1E6CD7002EF8E0 /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EC9EF35A2E1E6CD7002EF8E0 /* Secrets.xcconfig */; };
 		ECA55A702E0415BE006499CC /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = ECA55A6F2E0415BE006499CC /* Alamofire */; };
 		ECDBF0CC2E1124C500E81482 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = ECDBF0CB2E1124C500E81482 /* ZIPFoundation */; };
 /* End PBXBuildFile section */
@@ -32,6 +33,7 @@
 		EC23B6322DE5DC5B00CBEA9C /* PCL.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = PCL.ttf; sourceTree = "<group>"; };
 		EC9A7DC82DE1500F0018815F /* glfw-patcher.jar */ = {isa = PBXFileReference; lastKnownFileType = archive.jar; path = "glfw-patcher.jar"; sourceTree = "<group>"; };
 		EC9EAEC92DD85E48006CEDCC /* PCL-Mac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "PCL-Mac.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EC9EF35A2E1E6CD7002EF8E0 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		ECA5D8DC2DD99A4C006C58F7 /* PCL-MacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "PCL-MacTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -108,6 +110,7 @@
 				ECA5D8DD2DD99A4C006C58F7 /* PCL-MacTests */,
 				EC84E73F2DDD56E500524871 /* Frameworks */,
 				EC9EAECA2DD85E48006CEDCC /* Products */,
+				EC9EF35A2E1E6CD7002EF8E0 /* Secrets.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -130,7 +133,6 @@
 				EC9EAEC52DD85E48006CEDCC /* Sources */,
 				EC9EAEC62DD85E48006CEDCC /* Frameworks */,
 				EC9EAEC72DD85E48006CEDCC /* Resources */,
-				EC10129C2E14D13F00BD8D8B /* Run Script */,
 			);
 			buildRules = (
 			);
@@ -222,6 +224,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EC9EF35B2E1E6CD7002EF8E0 /* Secrets.xcconfig in Resources */,
 				EC9A7DCA2DE150170018815F /* glfw-patcher.jar in Resources */,
 				EC01E7E82DDC3BEA006EF529 /* log4j2.xml in Resources */,
 				EC23B6332DE5DC5B00CBEA9C /* PCL.ttf in Resources */,
@@ -237,29 +240,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		EC10129C2E14D13F00BD8D8B /* Run Script */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/.env.local",
-			);
-			name = "Run Script";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/PCL-Mac/Info.plist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "PLIST=\"${SRCROOT}/PCL-Mac/Info.plist\"\nENV_FILE=\"$SCRIPT_INPUT_FILE_0\"\n\nif [ -f \"$ENV_FILE\" ]; then\n  CLIENT_ID=$(grep CLIENT_ID \"$ENV_FILE\" | cut -d '=' -f2- | tr -d '\\r')\n  \n  if [ -n \"$CLIENT_ID\" ]; then\n    /usr/libexec/PlistBuddy -c \"Set :CLIENT_ID $CLIENT_ID\" \"$PLIST\"\n    echo \"CLIENT_ID updated in Info.plist\"\n  else\n    echo \"CLIENT_ID not found in $ENV_FILE, skip replace\"\n  fi\nelse\n  echo \"$ENV_FILE not found, skip CLIENT_ID replace\"\nfi\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		EC9EAEC52DD85E48006CEDCC /* Sources */ = {
@@ -289,6 +269,7 @@
 /* Begin XCBuildConfiguration section */
 		EC9EAED62DD85E49006CEDCC /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EC9EF35A2E1E6CD7002EF8E0 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -354,6 +335,7 @@
 		};
 		EC9EAED72DD85E49006CEDCC /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EC9EF35A2E1E6CD7002EF8E0 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -411,6 +393,7 @@
 		};
 		EC9EAED92DD85E49006CEDCC /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EC9EF35A2E1E6CD7002EF8E0 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -444,6 +427,7 @@
 		};
 		EC9EAEDA2DD85E49006CEDCC /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EC9EF35A2E1E6CD7002EF8E0 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
