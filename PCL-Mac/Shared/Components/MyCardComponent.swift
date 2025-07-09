@@ -13,9 +13,11 @@ struct BaseCardContainer<Content: View>: View {
     
     let content: (Binding<Bool>) -> Content
     let index: Int
+    let hasAnimation: Bool
     
-    init(index: Int, content: @escaping (Binding<Bool>) -> Content) {
+    init(index: Int, hasAnimation: Bool, content: @escaping (Binding<Bool>) -> Content) {
         self.index = index
+        self.hasAnimation = hasAnimation
         self.content = content
     }
 
@@ -39,10 +41,14 @@ struct BaseCardContainer<Content: View>: View {
                 isHovered = hover
             }
             .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.04) {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
-                        isAppeared = true
+                if hasAnimation {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.04) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
+                            isAppeared = true
+                        }
                     }
+                } else {
+                    isAppeared = true
                 }
             }
     }
@@ -61,20 +67,24 @@ struct MyCardComponent<Content: View>: View {
     let title: String
     let index: Int
     private let content: Content
+    private let hasAnimation: Bool
+    private var onToggle: ((Bool) -> Void)? = nil
+    
     @State private var isUnfolded: Bool = false // 带动画
     @State private var showContent: Bool = false // 无动画
     @State private var internalContentHeight: CGFloat = .zero
     @State private var contentHeight: CGFloat = .zero
     @State private var lastClick: Date = Date()
 
-    init(index: Int = 0, title: String, @ViewBuilder content: @escaping () -> Content) {
+    init(index: Int = 0, hasAnimation: Bool = true, title: String, @ViewBuilder content: @escaping () -> Content) {
         self.index = index
+        self.hasAnimation = hasAnimation
         self.title = title
         self.content = content()
     }
 
     var body: some View {
-        BaseCardContainer(index: index) { isHovered in
+        BaseCardContainer(index: index, hasAnimation: hasAnimation) { isHovered in
             VStack(spacing: 0) {
                 ZStack {
                     HStack {
@@ -101,6 +111,7 @@ struct MyCardComponent<Content: View>: View {
                         showContent = true
                         withAnimation(.linear(duration: 0.2)) {
                             isUnfolded = true
+                            onToggle?(true)
                             contentHeight = internalContentHeight
                         }
                     } else {
@@ -111,6 +122,7 @@ struct MyCardComponent<Content: View>: View {
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                             showContent = false
+                            onToggle?(false)
                         }
                     }
                 }
@@ -137,6 +149,12 @@ struct MyCardComponent<Content: View>: View {
             }
         }
     }
+    
+    func onToggle(_ callback: @escaping (Bool) -> Void) -> MyCardComponent {
+        var copy = self
+        copy.onToggle = callback
+        return copy
+    }
 }
 
 struct StaticMyCardComponent<Content: View>: View {
@@ -146,14 +164,17 @@ struct StaticMyCardComponent<Content: View>: View {
     let title: String
     let content: () -> Content
     
-    init(index: Int = 0, title: String, content: @escaping () -> Content) {
+    private var hasAnimation: Bool
+    
+    init(index: Int = 0, hasAnimation: Bool = true, title: String, content: @escaping () -> Content) {
         self.index = index
+        self.hasAnimation = hasAnimation
         self.title = title
         self.content = content
     }
 
     var body: some View {
-        BaseCardContainer(index: index) { _ in
+        BaseCardContainer(index: index, hasAnimation: hasAnimation) { _ in
             VStack {
                 MaskedTextRectangle(text: title)
                 content()
@@ -167,13 +188,16 @@ struct TitlelessMyCardComponent<Content: View>: View {
     let content: () -> Content
     let index: Int
     
-    init(index: Int = 0, @ViewBuilder content: @escaping () -> Content) {
+    @State private var hasAnimation: Bool
+    
+    init(index: Int = 0, hasAnimation: Bool = true, @ViewBuilder content: @escaping () -> Content) {
         self.content = content
         self.index = index
+        self.hasAnimation = hasAnimation
     }
 
     var body: some View {
-        BaseCardContainer(index: index) { _ in
+        BaseCardContainer(index: index, hasAnimation: hasAnimation) { _ in
             VStack {
                 content()
                     .foregroundStyle(Color("TextColor"))
@@ -182,7 +206,7 @@ struct TitlelessMyCardComponent<Content: View>: View {
     }
 }
 
-fileprivate struct MaskedTextRectangle: View {
+struct MaskedTextRectangle: View {
     let text: String
 
     var body: some View {
@@ -195,7 +219,6 @@ fileprivate struct MaskedTextRectangle: View {
                             HStack {
                                 Text(text)
                                     .font(.custom("PCL English", size: 14))
-                                    //.frame(height: geo.size.height)
                                     .fixedSize()
                                 Spacer()
                             }

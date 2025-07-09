@@ -8,9 +8,11 @@
 import Foundation
 import SwiftyJSON
 
-public class FabricManifest {
+public class FabricManifest: Identifiable {
+    public var id: UUID = .init()
     public var libraries: [ClientManifest.Library] = []
     public let loaderVersion: String
+    public let stable: Bool
     public let mainClass: String
     public let jsonString: String // 不应该写在这里，但写安装里太麻烦了 awa
     public let minecraftVersion: String
@@ -19,6 +21,7 @@ public class FabricManifest {
         jsonString = json.rawString()!
         
         loaderVersion = json["loader"]["version"].stringValue
+        stable = json["loader"]["stable"].boolValue
         
         let loader: ClientManifest.Library = .init(json: .init(
             [
