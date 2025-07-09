@@ -8,10 +8,30 @@
 import SwiftUI
 
 struct JavaComponent: View {
+    @ObservedObject private var dataManager: DataManager = .shared
+    
     let jvm: JavaVirtualMachine
+    private var instance: MinecraftInstance? = nil
+    private var javaPath: URL? {
+        guard let defaultInstance = AppSettings.shared.defaultInstance,
+              let instance = MinecraftInstance.create(runningDirectory: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions").appending(path: defaultInstance)) else {
+            return nil
+        }
+        
+        return URL(fileURLWithPath: instance.config.javaPath!)
+    }
+    
+    init(jvm: JavaVirtualMachine) {
+        self.jvm = jvm
+        guard let defaultInstance = AppSettings.shared.defaultInstance,
+              let instance = MinecraftInstance.create(runningDirectory: URL(fileURLWithUserPath: "~/PCL-Mac-minecraft/versions").appending(path: defaultInstance)) else {
+            return
+        }
+        self.instance = instance
+    }
     
     var body: some View {
-        MyListItemComponent {
+        MyListItemComponent(isSelected: javaPath == jvm.executableUrl) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(jvm.getTypeLabel()) \(jvm.displayVersion)")
@@ -44,6 +64,12 @@ struct JavaComponent: View {
                 }
             }
             .padding(5)
+        }
+        .animation(.easeInOut(duration: 0.2), value: javaPath)
+        .onTapGesture {
+            self.instance?.config.javaPath = jvm.executableUrl.path
+            self.instance?.saveConfig()
+            dataManager.objectWillChange.send()
         }
     }
 }
