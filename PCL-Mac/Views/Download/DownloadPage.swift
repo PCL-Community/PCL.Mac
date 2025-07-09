@@ -88,7 +88,7 @@ struct DownloadPage: View {
                         
                         DataManager.shared.inprogressInstallTasks = self.tasks
                         DataManager.shared.router.append(.installing(tasks: tasks))
-                        self.tasks.getTasks().first!.start()
+                        self.tasks.tasks["minecraft"]!.start()
                     }
                     .foregroundStyle(.white)
                     .padding()

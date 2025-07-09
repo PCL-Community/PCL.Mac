@@ -48,7 +48,7 @@ public class FabricManifest: Identifiable {
             }
         }
         
-        mainClass = json["launcherMeta"]["mainClass"]["client"].string ?? json["launchMeta"]["mainClass"].stringValue
+        mainClass = json["launcherMeta"]["mainClass"]["client"].string ?? json["launcherMeta"]["mainClass"].stringValue
     }
     
     public static func parse(_ data: Data) throws -> [FabricManifest] {

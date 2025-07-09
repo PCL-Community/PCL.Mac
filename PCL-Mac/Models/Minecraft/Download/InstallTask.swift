@@ -88,7 +88,8 @@ public class InstallTasks: ObservableObject, Identifiable, Hashable, Equatable {
     }
     
     public func getTasks() -> [InstallTask] {
-        Array(tasks.values)
+        let order = ["minecraft", "fabric"]
+        return order.compactMap { tasks[$0] }
     }
     
     public func addTask(key: String, task: InstallTask) {

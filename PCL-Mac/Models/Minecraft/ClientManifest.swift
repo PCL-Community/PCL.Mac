@@ -100,24 +100,31 @@ public class ClientManifest {
             classifier = split.count >= 4 ? split[3] : nil
             
             if json["url"].exists() { // Fabric 依赖
-                debug("检测到 Fabric 依赖 \(json["name"].stringValue)")
                 self.rules = []
                 self.classifiers = [:]
                 self.natives = [:]
                 let path = Util.toPath(mavenCoordinate: name)
                 self.artifact = DownloadInfo(path: path, url: URL(string: json["url"].stringValue)!.appending(path: path).absoluteString)
             } else {
-                rules = json["rules"].arrayValue.map { Rule(json: $0) }
-                natives = json["natives"].dictionaryObject as? [String: String] ?? [:]
-                artifact = json["downloads"]["artifact"].exists() ? DownloadInfo(json: json["downloads"]["artifact"]) : nil
-                if let cls = json["downloads"]["classifiers"].dictionary {
-                    var result: [String: DownloadInfo] = [:]
-                    for (k, v) in cls {
-                        result[k] = DownloadInfo(json: v)
-                    }
-                    classifiers = result
+                if artifactId == "launchwrapper" {
+                    self.rules = []
+                    self.classifiers = [:]
+                    self.natives = [:]
+                    let path = Util.toPath(mavenCoordinate: name)
+                    self.artifact = DownloadInfo(path: path, url: URL(string: "https://libraries.minecraft.net")!.appending(path: path).absoluteString)
                 } else {
-                    classifiers = [:]
+                    rules = json["rules"].arrayValue.map { Rule(json: $0) }
+                    natives = json["natives"].dictionaryObject as? [String: String] ?? [:]
+                    artifact = json["downloads"]["artifact"].exists() ? DownloadInfo(json: json["downloads"]["artifact"]) : nil
+                    if let cls = json["downloads"]["classifiers"].dictionary {
+                        var result: [String: DownloadInfo] = [:]
+                        for (k, v) in cls {
+                            result[k] = DownloadInfo(json: v)
+                        }
+                        classifiers = result
+                    } else {
+                        classifiers = [:]
+                    }
                 }
             }
         }

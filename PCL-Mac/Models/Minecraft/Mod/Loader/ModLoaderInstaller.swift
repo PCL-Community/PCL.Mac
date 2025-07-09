@@ -65,7 +65,7 @@ public class ModLoaderInstaller {
             
             do {
                 try? FileManager.default.createDirectory(at: runningDirectory.appending(path: ".pcl_mac"), withIntermediateDirectories: true)
-                try FileManager.default.copyItem(
+                try? FileManager.default.copyItem(
                     at: runningDirectory.appending(path: "\(runningDirectory.lastPathComponent).json"),
                     to: runningDirectory.appending(path: ".pcl_mac").appending(path: "\(manifest.minecraftVersion).json")
                 )
