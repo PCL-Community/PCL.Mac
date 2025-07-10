@@ -7,6 +7,7 @@
 
 import Foundation
 import ZIPFoundation
+import CryptoKit
 
 public class Util {
     public static func getMainClass(_ jarUrl: URL) -> String? {
@@ -122,6 +123,23 @@ public class Util {
                 err("无法解压文件: \(error.localizedDescription)")
             }
         }
+    }
+    
+    public static func sha1OfFile(url: URL) throws -> String {
+        let fileHandle = try FileHandle(forReadingFrom: url)
+        defer { try? fileHandle.close() }
+        
+        var hasher = Insecure.SHA1()
+        while true {
+            let data = try fileHandle.read(upToCount: 1024 * 1024)
+            if let data = data, !data.isEmpty {
+                hasher.update(data: data)
+            } else {
+                break
+            }
+        }
+        let digest = hasher.finalize()
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
 }
 

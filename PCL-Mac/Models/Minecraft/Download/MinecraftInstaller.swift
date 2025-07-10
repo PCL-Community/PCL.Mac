@@ -132,8 +132,12 @@ public class MinecraftInstaller {
         var destinations: [URL] = []
         
         for library in task.manifest!.getNeededLibraries() {
+            let dest = task.minecraftDirectory.librariesUrl.appending(path: library.artifact!.path)
+            if CacheStorage.default.copy(name: library.name, to: dest) {
+                continue
+            }
             urls.append(URL(string: library.artifact!.url)!)
-            destinations.append(task.minecraftDirectory.librariesUrl.appending(path: library.artifact!.path))
+            destinations.append(dest)
         }
         
         await withCheckedContinuation { continuation in
@@ -147,6 +151,12 @@ public class MinecraftInstaller {
             })
             downloader.start()
         }
+        
+        for library in task.manifest!.getNeededLibraries() {
+            if urls.contains(where: { $0.absoluteString == library.artifact!.url }) {
+                CacheStorage.default.add(name: library.name, path: task.minecraftDirectory.librariesUrl.appending(path: library.artifact!.path))
+            }
+        }
     }
     
     // MARK: 下载本地库
@@ -156,9 +166,13 @@ public class MinecraftInstaller {
         var urls: [URL] = []
         var destinations: [URL] = []
         
-        for (_, artifact) in task.manifest!.getNeededNatives() {
+        for (library, artifact) in task.manifest!.getNeededNatives() {
+            let dest = task.minecraftDirectory.librariesUrl.appending(path: artifact.path)
+            if CacheStorage.default.copy(name: library.name, to: dest) {
+                continue
+            }
             urls.append(URL(string: artifact.url)!)
-            destinations.append(task.minecraftDirectory.librariesUrl.appending(path: artifact.path))
+            destinations.append(dest)
         }
         
         try? FileManager.default.createDirectory(at: task.versionUrl.appending(path: "natives"), withIntermediateDirectories: true)
@@ -173,6 +187,12 @@ public class MinecraftInstaller {
                 continuation.resume()
             })
             downloader.start()
+        }
+        
+        for (library, artifact) in task.manifest!.getNeededNatives() {
+            if urls.contains(where: { $0.absoluteString == artifact.url }) {
+                CacheStorage.default.add(name: library.name, path: task.minecraftDirectory.librariesUrl.appending(path: artifact.path))
+            }
         }
     }
     

@@ -13,7 +13,7 @@ public struct SharedConstants {
     public let applicationContentsUrl: URL
     public let applicationResourcesUrl: URL
     public let applicationLogUrl: URL
-    public let applicationSupportUrl: URL = URL(fileURLWithUserPath: "~/Library/Application Support/PCL-Mac")
+    public let applicationSupportUrl: URL = .applicationSupportDirectory.appending(path: "PCL-Mac")
     public let applicationTemperatureUrl: URL
     
     public let dateFormatter = DateFormatter()
