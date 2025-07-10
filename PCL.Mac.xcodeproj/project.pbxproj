@@ -356,7 +356,7 @@
 					};
 				};
 			};
-			buildConfigurationList = EC9EAEC42DD85E48006CEDCC /* Build configuration list for PBXProject "PCL-Mac" */;
+			buildConfigurationList = EC9EAEC42DD85E48006CEDCC /* Build configuration list for PBXProject "PCL.Mac" */;
 			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -760,7 +760,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EC9EAEC42DD85E48006CEDCC /* Build configuration list for PBXProject "PCL-Mac" */ = {
+		EC9EAEC42DD85E48006CEDCC /* Build configuration list for PBXProject "PCL.Mac" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EC9EAED62DD85E49006CEDCC /* Debug */,
