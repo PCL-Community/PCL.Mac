@@ -1,6 +1,6 @@
 //
 //  ChunkedDownloader.swift
-//  PCL-Mac
+//  PCL.Mac
 //
 //  Created by Claude on 2025/6/1.
 //

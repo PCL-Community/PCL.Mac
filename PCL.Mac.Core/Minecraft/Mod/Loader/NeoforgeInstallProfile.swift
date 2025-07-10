@@ -1,6 +1,6 @@
 //
 //  NeoforgeInstallProfile.swift
-//  PCL-Mac
+//  PCL.Mac
 //
 //  Created by YiZhiMCQiu on 2025/6/18.
 //

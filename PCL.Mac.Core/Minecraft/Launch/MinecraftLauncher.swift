@@ -1,6 +1,6 @@
 //
 //  MinecraftLauncher.swift
-//  PCL-Mac
+//  PCL.Mac
 //
 //  Created by YiZhiMCQiu on 2025/5/20.
 //
