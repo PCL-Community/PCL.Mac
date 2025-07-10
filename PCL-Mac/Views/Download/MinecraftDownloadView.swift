@@ -88,6 +88,7 @@ struct MinecraftDownloadView: View {
                             CategoryCard(index: 1, label: "正式版", versions: versions["release"]!, parent: self)
                             CategoryCard(index: 2, label: "预览版", versions: versions["snapshot"]!, parent: self)
                             CategoryCard(index: 3, label: "远古版", versions: versions["old"]!, parent: self)
+                            CategoryCard(index: 4, label: "愚人节版", versions: versions["april_fool"]!, parent: self)
                         }
                         Spacer()
                     }
@@ -104,6 +105,7 @@ struct MinecraftDownloadView: View {
             versions["release"] = dataManager.versionManifest!.versions.filter { $0.type == "release" }
             versions["snapshot"] = dataManager.versionManifest!.versions.filter { $0.type == "snapshot" }
             versions["old"] = dataManager.versionManifest!.versions.filter { $0.type == "old_beta" || $0.type == "old_alpha" }
+            versions["april_fool"] = dataManager.versionManifest!.versions.filter { $0.type == "april_fool" }
             self.versions = versions
         }
     }

@@ -40,6 +40,7 @@ public class MinecraftVersion: Comparable, Hashable {
         case "release": "ReleaseVersionIcon"
         case "snapshot": "SnapshotVersionIcon"
         case "old_beta", "old_alpha": "OldVersionIcon"
+        case "april_fool": "AprilFoolVersionIcon"
         default: "Release"
         }
     }
@@ -52,6 +53,7 @@ public enum VersionType: String {
     case rc = "rc"
     case alpha = "old_alpha"
     case beta = "old_beta"
+    case aprilFool = "april_fool"
     
     public static func parse(_ displayVersion: String) -> VersionType {
         guard let manifest = DataManager.shared.versionManifest else {

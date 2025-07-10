@@ -7,8 +7,11 @@
 
 import Foundation
 import SwiftyJSON
+import Alamofire
 
 public class VersionManifest: Codable {
+    public static var aprilFoolVersions: [String] = []
+    
     public let latest: LatestVersions
     public let versions: [GameVersion]
     
@@ -33,6 +36,7 @@ public class VersionManifest: Codable {
             case snapshot = "snapshot"
             case oldBeta = "old_beta"
             case alpha = "old_alpha"
+            case aprilFool = "april_fool"
         }
         
         public let id: String
@@ -44,7 +48,7 @@ public class VersionManifest: Codable {
         public init(_ json: JSON) {
             let formatter = ISO8601DateFormatter()
             self.id = json["id"].stringValue.replacing(" Pre-Release ", with: "-pre")
-            self.type = json["type"].stringValue
+            self.type = aprilFoolVersions.contains(id) ? "april_fool" : json["type"].stringValue
             self.url = json["url"].stringValue
             self.time = formatter.date(from: json["time"].stringValue)!
             self.releaseTime = formatter.date(from: json["releaseTime"].stringValue)!
@@ -57,19 +61,27 @@ public class VersionManifest: Codable {
     
     public static func fetchLatestData() async -> VersionManifest? {
         debug("正在获取最新版本数据")
-        var request = URLRequest(url: URL(string: "https://launchermeta.mojang.com/mc/game/version_manifest.json")!)
-        request.httpMethod = "GET"
-        
-        return await withCheckedContinuation { continuation in
-            URLSession.shared.dataTask(with: request) { data, response, error in
-                if let data = data,
-                   let json = try? JSON(data: data) {
-                    continuation.resume(returning: .init(json))
-                    return
+        Task {
+            if let data = try? await AF.request(
+                "https://gitee.com/yizhimcqiu/pcl-mac-announcements/raw/main/april_fool_versions.json"
+            )
+                .serializingResponse(using: .data).value {
+                if let json = try? JSON(data: data) {
+                    aprilFoolVersions = json.arrayValue.map { $0.stringValue }
                 }
-                continuation.resume(returning: nil)
-            }.resume()
+            }
         }
+        
+        if let data = try? await AF.request(
+            "https://launchermeta.mojang.com/mc/game/version_manifest.json"
+        )
+            .serializingResponse(using: .data).value {
+            if let json = try? JSON(data: data) {
+                return .init(json)
+            }
+        }
+        
+        return nil
     }
     
     public func getLatestRelease() -> GameVersion {
