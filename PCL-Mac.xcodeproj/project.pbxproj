@@ -12,7 +12,6 @@
 		EC23B6332DE5DC5B00CBEA9C /* PCL.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EC23B6322DE5DC5B00CBEA9C /* PCL.ttf */; };
 		EC9507372DFCF17700018EE0 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = EC9507362DFCF17700018EE0 /* SwiftyJSON */; };
 		EC9A7DCA2DE150170018815F /* glfw-patcher.jar in Resources */ = {isa = PBXBuildFile; fileRef = EC9A7DC82DE1500F0018815F /* glfw-patcher.jar */; };
-		EC9EF35B2E1E6CD7002EF8E0 /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EC9EF35A2E1E6CD7002EF8E0 /* Secrets.xcconfig */; };
 		ECA55A702E0415BE006499CC /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = ECA55A6F2E0415BE006499CC /* Alamofire */; };
 		ECDBF0CC2E1124C500E81482 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = ECDBF0CB2E1124C500E81482 /* ZIPFoundation */; };
 /* End PBXBuildFile section */
@@ -224,7 +223,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EC9EF35B2E1E6CD7002EF8E0 /* Secrets.xcconfig in Resources */,
 				EC9A7DCA2DE150170018815F /* glfw-patcher.jar in Resources */,
 				EC01E7E82DDC3BEA006EF529 /* log4j2.xml in Resources */,
 				EC23B6332DE5DC5B00CBEA9C /* PCL.ttf in Resources */,
