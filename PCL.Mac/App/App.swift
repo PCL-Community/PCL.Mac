@@ -46,7 +46,9 @@ struct WindowAccessor: NSViewRepresentable {
         let nsView = NSView()
         DispatchQueue.main.async {
             if let window = nsView.window {
-                window.setContentSize(NSSize(width: 815, height: 465))
+                if AppSettings.shared.showPclMacPopup {
+                    window.setContentSize(NSSize(width: 815, height: 465))
+                }
                 window.isOpaque = false
                 window.backgroundColor = NSColor.clear
                 window.styleMask = [.borderless, .miniaturizable, .resizable]

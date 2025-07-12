@@ -26,7 +26,7 @@ struct BaseCardContainer<Content: View>: View {
             .foregroundStyle(isHovered ? AppSettings.shared.theme.getTextStyle() : .init(Color("TextColor")))
             .padding()
             .background(
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: 5)
                     .fill(Color("MyCardBackgroundColor"))
                     .shadow(
                         color: isHovered ? Color(hex: 0x0B5BCB) : .gray,
