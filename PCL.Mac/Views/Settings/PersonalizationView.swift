@@ -23,7 +23,23 @@ struct PersonalizationView: View {
                             }
                         }
                         .onChange(of: settings.colorScheme) { _ in
-                            HintManager.default.add(.init(text: "重启后生效", type: .info))
+                            settings.updateColorScheme()
+                        }
+                    Spacer()
+                }
+                .padding()
+            }
+            .padding()
+            
+            StaticMyCardComponent(title: "窗口按钮样式") {
+                HStack {
+                    MyComboBoxComponent(
+                        options: [WindowControlButtonStyle.pcl, WindowControlButtonStyle.macOS],
+                        selection: $settings.windowControlButtonStyle,
+                        label: { $0.getLabel() }) { content in
+                            HStack(spacing: 120) {
+                                content
+                            }
                         }
                     Spacer()
                 }

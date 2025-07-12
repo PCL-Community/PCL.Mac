@@ -42,10 +42,16 @@ struct GenericTitleBarComponent<Content: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
                 HStack(alignment: .center) {
+                    if AppSettings.shared.windowControlButtonStyle == .macOS {
+                        WindowControlButton.MacOSClose
+                        WindowControlButton.MacOSMiniaturize
+                    }
                     content()
                     Spacer()
-                    WindowControlButton.Miniaturize
-                    WindowControlButton.Close
+                    if AppSettings.shared.windowControlButtonStyle == .pcl {
+                        WindowControlButton.Miniaturize
+                        WindowControlButton.Close
+                    }
                 }
                 .padding()
             }
@@ -63,13 +69,15 @@ struct TitleBarComponent: View {
     var body: some View {
         GenericTitleBarComponent {
             Group {
-                Image("TitleLogo")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(height: 19)
-                    .bold()
-                MyTagComponent(label: "Mac", backgroundColor: .white)
-                    .foregroundStyle(AppSettings.shared.theme.getTextStyle())
+                if AppSettings.shared.windowControlButtonStyle == .pcl {
+                    Image("TitleLogo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 19)
+                        .bold()
+                    MyTagComponent(label: "Mac", backgroundColor: .white)
+                        .foregroundStyle(AppSettings.shared.theme.getTextStyle())
+                }
                 Spacer()
                 MenuItemButton(route: .launch, parent: self)
                 MenuItemButton(route: .download, parent: self)
@@ -86,7 +94,12 @@ struct SubviewTitleBarComponent: View {
 
     var body: some View {
         GenericTitleBarComponent {
-            WindowControlButton.Back
+            switch AppSettings.shared.windowControlButtonStyle {
+            case .pcl:
+                WindowControlButton.Back
+            case .macOS:
+                WindowControlButton.MacOSBack
+            }
             Text(getTitle())
                 .font(.custom("PCL English", size: 16))
                 .foregroundStyle(.white)
