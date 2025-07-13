@@ -47,48 +47,48 @@ fileprivate struct LeftTab: View {
             }
             
             Spacer()
-            if let instance = self.instance {
-                MyButtonComponent(text: "启动游戏", descriptionText: instance.config.name, foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
-                    if self.instance == nil {
-                        self.instance = instance
+            VStack {
+                if let instance = self.instance {
+                    MyButtonComponent(text: "启动游戏", descriptionText: instance.config.name, foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
+                        if self.instance == nil {
+                            self.instance = instance
+                        }
+                        let launchOptions: LaunchOptions = .init()
+                        
+                        guard launchPrecheck(launchOptions) else { return }
+                        if self.instance!.process == nil {
+                            Task {
+                                await instance.launch(launchOptions)
+                            }
+                        }
                     }
-                    let launchOptions: LaunchOptions = .init()
-                    
-                    guard launchPrecheck(launchOptions) else { return }
-                    if self.instance!.process == nil {
-                        Task {
-                            await instance.launch(launchOptions)
+                    .frame(height: 55)
+                    .padding()
+                    .padding(.bottom, -27)
+                } else {
+                    MyButtonComponent(text: "下载游戏", descriptionText: "未找到可用的游戏版本") {
+                        dataManager.router.setRoot(.download)
+                    }
+                    .frame(height: 55)
+                    .padding()
+                    .padding(.bottom, -27)
+                }
+                HStack(spacing: 12) {
+                    MyButtonComponent(text: "版本选择") {
+                        dataManager.router.append(.versionSelect)
+                    }
+                    if AppSettings.shared.defaultInstance != nil {
+                        MyButtonComponent(text: "版本设置") {
+                            
                         }
                     }
                 }
-                .frame(width: 280, height: 55)
+                .frame(height: 32)
                 .padding()
-                .padding(.bottom, -27)
-            } else {
-                MyButtonComponent(text: "下载游戏", descriptionText: "未找到可用的游戏版本") {
-                    dataManager.router.setRoot(.download)
-                }
-                .frame(width: 280, height: 55)
-                .padding()
-                .padding(.bottom, -27)
+                .padding(.bottom, 4)
             }
-            HStack {
-                MyButtonComponent(text: "版本选择") {
-                    dataManager.router.append(.versionSelect)
-                }
-                .frame(width: AppSettings.shared.defaultInstance == nil ? 280 : 135, height: 35)
-                .padding(.leading, AppSettings.shared.defaultInstance == nil ? 0 : 10)
-                if AppSettings.shared.defaultInstance != nil {
-                    Spacer()
-                    MyButtonComponent(text: "版本设置") {
-                        
-                    }
-                    .frame(width: 135, height: 35)
-                    .padding(.trailing, 10)
-                }
-            }
-            .frame(width: 300, height: 60)
         }
+        .frame(width: 300)
         .foregroundStyle(Color(hex: 0x343D4A))
         .onAppear {
             if let directory = AppSettings.shared.currentMinecraftDirectory,
