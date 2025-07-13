@@ -60,6 +60,7 @@ class Announcement: Identifiable {
             }
             .padding()
         }
+        .id("announcement")
     }
 }
 
