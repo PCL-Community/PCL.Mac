@@ -129,23 +129,19 @@ struct MenuItemButton: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 25)
+            RoundedRectangle(cornerRadius: 13)
                 .foregroundStyle(dataManager.router.getRoot() == route ? .white : (isHovered ? Color(hex: 0xFFFFFF, alpha: 0.17) : .clear))
             
             HStack {
                 getImage()
-                    .renderingMode(.template)
-                    .interpolation(.high)
                     .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
                     .foregroundStyle(dataManager.router.getRoot() == route ?
                                      AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(.white))
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 16, height: 16)
-                    .position(x: 17, y: 13)
                 Text(getText())
                     .foregroundStyle(dataManager.router.getRoot() == route ?
                                      AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(.white))
-                    .position(x: 9, y: 13)
             }
         }
         .frame(width: 75, height: 27)
