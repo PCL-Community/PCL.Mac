@@ -136,7 +136,6 @@ fileprivate struct NewOfflineAccountView: View {
                             warningText = checkPlayerName(name)
                         }
                         .onSubmit(addAccount)
-                        .fixedSize(horizontal: false, vertical: true)
                     HStack {
                         Spacer()
                         MyButtonComponent(text: "购买 Minecraft") {

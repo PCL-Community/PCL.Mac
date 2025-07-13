@@ -40,7 +40,6 @@ struct DownloadPage: View {
                             .scaledToFit()
                             .frame(width: 35)
                         MyTextFieldComponent(text: self.$name)
-                            .frame(height: 12)
                             .foregroundStyle(Color("TextColor"))
                     }
                 }
