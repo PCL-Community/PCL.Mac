@@ -16,7 +16,8 @@ struct DownloadView: View {
             case .minecraftDownload:
                 MinecraftDownloadView()
             case .modSearch:
-                ModSearchView()
+                Text("施工中……")
+                    .font(.custom("PCL English", size: 14))
             default:
                 Spacer()
             }
