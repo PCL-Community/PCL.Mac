@@ -63,6 +63,12 @@ public class AppSettings: ObservableObject {
     /// 窗口按钮样式
     @CodableAppStorage("windowControlButtonStyle") public var windowControlButtonStyle: WindowControlButtonStyle = .pcl
     
+    /// 是否登录过一次微软账号
+    @AppStorage("hasMicrosoftAccount") public var hasMicrosoftAccount: Bool = false
+    
+    /// 累计启动次数
+    @AppStorage("launchCount") public var launchCount: Int = 0
+    
     public func updateColorScheme() {
         if colorScheme != .system {
             NSApp.appearance = colorScheme == .light ? NSAppearance(named: .aqua) : NSAppearance(named: .darkAqua)

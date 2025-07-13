@@ -32,6 +32,7 @@ public class MsAccount: Codable, Identifiable, Account {
     public var uuid: UUID { profile.uuid }
     
     public func refreshAccessToken() {
+        AppSettings.shared.hasMicrosoftAccount = true
         if AccessTokenStorage.shared.getTokenInfo(for: id) != nil {
             debug("无需刷新 Access Token")
             return

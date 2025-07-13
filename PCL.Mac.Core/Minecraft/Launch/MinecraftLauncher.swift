@@ -10,27 +10,19 @@ import Cocoa
 
 public class MinecraftLauncher {
     private let instance: MinecraftInstance
-    private let account: Account
     
     public init?(_ instance: MinecraftInstance) {
         self.instance = instance
-        if let account = AccountManager.shared.getAccount() {
-            self.account = account
-        } else {
-            err("无法初始化 MinecraftLauncher: 未设置账号")
-            ContentView.setPopup(PopupOverlay("错误", "请先创建一个账号并选择再启动游戏！", [.Ok], .error))
-            return nil
-        }
     }
     
-    public func launch() {
+    public func launch(_ options: LaunchOptions) {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: instance.config.javaPath)
+        process.executableURL = options.javaPath
         process.environment = ProcessInfo.processInfo.environment
         process.arguments = []
-        process.arguments!.append(contentsOf: buildJvmArguments())
+        process.arguments!.append(contentsOf: buildJvmArguments(options))
         process.arguments!.append(instance.manifest.mainClass)
-        process.arguments!.append(contentsOf: buildGameArguments())
+        process.arguments!.append(contentsOf: buildGameArguments(options))
         debug(process.executableURL!.path + " " + process.arguments!.joined(separator: " ")
             .replacingOccurrences(of: #"--accessToken\s+\S+"#, with: "--accessToken 🎉", options: .regularExpression))
         process.currentDirectoryURL = instance.runningDirectory
@@ -75,10 +67,10 @@ public class MinecraftLauncher {
         }
     }
     
-    public func buildJvmArguments() -> [String] {
+    public func buildJvmArguments(_ options: LaunchOptions) -> [String] {
         let values: [String: String] = [
             "natives_directory": instance.runningDirectory.appending(path: "natives").path,
-            "launcher_name": "PCL Mac",
+            "launcher_name": "PCL.Mac",
             "launcher_version": "1.0.0",
             "classpath": buildClasspath(),
             "classpath_separator": ":",
@@ -136,20 +128,26 @@ public class MinecraftLauncher {
         return urls.joined(separator: ":")
     }
     
-    private func buildGameArguments() -> [String] {
+    private func buildGameArguments(_ options: LaunchOptions) -> [String] {
         let values: [String: String] = [
-            "auth_player_name": account.name,
+            "auth_player_name": options.account.name,
             "version_name": instance.version!.displayName,
             "game_directory": instance.runningDirectory.path,
             "assets_root": instance.minecraftDirectory.assetsUrl.path,
             "assets_index_name": instance.manifest.assetIndex.id,
-            "auth_uuid": account.uuid.uuidString.replacingOccurrences(of: "-", with: "").lowercased(),
-            "auth_access_token": account.getAccessToken(),
+            "auth_uuid": options.account.uuid.uuidString.replacingOccurrences(of: "-", with: "").lowercased(),
+            "auth_access_token": options.account.getAccessToken(),
             "user_type": "msa",
             "version_type": "PCL Mac",
             "user_properties": "\"{}\""
         ]
-        return Util.replaceTemplateStrings(instance.manifest.getArguments().getAllowedGameArguments(), with: values)
+        
+        var args: [String] = []
+        if options.isDemo {
+            args.append("--demo")
+        }
+        
+        return Util.replaceTemplateStrings(instance.manifest.getArguments().getAllowedGameArguments(), with: values).union(args)
     }
 }
 

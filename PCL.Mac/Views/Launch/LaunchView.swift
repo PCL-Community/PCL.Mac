@@ -52,10 +52,12 @@ fileprivate struct LeftTab: View {
                     if self.instance == nil {
                         self.instance = instance
                     }
+                    let launchOptions: LaunchOptions = .init()
                     
+                    guard launchPrecheck(launchOptions) else { return }
                     if self.instance!.process == nil {
                         Task {
-                            await instance.launch()
+                            await instance.launch(launchOptions)
                         }
                     }
                 }
@@ -95,6 +97,37 @@ fileprivate struct LeftTab: View {
                 self.instance = instance
             }
         }
+    }
+    
+    private func launchPrecheck(_ launchOptions: LaunchOptions) -> Bool {
+        if AppSettings.shared.hasMicrosoftAccount { return true }
+        
+        var returnValue: Bool = false
+        if Locale.current.identifier.starts(with: "zh") {
+            switch AppSettings.shared.launchCount {
+            case 3, 8, 15, 30, 50, 70, 90, 110, 130, 180, 220, 280, 330, 380, 450, 550, 660, 750, 880, 950, 1100, 1300, 1500, 1700, 1900:
+                ContentView.setPopup(.init(
+                    "考虑一下正版？",
+                    "你已经启动了 \(AppSettings.shared.launchCount) 次 Minecraft 啦！\n如果觉得 Minecraft 还不错，可以购买正版支持一下，毕竟开发游戏也真的很不容易……不要一直白嫖啦。\n在登录一次正版账号后，就不会再出现这个提示了！",
+                [
+                    .init(text: "支持正版游戏！", onClick: { NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!) ; PopupButton.Close.onClick() }),
+                    .init(text: "下次一定", onClick: { PopupButton.Close.onClick() ; returnValue = true })
+                ]))
+            default:
+                let _: Any? = nil
+            }
+        } else {
+            ContentView.setPopup(.init(
+                "正版验证",
+                "你必须先登录正版账号才能启动游戏！",
+                [
+                    .init(text: "购买正版", onClick: { NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!) ; PopupButton.Close.onClick() }),
+                    .init(text: "试玩", onClick: { launchOptions.isDemo = true ; returnValue = true ; PopupButton.Close.onClick() }),
+                    .init(text: "返回", onClick: PopupButton.Close.onClick)
+                ]))
+        }
+        
+        return returnValue
     }
 }
 

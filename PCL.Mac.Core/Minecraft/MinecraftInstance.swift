@@ -132,15 +132,31 @@ public class MinecraftInstance: Identifiable {
         return suitableJava
     }
     
-    public func launch(skipResourceCheck: Bool = false) async {
-        if !config.skipResourcesCheck && !skipResourceCheck {
+    public func launch(_ launchOptions: LaunchOptions) async {
+        if !config.skipResourcesCheck && !launchOptions.skipResourceCheck {
             log("正在进行资源完整性检查")
             await withCheckedContinuation { continuation in
                 let task = MinecraftInstaller.createCompleteTask(self, continuation.resume)
                 task.start()
             }
         }
-        MinecraftLauncher(self)?.launch()
+        
+        guard let account = AccountManager.shared.getAccount() else {
+            err("无法启动 Minecraft: 未设置账号")
+            await ContentView.setPopup(PopupOverlay("错误", "请先创建一个账号并选择再启动游戏！", [.Ok], .error))
+            return
+        }
+        
+        guard let javaPath = config.javaPath, let javaUrl = Optional(URL(fileURLWithPath: javaPath)) else {
+            err("无法启动 Minecraft: 未找到 Java")
+            await ContentView.setPopup(PopupOverlay("错误", "找不到可用的 Java，请确保你已经安装了符合要求的 Java 版本！", [.Ok], .error))
+            return
+        }
+        
+        launchOptions.account = account
+        launchOptions.javaPath = javaUrl
+        
+        MinecraftLauncher(self)?.launch(launchOptions)
     }
     
     public func detectVersion() {
