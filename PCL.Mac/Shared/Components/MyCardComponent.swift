@@ -22,21 +22,37 @@ struct BaseCardContainer<Content: View>: View {
     }
 
     var body: some View {
+        let isBetaUI = AppSettings.shared.enableBetaUI
+
         content($isHovered)
-            .foregroundStyle(isHovered ? AppSettings.shared.theme.getTextStyle() : .init(Color("TextColor")))
+            .foregroundStyle(isHovered ? AnyShapeStyle(Color.pclOriginalColor2) : .init(Color("TextColor")))
+            .fontWeight(isBetaUI && isHovered ? .bold : .regular)
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 5)
                     .fill(Color("MyCardBackgroundColor"))
+                    .overlay(
+                        Group {
+                            if isBetaUI {
+                                RoundedRectangle(cornerRadius: 5)
+                                    .stroke(Color.blue.opacity(0.6), lineWidth: isHovered ? 2 : 0)
+                            }
+                        }
+                    )
                     .shadow(
-                        color: isHovered ? Color(hex: 0x0B5BCB) : .gray,
-                        radius: 2, x: 0.5, y: 0.5
+                        color: isBetaUI ?
+                            Color.black.opacity(isHovered ? 0.15 : 0.12) :
+                            Color.blue.opacity(isHovered ? 1.5 : 0.12),
+                        radius: isHovered ? (isBetaUI ? 4 : 1.6) : 2.2,
+                        x: 0,
+                        y: isHovered ? (isBetaUI ? 2 : 0) : 1.3
                     )
             )
             .padding(.top, -23)
             .opacity(isAppeared ? 1 : 0)
             .offset(y: isAppeared ? 25 : 0)
-            .animation(.easeInOut(duration: 0.2), value: isHovered)
+            .scaleEffect(isBetaUI && isHovered ? 1.02 : 1.0)
+            .animation(.linear(duration: 0.09), value: isHovered)
             .onHover { hover in
                 isHovered = hover
             }
@@ -219,6 +235,7 @@ struct MaskedTextRectangle: View {
                             HStack {
                                 Text(text)
                                     .font(.custom("PCL English", size: 14))
+                                    .fontWeight(.bold)
                                     .fixedSize()
                                 Spacer()
                             }

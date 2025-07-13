@@ -44,7 +44,10 @@ public class AppSettings: ObservableObject {
     
     /// 主题需要观察 DataManager 才能更新
     @CodableAppStorage("theme") public var theme: Theme = .pcl
-    
+
+    /// 是否使用彩色背景（对应PCL的UiBackgroundColorful）
+    @AppStorage("backgroundColorful") public var backgroundColorful: Bool = true
+
     /// 启动时若为空自动设置为第一个版本
     @AppStorage("defaultInstance") public var defaultInstance: String?
     
@@ -62,7 +65,10 @@ public class AppSettings: ObservableObject {
     
     /// 窗口按钮样式
     @CodableAppStorage("windowControlButtonStyle") public var windowControlButtonStyle: WindowControlButtonStyle = .pcl
-    
+
+    /// 是否启用Beta UI效果
+    @AppStorage("enableBetaUI") public var enableBetaUI: Bool = false
+
     /// 是否登录过一次微软账号
     @AppStorage("hasMicrosoftAccount") public var hasMicrosoftAccount: Bool = false
     

@@ -73,7 +73,7 @@ struct ContentView: View {
                 ZStack {
                     Rectangle()
                         .fill(Color("BackgroundColor"))
-                        .shadow(radius: 2)
+                        .shadow(color: Color.black.opacity(0.09), radius: 2.1, x: 1.3, y: 0)
                     dataManager.leftTabContent
                         .scaleEffect(isLeftTabVisible ? 1 : 0.9 , anchor: .center)
                         .opacity(isLeftTabVisible ? 1 : 0)
@@ -94,7 +94,7 @@ struct ContentView: View {
                     .zIndex(0)
             }
             .background(
-                AppSettings.shared.theme.getBackgroundView()
+                AppSettings.shared.theme.getBackgroundView(colorful: AppSettings.shared.backgroundColorful)
             )
             .overlay {
                 if SharedConstants.shared.isDevelopment {

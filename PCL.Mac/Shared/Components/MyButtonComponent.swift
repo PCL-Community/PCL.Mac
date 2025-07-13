@@ -22,15 +22,21 @@ struct MyButtonComponent: View {
         if let foregroundStyle = self.foregroundStyle {
             return AnyShapeStyle(foregroundStyle)
         }
-        return isHovered ? AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(Color("TextColor"))
+        // 使用PCL原版按钮颜色：Normal状态，悬停时使用Color3，非悬停时使用Color1
+        return isHovered ? AnyShapeStyle(Color.pclOriginalColor3) : AnyShapeStyle(Color.pclOriginalColor1)
     }
 
     var body: some View {
         ZStack {
+            // 背景层 - 在边框内部
+            RoundedRectangle(cornerRadius: 3)
+                .foregroundStyle(isHovered ? Color.pclOriginalColor7 : .clear)
+                .padding(1.3) // 为边框留出空间
+
+            // 边框层 - 在最上层
             RoundedRectangle(cornerRadius: 4)
                 .stroke(self.getForegroundStyle(), lineWidth: 1.3)
-            RoundedRectangle(cornerRadius: 6)
-                .foregroundStyle(isHovered ? Color(hex: 0x1370F3, alpha: 0.1) : .clear)
+
             VStack {
                 Spacer()
                 Text(text)
@@ -42,7 +48,7 @@ struct MyButtonComponent: View {
                 if let descriptionText = self.descriptionText {
                     Text(descriptionText)
                         .font(.custom("PCL English", size: 12))
-                        .foregroundStyle(Color(hex: 0x9A9A9A))
+                        .foregroundStyle(Color.pclOriginalGray4)
                 }
                 Spacer()
             }

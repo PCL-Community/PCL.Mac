@@ -30,7 +30,7 @@ struct PopupButton: View, Identifiable {
                     RoundedRectangle(cornerRadius: 3)
                         .stroke(color ?? Color("TextColor"))
                         .background(
-                            Color(hex: 0x000000, alpha: self.isHovered ? 0.1 : 0.0)
+                            Color.pclOriginalColor7.opacity(self.isHovered ? 1.0 : 0.0)
                                 .onHover { hovering in
                                     self.isHovered = hovering
                                 }

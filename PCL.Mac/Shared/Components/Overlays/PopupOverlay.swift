@@ -77,7 +77,7 @@ struct PopupOverlay: View, Identifiable, Equatable {
             RoundedRectangle(cornerRadius: 10)
                 .fill(Color("MyCardBackgroundColor"))
                 .frame(width: Width + 20, height: Height + 20)
-                .shadow(color: Color("TextColor"), radius: 2)
+                .shadow(color: Color.black.opacity(0.18), radius: 2.8, x: 0, y: 2)
             HStack {
                 VStack {
                     Text(title)

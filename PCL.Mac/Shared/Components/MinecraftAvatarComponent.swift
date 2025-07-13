@@ -34,7 +34,7 @@ struct MinecraftAvatarComponent: View {
         ZStack {
             if let data = imageData {
                 SkinLayerView(imageData: data, startX: 8, startY: 16, width: 8 * 5.4 / 58 * size, height: 8 * 5.4 / 58 * size)
-                    .shadow(color: Color.black.opacity(0.2), radius: 1)
+                    .shadow(color: Color.black.opacity(0.15), radius: 1.4, x: 0, y: 1.1)
                 SkinLayerView(imageData: data, startX: 40, startY: 16, width: 7.99 * 6.1 / 58 * size, height: 7.99 * 6.1 / 58 * size)
             }
         }

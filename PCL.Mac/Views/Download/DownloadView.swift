@@ -101,7 +101,7 @@ struct RoundedButton<Content: View>: View {
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: .infinity)
-                    .fill(Color(hex: 0x1370F3))
+                    .fill(Color.pclOriginalColor3)
             )
             .scaleEffect(isPressed ? 0.85 : 1.0)
             .animation(.easeInOut(duration: 0.2), value: isHovered)

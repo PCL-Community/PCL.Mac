@@ -30,7 +30,7 @@ struct MyTextFieldComponent: View {
                 .padding(.leading, 4)
             
             RoundedRectangle(cornerRadius: 4)
-                .stroke(self.isHovered ? Color(hex: 0x4890F5) : Color(hex: 0x96C0F9), lineWidth: 1)
+                .stroke(self.isHovered ? Color.pclOriginalColor4 : Color.pclOriginalColorBg0, lineWidth: 1)
                 .allowsHitTesting(false)
                 .animation(.easeInOut(duration: 0.1), value: self.isHovered)
         }
