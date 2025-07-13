@@ -28,9 +28,11 @@ struct MinecraftLaunchIntent: AppIntent {
         guard let instance = instance else {
             return .result(dialog: .init("实例不存在。"))
         }
+        let options = LaunchOptions()
+        options.skipResourceCheck = true
         
         Task {
-            await instance.launch(skipResourceCheck: skipResourceCheck)
+            await instance.launch(options)
         }
         
         return .result(dialog: .init("在 \((DispatchTime.now().uptimeNanoseconds - before.uptimeNanoseconds) / 1_000_000)ms 内成功创建进程。"))
