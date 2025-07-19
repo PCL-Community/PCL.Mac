@@ -232,28 +232,7 @@ fileprivate struct NewMicrosoftAccountView: View {
                         if state.isSigningIn { return }
                         state.isSigningIn = true
                         Task {
-                            guard let authToken = await MsLogin.signIn() else {
-                                HintManager.default.add(.init(text: "登录失败！", type: .critical))
-                                return
-                            }
-                            
-                            DispatchQueue.main.async {
-                                state.authToken.setObject(authToken)
-                            }
-                            
-                            HintManager.default.add(.init(text: "登录成功！正在检测你是否拥有 Minecraft……", type: .finish))
-                            if await MsLogin.hasMinecraftGame(authToken) {
-                                HintManager.default.add(.init(text: "你购买了 Minecraft！正在保存账号数据……", type: .finish))
-                                if let msAccount = await MsAccount.create(authToken) {
-                                    DispatchQueue.main.async { AccountManager.shared.accounts.append(.microsoft(msAccount)) }
-                                    HintManager.default.add(.init(text: "登录成功！", type: .finish))
-                                } else {
-                                    HintManager.default.add(.init(text: "在创建账号实例时发生错误", type: .critical))
-                                }
-                                DispatchQueue.main.async { StateManager.shared.newAccount = .init() }
-                            } else {
-                                HintManager.default.add(.init(text: "你还没有购买 Minecraft！", type: .critical))
-                            }
+                            await signIn()
                         }
                     }
                 }
@@ -262,5 +241,35 @@ fileprivate struct NewMicrosoftAccountView: View {
         }
         .noAnimation()
         .padding()
+    }
+    
+    private func signIn() async {
+        do {
+            guard let authToken = try await MsLogin.signIn() else {
+                HintManager.default.add(.init(text: "登录失败！", type: .critical))
+                return
+            }
+            
+            DispatchQueue.main.async {
+                state.authToken.setObject(authToken)
+            }
+            
+            HintManager.default.add(.init(text: "登录成功！正在检测你是否拥有 Minecraft……", type: .finish))
+            if try await MsLogin.hasMinecraftGame(authToken) {
+                HintManager.default.add(.init(text: "你购买了 Minecraft！正在保存账号数据……", type: .finish))
+                if let msAccount = await MsAccount.create(authToken) {
+                    DispatchQueue.main.async { AccountManager.shared.accounts.append(.microsoft(msAccount)) }
+                    HintManager.default.add(.init(text: "登录成功！", type: .finish))
+                } else {
+                    HintManager.default.add(.init(text: "在创建账号实例时发生错误", type: .critical))
+                }
+                DispatchQueue.main.async { StateManager.shared.newAccount = .init() }
+            } else {
+                HintManager.default.add(.init(text: "你还没有购买 Minecraft！", type: .critical))
+            }
+        } catch {
+            err(error.localizedDescription)
+            ContentView.setPopup(.init("登录时发生错误", "\(error.localizedDescription)\n请不要退出启动器，在 设置 > 其他 中打开日志，将选中的文件反馈给开发者。", [.Ok]))
+        }
     }
 }

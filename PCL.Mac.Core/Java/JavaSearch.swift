@@ -22,7 +22,9 @@ public class JavaSearch {
     }
     
     private static func loadCustomJVMs() {
-        AppSettings.shared.userAddedJvmPaths.forEach{ DataManager.shared.javaVirtualMachines.append(JavaVirtualMachine.of($0, true)) }
+        for url in AppSettings.shared.userAddedJvmPaths {
+            DataManager.shared.javaVirtualMachines.append(JavaVirtualMachine.of(url, true))
+        }
         log("加载了 \(AppSettings.shared.userAddedJvmPaths.count) 个由用户添加的 Java")
     }
     

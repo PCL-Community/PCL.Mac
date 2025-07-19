@@ -62,7 +62,6 @@ public enum VersionType: String {
         }
         
         guard let version = manifest.versions.find({ $0.id == displayVersion }) else {
-            err("无法找到版本清单上的 \(displayVersion)")
             return .release
         }
         

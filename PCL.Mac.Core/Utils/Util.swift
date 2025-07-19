@@ -43,7 +43,7 @@ public class Util {
             )
             return String(data: prettyData, encoding: .utf8)
         } catch {
-            err("JSON格式化失败: \(error)")
+            err("JSON格式化失败: \(error.localizedDescription)")
             return nil
         }
     }

@@ -9,8 +9,8 @@ import Foundation
 
 public final class ProgressiveDownloader: NSObject, URLSessionDownloadDelegate {
     public let task: InstallTask?
-    public let urls: [URL]
-    public let destinations: [URL]
+    public var urls: [URL]
+    public var destinations: [URL]
     public let concurrentLimit: Int
     public let skipIfExists: Bool
     public let progressCallback: ((Int, Int, Double, Double) -> Void)?

@@ -265,21 +265,14 @@ public class MinecraftInstaller {
         let _1_12_2 = MinecraftVersion(displayName: "1.12.2")
         // 拷贝 log4j2.xml
         let targetUrl: URL = task.versionUrl.appending(path: "log4j2.xml")
-        if !FileManager.default.fileExists(atPath: targetUrl.path()) {
-            do {
-                try FileManager.default.copyItem(
-                    at: SharedConstants.shared.applicationResourcesUrl.appending(path: task.minecraftVersion >= _1_12_2 ? "log4j2.xml" : "log4j2-1.12-.xml"),
-                    to: targetUrl)
-            } catch {
-                err("无法拷贝 log4j2.xml: \(error.localizedDescription)")
-            }
-        }
+        try? FileManager.default.copyItem(
+            at: SharedConstants.shared.applicationResourcesUrl.appending(path: task.minecraftVersion >= _1_12_2 ? "log4j2.xml" : "log4j2-1.12-.xml"),
+            to: targetUrl
+        )
         
         // 初始化实例
-        let instance = MinecraftInstance.create(runningDirectory: task.versionUrl, config: MinecraftConfig(name: task.name, mainClass: task.manifest!.mainClass))
-        if let _ = DataManager.shared.inprogressInstallTasks?.tasks["fabric"] {
-            instance?.config.clientBrand = .fabric
-        }
+        let instance = MinecraftInstance.create(.init(rootUrl: task.versionUrl.parent().parent(), name: ""), task.versionUrl, config: MinecraftConfig(name: task.name))
+        
         instance?.saveConfig()
         
         // 修改 GLFW
@@ -294,7 +287,7 @@ public class MinecraftInstaller {
                 process.waitUntilExit()
                 log("已修改 lwjgl-glfw")
             } catch {
-                err("无法修改 lwjgl-glfw: \(error)")
+                err("无法修改 lwjgl-glfw: \(error.localizedDescription)")
             }
         }
     }

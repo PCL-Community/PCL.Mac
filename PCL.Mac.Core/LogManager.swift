@@ -63,7 +63,7 @@ final class LogStore {
             try FileManager.writeLog(content)
             callback?(true)
         } catch {
-            err("日志保存失败: \(error)")
+            err("日志保存失败: \(error.localizedDescription)")
             callback?(false)
         }
     }

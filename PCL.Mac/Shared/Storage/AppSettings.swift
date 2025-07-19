@@ -78,7 +78,6 @@ public class AppSettings: ObservableObject {
     }
     
     private init() {
-        log("已加载持久化储存数据")
         updateColorScheme()
         
         if currentMinecraftDirectory == nil {
@@ -90,17 +89,13 @@ public class AppSettings: ObservableObject {
                 minecraftDirectories.append(directory)
             }
             
-            // 判断 defaultInstance 是否合法
-            if let defaultInstance = defaultInstance,
-               MinecraftInstance.create(runningDirectory: directory.versionsUrl.appending(path: defaultInstance)) == nil {
-                warn("无效的 defaultInstance 配置")
-                self.defaultInstance = nil
-            }
-            
             if defaultInstance == nil {
-                directory.loadInnerInstances(callback: { self.defaultInstance = $0.first?.config.name })
+                directory.loadInnerInstances { instances in
+                    self.defaultInstance = instances.first?.config.name
+                }
             }
         }
+        log("已加载启动器设置")
     }
     
     public func removeDirectory(url: URL) {

@@ -151,13 +151,13 @@ public class MinecraftLauncher {
     
     private func buildGameArguments(_ options: LaunchOptions) -> [String] {
         let values: [String: String] = [
-            "auth_player_name": options.account.name,
+            "auth_player_name": options.playerName,
             "version_name": instance.version!.displayName,
             "game_directory": instance.runningDirectory.path,
             "assets_root": instance.minecraftDirectory.assetsUrl.path,
             "assets_index_name": instance.manifest.assetIndex.id,
-            "auth_uuid": options.account.uuid.uuidString.replacingOccurrences(of: "-", with: "").lowercased(),
-            "auth_access_token": options.account.getAccessToken(),
+            "auth_uuid": options.uuid.uuidString.replacingOccurrences(of: "-", with: "").lowercased(),
+            "auth_access_token": options.accessToken,
             "user_type": "msa",
             "version_type": "PCL Mac",
             "user_properties": "\"{}\""

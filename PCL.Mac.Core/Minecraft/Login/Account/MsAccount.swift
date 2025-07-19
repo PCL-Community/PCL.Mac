@@ -27,34 +27,40 @@ public class MsAccount: Codable, Identifiable, Account {
     public let id: UUID
     public var refreshToken: String
     public var profile: PlayerProfile
+    public var isTokenRefreshing: Bool = false
     
     public var name: String { profile.name }
     public var uuid: UUID { profile.uuid }
     
-    public func refreshAccessToken() {
+    public func refreshAccessToken() async {
+        if isTokenRefreshing { return }
+        isTokenRefreshing = true
         AppSettings.shared.hasMicrosoftAccount = true
         if AccessTokenStorage.shared.getTokenInfo(for: id) != nil {
             debug("无需刷新 Access Token")
             return
         }
         
-        Task {
-            if let authToken = await MsLogin.refreshAccessToken(self.refreshToken) {
-                if let _ = await MsLogin.getMinecraftAccessToken(id: id, authToken.accessToken) {
-                    self.refreshToken = authToken.refreshToken
-                    debug("成功刷新 Access Token")
-                    return
-                }
+        if let authToken = try? await MsLogin.refreshAccessToken(self.refreshToken) {
+            if (try? await MsLogin.getMinecraftAccessToken(id: id, authToken.accessToken)) != nil {
+                self.refreshToken = authToken.refreshToken
+                debug("成功刷新 Access Token")
+                return
             }
-            err("无法刷新 Access Token")
         }
+        err("无法刷新 Access Token")
+    }
+    
+    enum CodingKeys: CodingKey {
+        case id
+        case refreshToken
+        case profile
     }
     
     public init(refreshToken: String, profile: PlayerProfile) {
         self.id = .init()
         self.refreshToken = refreshToken
         self.profile = profile
-        refreshAccessToken()
     }
     
     public static func create(_ authToken: AuthToken) async -> MsAccount? {
@@ -73,7 +79,8 @@ public class MsAccount: Codable, Identifiable, Account {
         return nil
     }
     
-    public func getAccessToken() -> String {
-        AccessTokenStorage.shared.getTokenInfo(for: id)?.accessToken ?? UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+    public func getAccessToken() async -> String {
+        await self.refreshAccessToken()
+        return AccessTokenStorage.shared.getTokenInfo(for: id)?.accessToken ?? UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
     }
 }

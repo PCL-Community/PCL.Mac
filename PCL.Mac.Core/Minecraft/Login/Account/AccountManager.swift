@@ -10,7 +10,7 @@ import Foundation
 public protocol Account: Codable {
     var uuid: UUID { get }
     var name: String { get }
-    func getAccessToken() -> String
+    func getAccessToken() async -> String
 }
 
 public enum AnyAccount: Account, Identifiable, Equatable {
@@ -48,12 +48,12 @@ public enum AnyAccount: Account, Identifiable, Equatable {
         lhs.id == rhs.id
     }
     
-    public func getAccessToken() -> String {
+    public func getAccessToken() async -> String {
         switch self {
         case .offline(let offlineAccount):
             offlineAccount.getAccessToken()
         case .microsoft(let msAccount):
-            msAccount.getAccessToken()
+            await msAccount.getAccessToken()
         }
     }
     
@@ -110,13 +110,5 @@ public class AccountManager: ObservableObject {
         warn("accountId 对应的账号不存在！")
         accountId = nil
         return nil
-    }
-    
-    private init() {
-        for account in accounts {
-            if case .microsoft(let msAccount) = account {
-                msAccount.refreshAccessToken()
-            }
-        }
     }
 }

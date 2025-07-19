@@ -49,17 +49,12 @@ fileprivate struct LeftTab: View {
             VStack {
                 if let instance = self.instance {
                     MyButtonComponent(text: "启动游戏", descriptionText: instance.config.name, foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
-                        if self.instance == nil {
-                            self.instance = instance
-                        }
                         let launchOptions: LaunchOptions = .init()
                         
                         guard launchPrecheck(launchOptions) else { return }
-                        if self.instance!.process == nil {
-                            Task {
-                                debug("正在启动游戏")
-                                await instance.launch(launchOptions)
-                            }
+                        Task {
+                            debug("正在启动游戏")
+                            await instance.launch(launchOptions)
                         }
                     }
                     .frame(height: 55)
@@ -95,13 +90,17 @@ fileprivate struct LeftTab: View {
         .onAppear {
             if let directory = AppSettings.shared.currentMinecraftDirectory,
                let defaultInstance = AppSettings.shared.defaultInstance,
-               let instance = MinecraftInstance.create(runningDirectory: directory.versionsUrl.appending(path: defaultInstance)) {
+               let instance = MinecraftInstance.create(directory, directory.versionsUrl.appending(path: defaultInstance)) {
                 self.instance = instance
             }
         }
     }
     
     private func launchPrecheck(_ launchOptions: LaunchOptions) -> Bool {
+        if instance!.process != nil {
+            warn("[launchPrecheck] 有进程正在运行，终止启动")
+            return false
+        }
         log("[launchPrecheck] 正在进行 Java 检查")
         if DataManager.shared.javaVirtualMachines
             .filter({ $0.executableUrl.path != "/usr/bin/java" })

@@ -47,7 +47,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         log("正在初始化 Java 列表")
         initJavaList()
-        
         log("App 初始化完成, 耗时 \(Int((Date().timeIntervalSince1970 - start) * 1000))ms")
     }
     

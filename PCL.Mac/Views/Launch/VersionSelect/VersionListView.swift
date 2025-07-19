@@ -55,14 +55,14 @@ struct VersionListView: View {
     var body: some View {
         ScrollView(.vertical) {
             VStack {
-                let notVanillaVersions = minecraftDirectory.instances.filter { $0.config.clientBrand != .vanilla }
+                let notVanillaVersions = minecraftDirectory.instances.filter { $0.clientBrand != .vanilla }
                 if !notVanillaVersions.isEmpty {
                     MyCardComponent(title: "可安装 Mod") {
                         LazyVStack {
                             ForEach(
                                 notVanillaVersions
                                     .sorted(by: { $0.version! > $1.version! })
-                                    .sorted(by: { $0.config.clientBrand.index < $1.config.clientBrand.index })
+                                    .sorted(by: { $0.clientBrand.index < $1.clientBrand.index })
                             ) { instance in
                                 VersionView(instance: instance)
                             }
@@ -75,7 +75,7 @@ struct VersionListView: View {
                     LazyVStack {
                         ForEach(
                             minecraftDirectory.instances
-                                .filter { $0.config.clientBrand == .vanilla }
+                                .filter { $0.clientBrand == .vanilla }
                                 .sorted(by: { $0.version! > $1.version! })
                         ) { instance in
                             VersionView(instance: instance)

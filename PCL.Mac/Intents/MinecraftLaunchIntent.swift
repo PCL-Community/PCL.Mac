@@ -24,7 +24,7 @@ struct MinecraftLaunchIntent: AppIntent {
             return .result(dialog: "未设置默认 Minecraft 目录。")
         }
         
-        let instance = MinecraftInstance.create(runningDirectory: directory.versionsUrl.appending(path: instanceName))
+        let instance = MinecraftInstance.create(directory, directory.versionsUrl.appending(path: instanceName))
         guard let instance = instance else {
             return .result(dialog: .init("实例不存在。"))
         }

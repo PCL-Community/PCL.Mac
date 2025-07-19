@@ -18,8 +18,9 @@ public class ClientManifest {
     public let arguments: Arguments?
     public let minecraftArguments: String?
     public let javaVersion: Int?
+    public let clientDownload: Library?
     
-    private init(id: String, mainClass: String, type: String, assetIndex: AssetIndex, assets: String, libraries: [Library], arguments: Arguments?, minecraftArguments: String?, javaVersion: Int?) {
+    private init(id: String, mainClass: String, type: String, assetIndex: AssetIndex, assets: String, libraries: [Library], arguments: Arguments?, minecraftArguments: String?, javaVersion: Int?, clientDownload: Library?) {
         self.id = id
         self.mainClass = mainClass
         self.type = type
@@ -29,18 +30,28 @@ public class ClientManifest {
         self.arguments = arguments
         self.minecraftArguments = minecraftArguments
         self.javaVersion = javaVersion
+        self.clientDownload = clientDownload
     }
 
-    private init(json: JSON) {
+    private init?(json: JSON) {
         self.id = json["id"].stringValue
         self.mainClass = json["mainClass"].stringValue
         self.type = json["type"].stringValue
         self.assets = json["assets"].stringValue
         self.assetIndex = AssetIndex(json: json["assetIndex"])
-        self.libraries = json["libraries"].arrayValue.map(Library.init(json:))
+        self.libraries = []
+        let libraries = json["libraries"].arrayValue.map(Library.init(json:))
+        for library in libraries {
+            guard let library = library else {
+                err("无法解析 Library (\(self.id)")
+                return nil
+            }
+            self.libraries.append(library)
+        }
         self.arguments = json["arguments"].exists() ? Arguments(json: json["arguments"]) : nil
         self.minecraftArguments = json["minecraftArguments"].string
         self.javaVersion = json["javaVersion"]["majorVersion"].int
+        self.clientDownload = json["downloads"]["client"].exists() ? .init(json: json["downloads"]["client"]) : nil
     }
 
     public class AssetIndex {
@@ -91,9 +102,12 @@ public class ClientManifest {
         public let artifact: DownloadInfo?
         public let classifiers: [String: DownloadInfo]
 
-        public init(json: JSON) {
+        public init?(json: JSON) {
             name = json["name"].stringValue
             split = name.split(separator: ":").map(String.init)
+            if split.isEmpty {
+                return nil
+            }
             groupId = split[0]
             artifactId = split[1]
             version = split[2]
@@ -272,7 +286,8 @@ public class ClientManifest {
         }
     }
     
-    public static func createFromFabricManifest(_ fabricManifest: FabricManifest, _ instanceUrl: URL) -> ClientManifest {
+    public static func createFromFabricManifest(_ fabricManifest: FabricManifest?, _ instanceUrl: URL) -> ClientManifest? {
+        guard let fabricManifest = fabricManifest else { return nil }
         let manifest: ClientManifest = .init(
             id: fabricManifest.loaderVersion,
             mainClass: fabricManifest.mainClass,
@@ -282,7 +297,8 @@ public class ClientManifest {
             libraries: fabricManifest.libraries,
             arguments: nil,
             minecraftArguments: nil,
-            javaVersion: nil
+            javaVersion: nil,
+            clientDownload: nil
         )
         
         let parent: ClientManifest
@@ -290,16 +306,17 @@ public class ClientManifest {
         
         do {
             let data = try FileHandle(forReadingFrom: parentUrl).readToEnd()!
-            parent = try .parse(data, instanceUrl: instanceUrl)
+            guard let manifest = try ClientManifest.parse(data, instanceUrl: instanceUrl) else { return nil }
+            parent = manifest
         } catch {
-            err("无法解析 inheritsFrom: \(error)")
+            err("无法解析 inheritsFrom: \(error.localizedDescription)")
             return manifest
         }
         
         return merge(parent: parent, manifest: manifest)
     }
 
-    public static func parse(_ data: Data, instanceUrl: URL?) throws -> ClientManifest {
+    public static func parse(_ data: Data, instanceUrl: URL?) throws -> ClientManifest? {
         let json = try JSON(data: data)
         
     checkParent:
@@ -313,12 +330,13 @@ public class ClientManifest {
             }
             
             let parent: ClientManifest
-            let manifest = ClientManifest(json: json)
+            guard let manifest = ClientManifest(json: json) else { return nil }
             do {
                 let data = try FileHandle(forReadingFrom: parentUrl).readToEnd()!
-                parent = try .parse(data, instanceUrl: instanceUrl)
+                guard let manifest = try ClientManifest.parse(data, instanceUrl: instanceUrl) else { return nil }
+                parent = manifest
             } catch {
-                err("无法解析 inheritsFrom: \(error)")
+                err("无法解析 inheritsFrom: \(error.localizedDescription)")
                 break checkParent
             }
             

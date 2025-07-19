@@ -3,4 +3,80 @@
    uuid = "22FF4B39-128A-4CA6-9322-D88F9BC78738"
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "D1ABD7EE-6490-4A86-AF97-1F7CDE9976B1"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "PCL.Mac.Core/Minecraft/Login/Account/MsAccount.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "51"
+            endingLineNumber = "51"
+            landmarkName = "refreshAccessToken()"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "D1ABD7EE-6490-4A86-AF97-1F7CDE9976B1 - f4716f0e46d53da2"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for PCL_Mac.MsAccount.refreshAccessToken() async -&gt; ()"
+                  moduleName = "PCL.Mac.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/yizhimcqiu/Documents/PCL-Mac/PCL.Mac.Core/Minecraft/Login/Account/MsAccount.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "51"
+                  endingLineNumber = "51">
+               </Location>
+               <Location
+                  uuid = "D1ABD7EE-6490-4A86-AF97-1F7CDE9976B1 - d8c8f752cd2d8da0"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(5) suspend resume partial function for PCL_Mac.MsAccount.refreshAccessToken() async -&gt; ()"
+                  moduleName = "PCL.Mac.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/yizhimcqiu/Documents/PCL-Mac/PCL.Mac.Core/Minecraft/Login/Account/MsAccount.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "51"
+                  endingLineNumber = "51">
+               </Location>
+               <Location
+                  uuid = "D1ABD7EE-6490-4A86-AF97-1F7CDE9976B1 - d37bcb4cb63825a1"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(6) suspend resume partial function for PCL_Mac.MsAccount.refreshAccessToken() async -&gt; ()"
+                  moduleName = "PCL.Mac.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/yizhimcqiu/Documents/PCL-Mac/PCL.Mac.Core/Minecraft/Login/Account/MsAccount.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "51"
+                  endingLineNumber = "51">
+               </Location>
+               <Location
+                  uuid = "D1ABD7EE-6490-4A86-AF97-1F7CDE9976B1 - 2da61f657304dda6"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(7) suspend resume partial function for PCL_Mac.MsAccount.refreshAccessToken() async -&gt; ()"
+                  moduleName = "PCL.Mac.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/yizhimcqiu/Documents/PCL-Mac/PCL.Mac.Core/Minecraft/Login/Account/MsAccount.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "51"
+                  endingLineNumber = "51">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

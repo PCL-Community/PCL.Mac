@@ -34,7 +34,7 @@ public class ModLoaderInstaller {
     public static func installFabric(_ instance: MinecraftInstance, _ loaderVersion: String) async {
         await installFabric(version: instance.version!, minecraftDirectory: instance.minecraftDirectory, runningDirectory: instance.runningDirectory, loaderVersion)
         
-        instance.config.clientBrand = .fabric
+        instance.clientBrand = .fabric
         instance.saveConfig()
     }
     
@@ -78,8 +78,8 @@ public class ModLoaderInstaller {
     }
     
     public static func installNeoforge(_ instance: MinecraftInstance, _ version: String) async {
-            if instance.config.clientBrand != .vanilla {
-                err("无法安装 NeoForge: 实例 \(instance.config.name) 已有 Mod 加载器: \(instance.config.clientBrand.rawValue)")
+            if instance.clientBrand != .vanilla {
+                err("无法安装 NeoForge: 实例 \(instance.config.name) 已有 Mod 加载器: \(instance.clientBrand.rawValue)")
                 return
             }
         if let data = await Requests.get(
@@ -118,7 +118,7 @@ public class ModLoaderInstaller {
                 let handle = try FileHandle(forReadingFrom: temp.appending(path: "install_profile.json"))
                 profile = try NeoforgeInstallProfile(.init(data: try handle.readToEnd()!))
             } catch {
-                err("无法解析 install_profile.json: \(error)")
+                err("无法解析 install_profile.json: \(error.localizedDescription)")
                 return
             }
             

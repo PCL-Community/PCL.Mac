@@ -20,7 +20,7 @@ struct JavaSettingsView: View {
                         do {
                             try JavaSearch.searchAndSet()
                         } catch {
-                            print("无法刷新Java列表: \(error)")
+                            print("无法刷新Java列表: \(error.localizedDescription)")
                         }
                     }
                     .frame(height: 40)
