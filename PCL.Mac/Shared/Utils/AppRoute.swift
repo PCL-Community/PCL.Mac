@@ -21,7 +21,7 @@ public enum AppRoute: Hashable {
     case newAccount
     case installing(tasks: InstallTasks)
     case versionSelect
-    case modDownload(summary: NewModSummary)
+    case modDownload(summary: ModSummary)
     case announcementHistory
     case versionSettings(instance: MinecraftInstance)
     

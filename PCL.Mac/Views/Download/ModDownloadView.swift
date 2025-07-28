@@ -10,9 +10,9 @@ import SwiftUI
 // 别问为什么抽出来，问就是 The compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions
 fileprivate struct ModVersionListView: View {
     @ObservedObject private var dataManager: DataManager = .shared
-    @ObservedObject var summary: NewModSummary
+    @ObservedObject var summary: ModSummary
     @State private var requestID = UUID()
-    @State private var versionMap: NewModVersionMap = [:]
+    @State private var versionMap: ModVersionMap = [:]
     
     let versions: [String]
     
@@ -20,7 +20,7 @@ fileprivate struct ModVersionListView: View {
         VStack {
             ForEach(sortedReleaseVersions, id: \.self) { version in
                 ForEach(summary.loaders, id: \.self) { loader in
-                    if let versions: [NewModVersion] = versionMap[ModPlatformKey(loader: loader, minecraftVersion: version)] {
+                    if let versions: [ModVersion] = versionMap[ModPlatformKey(loader: loader, minecraftVersion: version)] {
                         MyCardComponent(title: "\(loader.getName()) \(version.displayName)") {
                             LazyVStack(alignment: .leading, spacing: 0) {
                                 if let version = versions.first,
@@ -74,7 +74,7 @@ fileprivate struct ModVersionListView: View {
 }
 
 fileprivate struct ModVersionListItem: View {
-    let version: NewModVersion
+    let version: ModVersion
     
     var body: some View {
         MyListItemComponent {
@@ -85,7 +85,7 @@ fileprivate struct ModVersionListItem: View {
                 VStack(alignment: .leading) {
                     Text(version.name)
                         .font(.custom("PCL English", size: 14))
-                    Text(version.versionNumber)
+                    Text(getDescription())
                         .font(.custom("PCL English", size: 14))
                         .foregroundStyle(Color(hex: 0x8C8C8C))
                 }
@@ -94,11 +94,27 @@ fileprivate struct ModVersionListItem: View {
             .padding(4)
         }
     }
+    
+    private func getDescription() -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.unitsStyle = .full
+        let result = formatter.localizedString(for: version.updateDate, relativeTo: Date()).replacingOccurrences(of: "(\\d+)", with: " $1 ", options: .regularExpression)
+        let typeText = switch version.type {
+        case "release":
+            "正式版"
+        case "beta", "alpha":
+            "测试版"
+        default:
+            "未知"
+        }
+        return "\(version.versionNumber)，更新于\(result)，\(typeText)"
+    }
 }
 
 struct ModDownloadView: View {
     @ObservedObject private var dataManager: DataManager = .shared
-    @State private var summary: NewModSummary?
+    @State private var summary: ModSummary?
     let id: String
     
     init(id: String) {

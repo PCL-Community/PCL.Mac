@@ -5,9 +5,8 @@
 //  Created by YiZhiMCQiu on 2025/6/19.
 //
 
-import Foundation
-import SwiftyJSON
 import SwiftUI
+import SwiftyJSON
 
 public struct ModPlatformKey: Hashable, Comparable {
     public static func < (lhs: ModPlatformKey, rhs: ModPlatformKey) -> Bool {
@@ -18,313 +17,205 @@ public struct ModPlatformKey: Hashable, Comparable {
     let minecraftVersion: MinecraftVersion
 }
 
-public struct ModDependency: Identifiable {
+public typealias ModVersionMap = [ModPlatformKey: [ModVersion]]
+
+public class ModDependency: Hashable, Identifiable, Equatable {
     public enum DependencyType: String {
         case required, optional, unsupported, unknown
     }
     
-    public let id: UUID = .init()
-    let type: DependencyType
-    var summary: ModSummary? = nil
+    public let summary: ModSummary
+    public let versionId: String?
+    public let type: DependencyType
     
-    init(type: DependencyType, summary: ModSummary? = nil) {
-        self.type = type
+    init(summary: ModSummary, versionId: String?, type: DependencyType) {
         self.summary = summary
+        self.versionId = versionId
+        self.type = type
     }
-}
-
-public struct ModVersion: Hashable, Identifiable {
-    public let id: UUID = .init()
-    
-    let name: String
-    let version: String
-    let releaseDate: Date
-    let type: String
-    let downloadUrl: URL
-    let filename: String
-    let dependencies: [ModSummary]
-    
-    func getDescription() -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.unitsStyle = .full
-        let result = formatter.localizedString(for: releaseDate, relativeTo: Date()).replacingOccurrences(of: "(\\d+)", with: " $1 ", options: .regularExpression)
-        let typeText = switch type {
-        case "release":
-            "正式版"
-        case "beta", "alpha":
-            "测试版"
-        default:
-            "未知"
-        }
-        return filename[filename.startIndex...filename.index(filename.endIndex, offsetBy: -5)]
-        + "，更新于\(result)"
-        + "，\(typeText)"
-    }
-}
-
-public typealias ModVersionMap = [ModPlatformKey: [ModVersion]]
-
-@MainActor
-public class ModSummary: ObservableObject, Identifiable, Hashable, Equatable {
-    private static var cache: [String : ModSummary] = [:]
     
     public let id: UUID = .init()
+    public func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    public static func == (lhs: ModDependency, rhs: ModDependency) -> Bool { lhs.id == rhs.id }
+}
+
+public class ModVersion: Hashable, Identifiable, Equatable {
+    public let name: String
+    public let versionNumber: String
+    public let type: String
+    public let downloads: Int
+    public let updateDate: Date
+    public let gameVersions: [MinecraftVersion]
+    public let loaders: [ClientBrand]
+    public let dependencies: [ModDependency]
+    public let downloadURL: URL
     
+    init(name: String, versionNumber: String, type: String, downloads: Int, updateDate: Date, gameVersions: [MinecraftVersion], loaders: [ClientBrand], dependencies: [ModDependency], downloadURL: URL) {
+        self.name = name
+        self.versionNumber = versionNumber
+        self.type = type
+        self.downloads = downloads
+        self.updateDate = updateDate
+        self.gameVersions = gameVersions
+        self.loaders = loaders
+        self.dependencies = dependencies
+        self.downloadURL = downloadURL
+    }
+    
+    public let id: UUID = .init()
+    public func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    public static func == (lhs: ModVersion, rhs: ModVersion) -> Bool { lhs.id == rhs.id }
+}
+
+public class ModSummary: Hashable, Identifiable, Equatable, ObservableObject {
     public let modId: String
-    public let title: String
+    public let name: String
     public let description: String
-    public var tags: [String] = []
-    public var loaders: [ClientBrand] = []
-    public var supportDescription: String = ""
-    public var downloads: String = ""
-    public var lastUpdate: String = ""
+    public let lastUpdate: Date
+    public let downloadCount: Int
+    public let gameVersions: [MinecraftVersion]
+    public let loaders: [ClientBrand]
+    public let tags: [String]
+    public let iconUrl: URL?
     public let infoUrl: URL
-    private let loadVersions: () async -> ModVersionMap
-    @Published public var versions: ModVersionMap?
-    @Published public var icon: Image?
+    public let versions: [String]? // 只有通过搜索创建时这个变量的值才为 nil
     
-    nonisolated public static func == (lhs: ModSummary, rhs: ModSummary) -> Bool {
-        lhs.id == rhs.id
-    }
-    
-    nonisolated public func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-        hasher.combine(title)
-        hasher.combine(description)
-    }
-    
-    static func getFrom(_ slug: String) async -> ModSummary? {
-        if let summary = cache[slug] {
-            return summary
-        }
-        if let json = await Requests.get(
-            "https://api.modrinth.com/v2/project/\(slug)"
-        ).json {
-            let summary = ModrinthModSearcher.default.getFromJson(json)
-            cache[slug] = summary
-            return summary
-        }
-        return nil
-    }
-    
-    init(slug: String, title: String, description: String, categories: [String], supportedVersions: [String]?, downloads: Int, lastUpdate: Date, infoUrl: URL, iconUrl: URL?, loadVersions: @escaping () async -> ModVersionMap) {
-        self.modId = slug
-        self.title = title
+    init(modId: String, name: String, description: String, lastUpdate: Date, downloadCount: Int, gameVersions: [MinecraftVersion], categories: [String], iconUrl: URL?, infoUrl: URL, versions: [String]?) {
+        self.modId = modId
+        self.name = name
         self.description = description
+        self.lastUpdate = lastUpdate
+        self.downloadCount = downloadCount
+        self.gameVersions = gameVersions
+        self.iconUrl = iconUrl
         self.infoUrl = infoUrl
-        self.loadVersions = loadVersions
+        self.versions = versions
         
+        var loaders: [ClientBrand] = []
+        var tags: [String] = []
         for category in categories {
-            if let clientBrand = ClientBrand(rawValue: category) {
-                self.loaders.append(clientBrand)
+            if let loader = ClientBrand(rawValue: category) {
+                loaders.append(loader)
                 continue
             }
-            
-            let tag: String? = switch category {
-            case "technology": "科技"
-            case "magic": "魔法"
-            case "adventure": "冒险"
-            case "utility": "实用"
-            case "optimization": "性能优化"
-            case "vanilla-like": "原版风"
-            case "realistic": "写实风"
-            case "worldgen": "世界元素"
-            case "food": "食物/烹饪"
-            case "game-mechanics": "游戏机制"
-            case "transportation": "运输"
-            case "storage": "仓储"
-            case "decoration": "装饰"
-            case "mobs": "生物"
-            case "equipment": "装备"
-            case "social": "服务器"
-            case "library": "支持库"
-            case "multiplayer": "多人"
-            case "challenging": "硬核"
-            case "combat": "战斗"
-            case "quests": "任务"
-            case "kitchen-sink": "水槽包"
-            case "lightweight": "轻量"
-            case "simplistic": "简洁"
-            case "tweaks": "改良"
-            case "8x-": "极简"
-            case "16x": "16x"
-            case "32x": "32x"
-            case "48x": "48x"
-            case "64x": "64x"
-            case "128x": "128x"
-            case "256x": "256x"
-            case "512x+": "超高清"
-            case "audio": "含声音"
-            case "fonts": "含字体"
-            case "models": "含模型"
-            case "gui": "含 UI"
-            case "locale": "含语言"
-            case "core-shaders": "核心着色器"
-            case "modded": "兼容 Mod"
-            case "fantasy": "幻想风"
-            case "semi-realistic": "半写实风"
-            case "cartoon": "卡通风"
-            case "colored-lighting": "彩色光照"
-            case "path-tracing": "路径追踪"
-            case "pbr": "PBR"
-            case "reflections": "反射"
-            case "iris": "Iris"
-            case "optifine": "OptiFine"
-            case "vanilla": "原版可用"
-            default: nil
-            }
-            if let tag = tag {
-                self.tags.append(tag)
-            }
+            tags.append(category)
         }
-        
-        if var supportedVersions = supportedVersions {
-            if loaders.count == 1 {
-                self.supportDescription.append("仅 \(self.loaders.first!.rawValue.capitalized)")
-            } else if loaders.count < 3 {
-                self.supportDescription.append(self.loaders.map { $0.rawValue.capitalized }.joined(separator: " / "))
-            }
-            
-            if !self.supportDescription.isEmpty { self.supportDescription.append(" ") }
-            supportedVersions.removeAll(where: { $0.starts(with: "3D-Shareware") }) // 笑点解析: 3D-Shareware-v1.34 识别成 1.34
-            self.supportDescription.append(ModSummary.describeGameVersions(
-                gameVersions: Set(supportedVersions
-                    .filter { MinecraftVersion(displayName: $0).type == .release}
-                    .map { Int($0.split(separator: ".")[1])! }).sorted(by: { $0 > $1 }),
-                mcVersionHighest: Int(DataManager.shared.versionManifest!.latest.release.split(separator: ".")[1])!)
-            )
-        }
-        
-        self.downloads = formatNumber(downloads)
-        let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.unitsStyle = .full
-        self.lastUpdate = formatter.localizedString(for: lastUpdate, relativeTo: Date()).replacingOccurrences(of: "(\\d+)", with: " $1 ", options: .regularExpression)
-        
-        if let iconUrl = iconUrl {
-            Task {
-                do {
-                    let (data, _) = try await URLSession.shared.data(from: iconUrl)
-                    if let nsImage = NSImage(data: data) {
-                        self.icon = Image(nsImage: nsImage)
-                    }
-                } catch {
-                    self.icon = Image("ModIconPlaceholder")
-                }
-            }
-        } else {
-            self.icon = Image("ModIconPlaceholder")
-        }
+        self.loaders = loaders
+        self.tags = tags
     }
     
-    func formatNumber(_ num: Int) -> String {
-        let absNum = abs(num)
-        let sign = num < 0 ? "-" : ""
-        let numDouble = Double(absNum)
-        
-        if absNum >= 100_000_000 {
-            let value = numDouble / 100_000_000
-            return String(format: "%@%.2f 亿", sign, value)
-        } else if absNum >= 10_000 {
-            let value = numDouble / 10_000
-            return String(format: "%@%.0f 万", sign, value)
-        } else {
-            return "\(num)"
-        }
-    }
-    
-    private static func describeGameVersions(gameVersions: [Int]?, mcVersionHighest: Int) -> String {
-        guard let gameVersions = gameVersions, !gameVersions.isEmpty else {
-            return "仅快照版本"
-        }
-        
-        var spaVersions: [String] = []
-        var isOld = false
-        var i = 0
-        let count = gameVersions.count
-        
-        while i < count {
-            let startVersion = gameVersions[i]
-            var endVersion = startVersion
-            
-            if startVersion < 10 {
-                if !spaVersions.isEmpty && !isOld {
-                    break
-                } else {
-                    isOld = true
-                }
-            }
-            
-            var ii = i + 1
-            while ii < count && gameVersions[ii] == endVersion - 1 {
-                endVersion = gameVersions[ii]
-                i = ii
-                ii += 1
-            }
-            
-            if startVersion == endVersion {
-                spaVersions.append("1.\(startVersion)")
-            } else if mcVersionHighest > -1 && startVersion >= mcVersionHighest {
-                if endVersion < 10 {
-                    spaVersions.removeAll()
-                    spaVersions.append("全版本")
-                    break
-                } else {
-                    spaVersions.append("1.\(endVersion)+")
-                }
-            } else if endVersion < 10 {
-                spaVersions.append("1.\(startVersion)-")
-                break
-            } else if startVersion - endVersion == 1 {
-                spaVersions.append("1.\(startVersion), 1.\(endVersion)")
-            } else {
-                spaVersions.append("1.\(startVersion)~1.\(endVersion)")
-            }
-            
-            i += 1
-        }
-        
-        return spaVersions.joined(separator: ", ")
-    }
-    
-    public func getVersions() -> ModVersionMap? {
-        if versions == nil {
-            Task {
-                self.versions = await self.loadVersions()
-            }
-        }
-        
-        return versions
-    }
-}
-
-public protocol ModSearching {
-    func search(query: String?, version: MinecraftVersion?) async -> [ModSummary]
-}
-
-public class ModrinthModSearcher: ModSearching {
-    public static let `default` = ModrinthModSearcher()
-    
-    @MainActor
-    public func getFromJson(_ mod: JSON) -> ModSummary {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return ModSummary(
-            slug: mod["slug"].stringValue,
-            title: mod["title"].stringValue,
-            description: mod["description"].stringValue,
-            categories: mod["display_categories"].arrayValue.map { $0.stringValue },
-            supportedVersions: (mod["game_versions"].array ?? mod["versions"].arrayValue).map { $0.stringValue },
-            downloads: mod["downloads"].intValue,
-            lastUpdate: formatter.date(from: mod["date_modified"].string ?? mod["updated"].stringValue)!,
-            infoUrl: URL(string: "https://modrinth.com/mod/\(mod["slug"].stringValue)")!,
-            iconUrl: URL(string: mod["icon_url"].stringValue),
-            loadVersions: { await self.getVersions(mod["slug"].stringValue) }
+    convenience init(json: JSON) {
+        self.init(
+            modId: json["slug"].stringValue,
+            name: json["title"].stringValue,
+            description: json["description"].stringValue,
+            lastUpdate: ModSearcher.shared.dateFormatter.date(from: json["date_modified"].string ?? json["updated"].stringValue)!,
+            downloadCount: json["downloads"].intValue,
+            gameVersions: (json["game_versions"].array ?? json["versions"].arrayValue).map { MinecraftVersion(displayName: $0.stringValue) },
+            categories: json["categories"].arrayValue.union(json["loaders"].arrayValue).map { $0.stringValue },
+            iconUrl: json["icon_url"].url,
+            infoUrl: URL(string: "https://modrinth.com/mod/\(json["slug"].stringValue)")!,
+            versions: json["versions"].array.map { $0.map { $0.stringValue } } // 若 versions 存在，传入 versions 的 [String] 形式，否则传入 nil
         )
     }
     
-    public func search(query: String? = nil, version: MinecraftVersion? = nil) async -> [ModSummary] {
+    public let id: UUID = .init()
+    public func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    public static func == (lhs: ModSummary, rhs: ModSummary) -> Bool { lhs.id == rhs.id }
+}
+
+public class ModSearcher {
+    public static let shared = ModSearcher()
+    
+    fileprivate var dateFormatter: ISO8601DateFormatter
+    private var dependencyCache: [String: ModSummary?] = [:]
+    
+    private init() {
+        self.dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    }
+    
+    public func get(_ id: String) async throws -> ModSummary {
+        return .init(json: try await Requests.get("https://api.modrinth.com/v2/project/\(id)").getJSONOrThrow())
+    }
+    
+    private func getDependencies(_ json: JSON) async -> [ModDependency] {
+        var dependencies: [ModDependency] = []
+        for dependency in json["dependencies"].arrayValue {
+            guard let projectId = dependency["project_id"].string else { continue }
+            guard dependency["dependency_type"] != "incompatible" else { continue }
+            
+            let dependencySummary: ModSummary?
+            if let cache = dependencyCache[projectId] {
+                dependencySummary = cache
+            } else {
+                dependencySummary = try? await get(projectId)
+                dependencyCache[projectId] = dependencySummary
+            }
+            
+            if let dependencySummary = dependencySummary {
+                dependencies.append(
+                    .init(
+                        summary: dependencySummary,
+                        versionId: dependency["version_id"].string,
+                        type: .init(rawValue: dependency["dependency_type"].stringValue) ?? .required
+                    )
+                )
+            }
+        }
+        return dependencies
+    }
+    
+    public func getVersion(_ version: String) async throws -> ModVersion {
+        let json = try await Requests.get("https://api.modrinth.com/v2/version/\(version)").getJSONOrThrow()
+        
+        return .init(
+            name: json["name"].stringValue,
+            versionNumber: json["version_number"].stringValue,
+            type: json["version_type"].stringValue,
+            downloads: json["downloads"].intValue,
+            updateDate: dateFormatter.date(from: json["date_published"].stringValue)!,
+            gameVersions: json["game_versions"].arrayValue.map { MinecraftVersion(displayName: $0.stringValue) },
+            loaders: json["loaders"].arrayValue.map { ClientBrand(rawValue: $0.stringValue) ?? .vanilla },
+            dependencies: await getDependencies(json),
+            downloadURL: json["files"].arrayValue.first!["url"].url!
+        )
+    }
+    
+    public func getVersionMap(id: String) async throws -> ModVersionMap {
+        let json = try await Requests.get("https://api.modrinth.com/v2/project/\(id)/version").getJSONOrThrow()
+        var versionMap: ModVersionMap = [:]
+        
+        for version in json.arrayValue {
+            let version = ModVersion(
+                name: version["name"].stringValue,
+                versionNumber: version["version_number"].stringValue,
+                type: version["version_type"].stringValue,
+                downloads: version["downloads"].intValue,
+                updateDate: dateFormatter.date(from: version["date_published"].stringValue)!,
+                gameVersions: version["game_versions"].arrayValue.map { MinecraftVersion(displayName: $0.stringValue) },
+                loaders: version["loaders"].arrayValue.map { ClientBrand(rawValue: $0.stringValue) ?? .vanilla },
+                dependencies: await getDependencies(version),
+                downloadURL: version["files"].arrayValue.first!["url"].url!
+            )
+            
+            for gameVersion in version.gameVersions {
+                for loader in version.loaders {
+                    let key = ModPlatformKey(loader: loader, minecraftVersion: gameVersion)
+                    if versionMap[key] == nil {
+                        versionMap[key] = []
+                    }
+                    versionMap[key]!.append(version)
+                }
+            }
+        }
+        
+        return versionMap
+    }
+    
+    // 模组搜索界面调用
+    // 不通过此函数获取模组版本列表
+    public func search(query: String, version: MinecraftVersion? = nil, limit: Int = 40) async throws -> [ModSummary] {
         var facets = [
             ["project_type:mod"],
         ]
@@ -336,61 +227,76 @@ public class ModrinthModSearcher: ModSearching {
         let facetsData = try! JSONSerialization.data(withJSONObject: facets)
         let facetsString = String(data: facetsData, encoding: .utf8)!
         
-        if let json = await Requests.get(
+        let json = try await Requests.get(
             "https://api.modrinth.com/v2/search",
             body: [
-                "query": query ?? "",
+                "query": query,
                 "facets": facetsString,
-                "limit": 40
+                "limit": limit
             ],
             encodeMethod: .urlEncoded
-        ).json {
-            let mods = json["hits"].arrayValue
-            var result: [ModSummary] = []
-            for mod in mods {
-                let formatter = ISO8601DateFormatter()
-                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                result.append(await getFromJson(mod))
-            }
-            return result
-        }
-        return []
-    }
-    
-    public func getVersions(_ slug: String) async -> ModVersionMap {
-        if let json = await Requests.get(
-            "https://api.modrinth.com/v2/project/\(slug)/version"
-        ).json {
-            var versions: ModVersionMap = [:]
-            
-            for version in json.arrayValue {
-                let key = ModPlatformKey(
-                    loader: ClientBrand(rawValue: version["loaders"].arrayValue.first!.stringValue) ?? .vanilla,
-                    minecraftVersion: MinecraftVersion(displayName: version["game_versions"].arrayValue.first!.stringValue)
-                )
-                
-//                let modVersion = await MainActor.run {
-//                    let formatter = ISO8601DateFormatter()
-//                    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-//                    
-//                    return ModVersion(
-//                        name: version["name"].stringValue,
-//                        version: version["version_number"].stringValue,
-//                        releaseDate: formatter.date(from: version["date_published"].stringValue)!,
-//                        type: version["version_type"].stringValue,
-//                        downloadUrl: version["files"].arrayValue.first!["url"].url!,
-//                        filename: version["files"].arrayValue.first!["filename"].stringValue.removingPercentEncoding!,
-//                        dependencies: version["dependencies"].arrayValue.map { $0["project_id"] }.compactMap { await ModSummary.getFrom($0.stringValue) }
-//                    )
-//                }
-//                if versions[key] == nil {
-//                    versions[key] = []
-//                }
-//                versions[key]!.append(modVersion)
-            }
-            
-            return versions
-        }
-        return [:]
+        ).getJSONOrThrow()
+        
+        return json["hits"].arrayValue.map(ModSummary.init(json:))
     }
 }
+
+public class ModInstallTask: InstallTask {
+    public let instance: MinecraftInstance
+    public let version: ModVersion
+    @Published public var state: InstallState = .waiting
+    
+    init(instance: MinecraftInstance, version: ModVersion) {
+        self.instance = instance
+        self.version = version
+        super.init()
+        self.totalFiles = version.dependencies.count + 1
+        self.remainingFiles = totalFiles
+    }
+    
+    public override func start() {
+        Task {
+            await MainActor.run {
+                self.state = .inprogress
+            }
+            let modsURL = instance.runningDirectory.appending(path: "mods")
+            var urls = [version.downloadURL]
+            var destinations = [modsURL.appending(path: version.downloadURL.lastPathComponent)]
+            for dependency in version.dependencies {
+                if dependency.versionId == nil {
+                    if let versionMap = try? await ModSearcher.shared.getVersionMap(id: dependency.summary.modId),
+                       let versions = versionMap[.init(loader: instance.clientBrand, minecraftVersion: instance.version)] {
+                        destinations.append(versions.first!.downloadURL)
+                    } else {
+                        err("依赖不存在: \(dependency.summary.modId)")
+                        continue
+                    }
+                } else {
+                    if let version = try? await ModSearcher.shared.getVersion(dependency.versionId!) {
+                        destinations.append(modsURL.appending(path: version.downloadURL.lastPathComponent))
+                    } else {
+                        err("依赖 \(dependency.summary.modId) 版本 \(dependency.versionId!) 不存在")
+                        continue
+                    }
+                }
+                urls.append(version.downloadURL)
+            }
+            
+            await withCheckedContinuation { continuation in
+                let downloader = ProgressiveDownloader(
+                    task: self,
+                    urls: urls,
+                    destinations: destinations,
+                    skipIfExists: true,
+                    completion: continuation.resume
+                )
+                downloader.start()
+            }
+            complete()
+        }
+    }
+    
+    public override func getInstallStates() -> [InstallStage : InstallState] { [.mods : state] }
+    public override func getTitle() -> String { "\(version.name) 下载" }
+}
+
