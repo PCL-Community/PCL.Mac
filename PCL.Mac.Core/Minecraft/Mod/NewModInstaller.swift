@@ -16,10 +16,12 @@ public class NewModDependency: Hashable, Identifiable, Equatable {
     }
     
     public let summary: NewModSummary
+    public let versionId: String?
     public let type: DependencyType
     
-    init(summary: NewModSummary, type: DependencyType) {
+    init(summary: NewModSummary, versionId: String?, type: DependencyType) {
         self.summary = summary
+        self.versionId = versionId
         self.type = type
     }
     
@@ -37,8 +39,9 @@ public class NewModVersion: Hashable, Identifiable, Equatable {
     public let gameVersions: [MinecraftVersion]
     public let loaders: [ClientBrand]
     public let dependencies: [NewModDependency]
+    public let downloadURL: URL
     
-    public init(name: String, versionNumber: String, type: String, downloads: Int, updateDate: Date, gameVersions: [MinecraftVersion], loaders: [ClientBrand], dependencies: [NewModDependency]) {
+    init(name: String, versionNumber: String, type: String, downloads: Int, updateDate: Date, gameVersions: [MinecraftVersion], loaders: [ClientBrand], dependencies: [NewModDependency], downloadURL: URL) {
         self.name = name
         self.versionNumber = versionNumber
         self.type = type
@@ -47,6 +50,7 @@ public class NewModVersion: Hashable, Identifiable, Equatable {
         self.gameVersions = gameVersions
         self.loaders = loaders
         self.dependencies = dependencies
+        self.downloadURL = downloadURL
     }
     
     public let id: UUID = .init()
@@ -144,6 +148,7 @@ public class ModSearcher {
                 dependencies.append(
                     .init(
                         summary: dependencySummary,
+                        versionId: dependency["version_id"].string,
                         type: .init(rawValue: dependency["dependency_type"].stringValue) ?? .required
                     )
                 )
@@ -163,7 +168,8 @@ public class ModSearcher {
             updateDate: dateFormatter.date(from: json["date_published"].stringValue)!,
             gameVersions: json["game_versions"].arrayValue.map { MinecraftVersion(displayName: $0.stringValue) },
             loaders: json["loaders"].arrayValue.map { ClientBrand(rawValue: $0.stringValue) ?? .vanilla },
-            dependencies: await getDependencies(json)
+            dependencies: await getDependencies(json),
+            downloadURL: json["files"].arrayValue.first!["url"].url!
         )
     }
     
@@ -180,7 +186,8 @@ public class ModSearcher {
                 updateDate: dateFormatter.date(from: version["date_published"].stringValue)!,
                 gameVersions: version["game_versions"].arrayValue.map { MinecraftVersion(displayName: $0.stringValue) },
                 loaders: version["loaders"].arrayValue.map { ClientBrand(rawValue: $0.stringValue) ?? .vanilla },
-                dependencies: await getDependencies(version)
+                dependencies: await getDependencies(version),
+                downloadURL: version["files"].arrayValue.first!["url"].url!
             )
             
             for gameVersion in version.gameVersions {
@@ -223,4 +230,63 @@ public class ModSearcher {
         
         return json["hits"].arrayValue.map(NewModSummary.init(json:))
     }
+}
+
+public class ModInstallTask: InstallTask {
+    public let instance: MinecraftInstance
+    public let version: NewModVersion
+    @Published public var state: InstallState = .waiting
+    
+    init(instance: MinecraftInstance, version: NewModVersion) {
+        self.instance = instance
+        self.version = version
+        super.init()
+        self.totalFiles = version.dependencies.count + 1
+        self.remainingFiles = totalFiles
+    }
+    
+    public override func start() {
+        Task {
+            await MainActor.run {
+                self.state = .inprogress
+            }
+            let modsURL = instance.runningDirectory.appending(path: "mods")
+            var urls = [version.downloadURL]
+            var destinations = [modsURL.appending(path: version.downloadURL.lastPathComponent)]
+            for dependency in version.dependencies {
+                if dependency.versionId == nil {
+                    if let versionMap = try? await ModSearcher.shared.getVersionMap(id: dependency.summary.modId),
+                       let versions = versionMap[.init(loader: instance.clientBrand, minecraftVersion: instance.version)] {
+                        destinations.append(versions.first!.downloadURL)
+                    } else {
+                        err("依赖不存在: \(dependency.summary.modId)")
+                        continue
+                    }
+                } else {
+                    if let version = try? await ModSearcher.shared.getVersion(dependency.versionId!) {
+                        destinations.append(modsURL.appending(path: version.downloadURL.lastPathComponent))
+                    } else {
+                        err("依赖 \(dependency.summary.modId) 版本 \(dependency.versionId!) 不存在")
+                        continue
+                    }
+                }
+                urls.append(version.downloadURL)
+            }
+            
+            await withCheckedContinuation { continuation in
+                let downloader = ProgressiveDownloader(
+                    task: self,
+                    urls: urls,
+                    destinations: destinations,
+                    skipIfExists: true,
+                    completion: continuation.resume
+                )
+                downloader.start()
+            }
+            complete()
+        }
+    }
+    
+    public override func getInstallStates() -> [InstallStage : InstallState] { [.mods : state] }
+    public override func getTitle() -> String { "\(version.name) 下载" }
 }

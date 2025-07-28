@@ -24,6 +24,14 @@ class DataManager: ObservableObject {
     @Published var leftTabId: UUID = .init()
     @Published var downloadSpeed: Double = 0
     @Published var inprogressInstallTasks: InstallTasks?
+    var defaultInstance: MinecraftInstance? {
+        if let directory = AppSettings.shared.currentMinecraftDirectory,
+           let defaultInstance = AppSettings.shared.defaultInstance,
+           let instance = MinecraftInstance.create(directory, defaultInstance) {
+            return instance
+        }
+        return nil
+    }
     
     private var routerCancellable: AnyCancellable?
     

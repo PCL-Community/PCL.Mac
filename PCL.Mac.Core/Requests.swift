@@ -85,6 +85,8 @@ public class Requests {
             }
             let json = try? JSON(data: data)
             return Response(data: data, json: json, error: nil)
+        } catch let error as URLError where error.code == .cancelled {
+            return Response(data: nil, json: nil, error: nil)
         } catch {
             err("在发送请求时发生错误: \(error)")
             return Response(data: nil, json: nil, error: error)

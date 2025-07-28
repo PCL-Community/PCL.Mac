@@ -36,6 +36,10 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
         lhs.id == rhs.id
     }
     
+    public static func create(_ minecraftDirectory: MinecraftDirectory, _ name: String, config: MinecraftConfig? = nil) -> MinecraftInstance? {
+        create(minecraftDirectory, minecraftDirectory.versionsUrl.appending(path: name), config: config)
+    }
+    
     public static func create(_ minecraftDirectory: MinecraftDirectory, _ runningDirectory: URL, config: MinecraftConfig? = nil) -> MinecraftInstance? {
         if let cached = cache[runningDirectory] {
             return cached

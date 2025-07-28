@@ -56,7 +56,7 @@ public enum AppRoute: Hashable {
     var name: String {
         switch self {
         case .installing(let task): "installing?task=\(task.id)"
-        case .modDownload(let summary): "modDownload?summary=\(summary.id)"
+        case .modDownload(let summary): "modDownload?summary=\(summary.modId)"
         case .versionList(let directory): "versionList?rootUrl=\(directory.rootUrl.path)"
         case .versionSettings(let instance): "versionSettings?instance=\(instance.config.name)"
         default:

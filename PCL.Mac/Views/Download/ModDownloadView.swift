@@ -30,6 +30,9 @@ fileprivate struct ModVersionListView: View {
                                         .padding(4)
                                     ForEach(version.dependencies, id: \.self) { dependency in
                                         ModListItem(summary: dependency.summary)
+                                            .onTapGesture {
+                                                dataManager.router.append(.modDownload(summary: dependency.summary))
+                                            }
                                     }
                                     Text("版本列表")
                                         .font(.custom("PCL English", size: 14))
@@ -38,7 +41,12 @@ fileprivate struct ModVersionListView: View {
                                 ForEach(versions) { version in
                                     ModVersionListItem(version: version)
                                     .onTapGesture {
-//                                        ContentView.setPopup(PopupOverlay("URL", version.downloadUrl.absoluteString, [.Ok]))
+                                        if let instance = dataManager.defaultInstance {
+                                            let task = ModInstallTask(instance: instance, version: version)
+                                            dataManager.inprogressInstallTasks = .single(task)
+                                            task.start()
+//                                            ContentView.setPopup(PopupOverlay("URL", version.downloadURL.absoluteString, [.Ok]))
+                                        }
                                     }
                                 }
                             }
@@ -93,6 +101,10 @@ struct ModDownloadView: View {
     @State private var summary: NewModSummary?
     let id: String
     
+    init(id: String) {
+        self.id = id
+    }
+    
     var body: some View {
         Group {
             if let summary = summary {
@@ -125,10 +137,12 @@ struct ModDownloadView: View {
                 Spacer()
             }
         }
+        .id(id)
         .onAppear {
             dataManager.leftTab(0) { EmptyView() }
         }
-        .task {
+        .task(id: id) {
+            summary = nil
             summary = try? await ModSearcher.shared.get(id)
         }
     }
