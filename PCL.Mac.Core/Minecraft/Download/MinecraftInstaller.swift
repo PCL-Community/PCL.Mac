@@ -40,7 +40,7 @@ public class MinecraftInstaller {
         await withCheckedContinuation { continuation in
             let downloader = ProgressiveDownloader(
                 task: task,
-                urls: [URL(string: "https://bmclapi2.bangbang93.com/version/\(minecraftVersion)/json")!],
+                urls: [URL(string: DataManager.shared.versionManifest!.versions.find { $0.id == minecraftVersion }!.url)!],
                 destinations: [clientJsonUrl],
                 completion: {
                 // 解析 JSON
@@ -60,20 +60,15 @@ public class MinecraftInstaller {
     // MARK: 下载客户端本体
     private static func downloadClientJar(_ task: MinecraftInstallTask, skipIfExists: Bool = false) async {
         task.updateStage(.clientJar)
-        let clientJarUrl = task.versionUrl.appending(path: "\(task.name).jar")
-        if skipIfExists && FileManager.default.fileExists(atPath: clientJarUrl.path) {
-            task.completeOneFile()
-            return
-        } else {
-            let downloader = ChunkedDownloader(
-                url: URL(string: task.manifest!.clientDownload!.url)!,
-                destination: clientJarUrl,
-                chunkCount: 32
-            ) { finished, total in
-                task.currentStagePercentage = Double(finished) / Double(total)
-            }
-            await downloader.start()
-            task.completeOneFile()
+        await withCheckedContinuation { continuation in
+            let downloader = ProgressiveDownloader(
+                task: task,
+                urls: [URL(string: task.manifest!.clientDownload!.url)!],
+                destinations: [task.versionUrl.appending(path: "\(task.name).jar")],
+                skipIfExists: skipIfExists,
+                completion: continuation.resume
+            )
+            downloader.start()
         }
     }
     
@@ -125,7 +120,7 @@ public class MinecraftInstaller {
                 task: task,
                 urls: urls,
                 destinations: destinations,
-                concurrentLimit: 8,
+                concurrentLimit: 1024,
                 skipIfExists: true, completion: {
                 continuation.resume()
             })

@@ -42,6 +42,7 @@ public struct ModVersion: Hashable, Identifiable {
     let type: String
     let downloadUrl: URL
     let filename: String
+    let dependencies: [ModSummary]
     
     func getDescription() -> String {
         let formatter = RelativeDateTimeFormatter()
@@ -66,9 +67,11 @@ public typealias ModVersionMap = [ModPlatformKey: [ModVersion]]
 
 @MainActor
 public class ModSummary: ObservableObject, Identifiable, Hashable, Equatable {
+    private static var cache: [String : ModSummary] = [:]
+    
     public let id: UUID = .init()
     
-    public let slug: String
+    public let modId: String
     public let title: String
     public let description: String
     public var tags: [String] = []
@@ -80,7 +83,6 @@ public class ModSummary: ObservableObject, Identifiable, Hashable, Equatable {
     private let loadVersions: () async -> ModVersionMap
     @Published public var versions: ModVersionMap?
     @Published public var icon: Image?
-    @Published public var dependencies: [ModDependency] = []
     
     nonisolated public static func == (lhs: ModSummary, rhs: ModSummary) -> Bool {
         lhs.id == rhs.id
@@ -93,16 +95,21 @@ public class ModSummary: ObservableObject, Identifiable, Hashable, Equatable {
     }
     
     static func getFrom(_ slug: String) async -> ModSummary? {
+        if let summary = cache[slug] {
+            return summary
+        }
         if let json = await Requests.get(
             "https://api.modrinth.com/v2/project/\(slug)"
         ).json {
-            return ModrinthModSearcher.default.getFromJson(json)
+            let summary = ModrinthModSearcher.default.getFromJson(json)
+            cache[slug] = summary
+            return summary
         }
         return nil
     }
     
     init(slug: String, title: String, description: String, categories: [String], supportedVersions: [String]?, downloads: Int, lastUpdate: Date, infoUrl: URL, iconUrl: URL?, loadVersions: @escaping () async -> ModVersionMap) {
-        self.slug = slug
+        self.modId = slug
         self.title = title
         self.description = description
         self.infoUrl = infoUrl
@@ -285,33 +292,6 @@ public class ModSummary: ObservableObject, Identifiable, Hashable, Equatable {
         if versions == nil {
             Task {
                 self.versions = await self.loadVersions()
-                debug("正在获取 \(slug) 的依赖项")
-                if let json = await Requests.get(
-                    "https://api.modrinth.com/v2/project/\(self.slug)/dependencies"
-                ).json {
-                    let formatter = ISO8601DateFormatter()
-                    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                    self.dependencies.removeAll()
-                    for project in json["projects"].arrayValue {
-                        let slug = project["slug"].stringValue
-                        let dependency = ModDependency(
-                            type: .init(rawValue: project["client_side"].stringValue)!,
-                            summary: ModSummary(
-                                slug: slug,
-                                title: project["title"].stringValue,
-                                description: project["description"].stringValue,
-                                categories: project["categories"].arrayValue.map { $0.stringValue },
-                                supportedVersions: nil,
-                                downloads: project["downloads"].intValue,
-                                lastUpdate: formatter.date(from: project["updated"].stringValue)!,
-                                infoUrl: URL(string: "https://modrinth.com/mod/\(slug)")!,
-                                iconUrl: URL(string: project["icon_url"].stringValue),
-                                loadVersions: { await ModrinthModSearcher.default.getVersions(slug) }
-                            )
-                        )
-                        self.dependencies.append(dependency)
-                    }
-                }
             }
         }
         
@@ -362,7 +342,8 @@ public class ModrinthModSearcher: ModSearching {
                 "query": query ?? "",
                 "facets": facetsString,
                 "limit": 40
-            ]
+            ],
+            encodeMethod: .urlEncoded
         ).json {
             let mods = json["hits"].arrayValue
             var result: [ModSummary] = []
@@ -388,23 +369,24 @@ public class ModrinthModSearcher: ModSearching {
                     minecraftVersion: MinecraftVersion(displayName: version["game_versions"].arrayValue.first!.stringValue)
                 )
                 
-                let modVersion = await MainActor.run {
-                    let formatter = ISO8601DateFormatter()
-                    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                    
-                    return ModVersion(
-                        name: version["name"].stringValue,
-                        version: version["version_number"].stringValue,
-                        releaseDate: formatter.date(from: version["date_published"].stringValue)!,
-                        type: version["version_type"].stringValue,
-                        downloadUrl: version["files"].arrayValue.first!["url"].url!,
-                        filename: version["files"].arrayValue.first!["filename"].stringValue.removingPercentEncoding!
-                    )
-                }
-                if versions[key] == nil {
-                    versions[key] = []
-                }
-                versions[key]!.append(modVersion)
+//                let modVersion = await MainActor.run {
+//                    let formatter = ISO8601DateFormatter()
+//                    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+//                    
+//                    return ModVersion(
+//                        name: version["name"].stringValue,
+//                        version: version["version_number"].stringValue,
+//                        releaseDate: formatter.date(from: version["date_published"].stringValue)!,
+//                        type: version["version_type"].stringValue,
+//                        downloadUrl: version["files"].arrayValue.first!["url"].url!,
+//                        filename: version["files"].arrayValue.first!["filename"].stringValue.removingPercentEncoding!,
+//                        dependencies: version["dependencies"].arrayValue.map { $0["project_id"] }.compactMap { await ModSummary.getFrom($0.stringValue) }
+//                    )
+//                }
+//                if versions[key] == nil {
+//                    versions[key] = []
+//                }
+//                versions[key]!.append(modVersion)
             }
             
             return versions

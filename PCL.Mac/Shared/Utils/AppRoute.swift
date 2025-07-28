@@ -21,7 +21,7 @@ public enum AppRoute: Hashable {
     case newAccount
     case installing(tasks: InstallTasks)
     case versionSelect
-    case modDownload(summary: ModSummary)
+    case modDownload(summary: NewModSummary)
     case announcementHistory
     case versionSettings(instance: MinecraftInstance)
     
@@ -100,7 +100,7 @@ public class AppRouter: ObservableObject {
         case .versionSelect, .versionList(_):
             VersionSelectView()
         case .modDownload(let summary):
-            ModDownloadView(summary: summary)
+            ModDownloadView(id: summary.modId)
         case .announcementHistory:
             AnnouncementHistoryView()
         case .versionSettings, .instanceOverview, .instanceSettings, .instanceMods:

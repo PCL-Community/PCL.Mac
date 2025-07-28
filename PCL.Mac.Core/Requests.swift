@@ -66,10 +66,16 @@ public class Requests {
                     request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
                 case .urlEncoded:
                     request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-                    let query = body.map { key, value in
-                        "\(key)=\(String(describing: value))"
-                    }.joined(separator: "&")
-                    request.httpBody = query.data(using: .utf8)
+                    if method == "GET" {
+                        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+                        components.queryItems = body.map { URLQueryItem(name: $0.key, value: String(describing: $0.value)) }
+                        request.url = components.url
+                    } else {
+                        let query = body.map { key, value in
+                            "\(key)=\(String(describing: value))"
+                        }.joined(separator: "&")
+                        request.httpBody = query.data(using: .utf8)
+                    }
                 }
             }
             
@@ -80,7 +86,7 @@ public class Requests {
             let json = try? JSON(data: data)
             return Response(data: data, json: json, error: nil)
         } catch {
-            err("在发送请求时发生错误: \(error.localizedDescription)")
+            err("在发送请求时发生错误: \(error)")
             return Response(data: nil, json: nil, error: error)
         }
     }

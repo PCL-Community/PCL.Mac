@@ -110,7 +110,7 @@ struct SubviewTitleBarComponent: View {
         switch dataManager.router.getLast() {
         case .installing(_): return "下载管理"
         case .versionSelect, .versionList: return "版本选择"
-        case .modDownload(let summary): return "资源下载 - \(summary.title)"
+        case .modDownload(let summary): return "资源下载 - \(summary.name)"
         case .accountManagement, .accountList, .newAccount: return "账号管理"
         case .announcementHistory: return "历史公告"
         case .versionSettings, .instanceOverview, .instanceSettings, .instanceMods: return "版本设置 - \(AppSettings.shared.defaultInstance ?? "")"

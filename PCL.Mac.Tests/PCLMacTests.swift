@@ -29,4 +29,11 @@ struct PCL_MacTests {
         print(response.data!.count)
         print(Date().distance(to: before))
     }
+    
+    @Test func testDownload() async {
+        await withCheckedContinuation { continuation in
+            let task = MinecraftInstaller.createTask(.init(displayName: "1.21.8"), "1.21.8", .default, continuation.resume)
+            task.start()
+        }
+    }
 }

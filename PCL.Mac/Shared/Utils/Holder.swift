@@ -8,7 +8,7 @@
 import SwiftUI
 import Combine
 
-final class Holder<T: ObservableObject>: ObservableObject {
+final class Holder<T>: ObservableObject {
     @Published var object: T?
     
     init(object: T? = nil) {
@@ -16,13 +16,18 @@ final class Holder<T: ObservableObject>: ObservableObject {
     }
     
     func setObject(_ newObject: T?) {
-        self.object = newObject
+        DispatchQueue.main.async {
+            self.object = newObject
+            self.objectWillChange.send()
+        }
     }
     
-    func modifyObject(_ modify: (T) -> Void) {
-        if let obj = object {
-            modify(obj)
-            objectWillChange.send()
+    func modifyObject(_ modify: @escaping (T) -> Void) {
+        DispatchQueue.main.async {
+            if let obj = self.object {
+                modify(obj)
+                self.objectWillChange.send()
+            }
         }
     }
 }

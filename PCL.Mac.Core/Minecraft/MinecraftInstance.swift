@@ -282,9 +282,10 @@ public struct MinecraftConfig: Codable {
     }
 }
 
-public enum ClientBrand: String, Codable {
+public enum ClientBrand: String, Codable, Hashable {
     case vanilla = "vanilla"
     case fabric = "fabric"
+    case quilt = "quilt"
     case forge = "forge"
     case neoforge = "neoforge"
     
@@ -300,8 +301,9 @@ public enum ClientBrand: String, Codable {
         switch self {
         case .vanilla: 0
         case .fabric: 1
-        case .forge: 2
-        case .neoforge: 3
+        case .quilt: 2
+        case .forge: 3
+        case .neoforge: 4
         }
     }
 }

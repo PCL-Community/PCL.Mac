@@ -16,10 +16,14 @@ struct DownloadView: View {
             case .minecraftDownload:
                 MinecraftDownloadView()
             case .modSearch:
-                Text("施工中……")
-                    .font(.custom("PCL English", size: 14))
+                ModSearchView()
             default:
                 Spacer()
+                    .onAppear {
+                        if dataManager.router.getLast() == .download {
+                            dataManager.router.append(.minecraftDownload)
+                        }
+                    }
             }
         }
         .onAppear {
@@ -32,7 +36,6 @@ struct DownloadView: View {
                         .padding(.top, 20)
                         .padding(.bottom, 4)
                     MyListComponent(
-                        default: .minecraftDownload,
                         cases: .constant([.minecraftDownload])
                     ) { type, isSelected in
                         createListItemView(type)
