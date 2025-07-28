@@ -24,8 +24,19 @@ fileprivate struct ImageAndTextComponent: View {
 }
 
 struct ModListItem: View {
+    private static let tagMap: [String: String] = ["technology":"科技","magic":"魔法","adventure":"冒险","utility":"实用","optimization":"性能优化","vanilla-like":"原版风","realistic":"写实风","worldgen":"世界元素","food":"食物/烹饪","game-mechanics":"游戏机制","transportation":"运输","storage":"仓储","decoration":"装饰","mobs":"生物","equipment":"装备","social":"服务器","library":"支持库","multiplayer":"多人","challenging":"硬核","combat":"战斗","quests":"任务","kitchen-sink":"水槽包","lightweight":"轻量","simplistic":"简洁","tweaks":"改良","8x-":"极简","16x":"16x","32x":"32x","48x":"48x","64x":"64x","128x":"128x","256x":"256x","512x+":"超高清","audio":"含声音","fonts":"含字体","models":"含模型","gui":"含 UI","locale":"含语言","core-shaders":"核心着色器","modded":"兼容 Mod","fantasy":"幻想风","semi-realistic":"半写实风","cartoon":"卡通风","colored-lighting":"彩色光照","path-tracing":"路径追踪","pbr":"PBR","reflections":"反射","iris":"Iris","optifine":"OptiFine","vanilla":"原版可用"]
+    
     @ObservedObject var summary: NewModSummary
     @ObservedObject var state: ModSearchViewState = StateManager.shared.modSearch
+    private let lastUpdateLabel: String
+    
+    init(summary: NewModSummary) {
+        self.summary = summary
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.unitsStyle = .full
+        self.lastUpdateLabel = formatter.localizedString(for: summary.lastUpdate, relativeTo: Date()).replacingOccurrences(of: "(\\d+)", with: " $1 ", options: .regularExpression)
+    }
     
     var body: some View {
         MyListItemComponent {
@@ -59,9 +70,9 @@ struct ModListItem: View {
                         .font(.custom("PCL English", size: 16))
                         .foregroundStyle(Color("TextColor"))
                     HStack {
-//                        ForEach(summary.tags, id: \.self) { tag in
-//                            MyTagComponent(label: tag, backgroundColor: Color("TagColor"), fontSize: 12)
-//                        }
+                        ForEach(summary.tags.compactMap { ModListItem.tagMap[$0] }, id: \.self) { tag in
+                            MyTagComponent(label: tag, backgroundColor: Color("TagColor"), fontSize: 12)
+                        }
                         
                         Text(summary.description)
                             .font(.custom("PCL English", size: 14))
@@ -71,13 +82,14 @@ struct ModListItem: View {
                     .foregroundStyle(Color(hex: 0x8C8C8C))
                     
                     ZStack(alignment: .leading) {
-//                        if !summary.supportDescription.isEmpty {
-//                            ImageAndTextComponent(imageName: "SettingsIcon", text: summary.supportDescription)
-//                        }
-//                        ImageAndTextComponent(imageName: "DownloadIcon", text: summary.downloads)
-//                            .offset(x: summary.supportDescription.isEmpty ? 0 : 200)
-//                        ImageAndTextComponent(imageName: "UploadIcon", text: summary.lastUpdate)
-//                            .offset(x: 300)
+                        let supportDescription = getSupportDescription()
+                        if !supportDescription.isEmpty {
+                            ImageAndTextComponent(imageName: "SettingsIcon", text: supportDescription)
+                        }
+                        ImageAndTextComponent(imageName: "DownloadIcon", text: formatNumber(summary.downloadCount))
+                            .offset(x: supportDescription.isEmpty ? 0 : 200)
+                        ImageAndTextComponent(imageName: "UploadIcon", text: lastUpdateLabel)
+                            .offset(x: 300)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .foregroundStyle(Color(hex: 0x8C8C8C))
@@ -86,6 +98,96 @@ struct ModListItem: View {
                 Spacer()
             }
             .padding(4)
+        }
+    }
+    
+    private func getSupportDescription() -> String {
+        var supportedVersions = summary.gameVersions.map { $0.displayName }
+        var supportDescription = ""
+        if summary.loaders.count == 1 {
+            supportDescription.append("仅 \(summary.loaders.first!.getName())")
+        } else if summary.loaders.count < 3 {
+            supportDescription.append(summary.loaders.map { $0.rawValue.capitalized }.joined(separator: " / "))
+        }
+        
+        if !supportDescription.isEmpty { supportDescription.append(" ") }
+        supportedVersions.removeAll(where: { $0.starts(with: "3D-Shareware") }) // 笑点解析: 3D-Shareware-v1.34 识别成 1.34
+        supportDescription.append(ModListItem.describeGameVersions(
+            gameVersions: Set(supportedVersions
+                .filter { MinecraftVersion(displayName: $0).type == .release}
+                .map { Int($0.split(separator: ".")[1])! }).sorted(by: { $0 > $1 }),
+            mcVersionHighest: Int(DataManager.shared.versionManifest!.latest.release.split(separator: ".")[1])!)
+        )
+        return supportDescription
+    }
+    
+    private static func describeGameVersions(gameVersions: [Int]?, mcVersionHighest: Int) -> String {
+        guard let gameVersions = gameVersions, !gameVersions.isEmpty else {
+            return "仅快照版本"
+        }
+        
+        var spaVersions: [String] = []
+        var isOld = false
+        var i = 0
+        let count = gameVersions.count
+        
+        while i < count {
+            let startVersion = gameVersions[i]
+            var endVersion = startVersion
+            
+            if startVersion < 10 {
+                if !spaVersions.isEmpty && !isOld {
+                    break
+                } else {
+                    isOld = true
+                }
+            }
+            
+            var ii = i + 1
+            while ii < count && gameVersions[ii] == endVersion - 1 {
+                endVersion = gameVersions[ii]
+                i = ii
+                ii += 1
+            }
+            
+            if startVersion == endVersion {
+                spaVersions.append("1.\(startVersion)")
+            } else if mcVersionHighest > -1 && startVersion >= mcVersionHighest {
+                if endVersion < 10 {
+                    spaVersions.removeAll()
+                    spaVersions.append("全版本")
+                    break
+                } else {
+                    spaVersions.append("1.\(endVersion)+")
+                }
+            } else if endVersion < 10 {
+                spaVersions.append("1.\(startVersion)-")
+                break
+            } else if startVersion - endVersion == 1 {
+                spaVersions.append("1.\(startVersion), 1.\(endVersion)")
+            } else {
+                spaVersions.append("1.\(startVersion)~1.\(endVersion)")
+            }
+            
+            i += 1
+        }
+        
+        return spaVersions.joined(separator: ", ")
+    }
+    
+    func formatNumber(_ num: Int) -> String {
+        let absNum = abs(num)
+        let sign = num < 0 ? "-" : ""
+        let numDouble = Double(absNum)
+        
+        if absNum >= 100_000_000 {
+            let value = numDouble / 100_000_000
+            return String(format: "%@%.2f 亿", sign, value)
+        } else if absNum >= 10_000 {
+            let value = numDouble / 10_000
+            return String(format: "%@%.0f 万", sign, value)
+        } else {
+            return "\(num)"
         }
     }
 }

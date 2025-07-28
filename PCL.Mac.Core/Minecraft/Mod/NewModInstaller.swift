@@ -62,21 +62,33 @@ public class NewModSummary: Hashable, Identifiable, Equatable, ObservableObject 
     public let downloadCount: Int
     public let gameVersions: [MinecraftVersion]
     public let loaders: [ClientBrand]
+    public let tags: [String]
     public let iconUrl: URL?
     public let infoUrl: URL
     public let versions: [String]? // 只有通过搜索创建时这个变量的值才为 nil
     
-    init(modId: String, name: String, description: String, lastUpdate: Date, downloadCount: Int, gameVersions: [MinecraftVersion], loaders: [ClientBrand], iconUrl: URL?, infoUrl: URL, versions: [String]?) {
+    init(modId: String, name: String, description: String, lastUpdate: Date, downloadCount: Int, gameVersions: [MinecraftVersion], categories: [String], iconUrl: URL?, infoUrl: URL, versions: [String]?) {
         self.modId = modId
         self.name = name
         self.description = description
         self.lastUpdate = lastUpdate
         self.downloadCount = downloadCount
         self.gameVersions = gameVersions
-        self.loaders = loaders
         self.iconUrl = iconUrl
         self.infoUrl = infoUrl
         self.versions = versions
+        
+        var loaders: [ClientBrand] = []
+        var tags: [String] = []
+        for category in categories {
+            if let loader = ClientBrand(rawValue: category) {
+                loaders.append(loader)
+                continue
+            }
+            tags.append(category)
+        }
+        self.loaders = loaders
+        self.tags = tags
     }
     
     convenience init(json: JSON) {
@@ -87,7 +99,7 @@ public class NewModSummary: Hashable, Identifiable, Equatable, ObservableObject 
             lastUpdate: ModSearcher.shared.dateFormatter.date(from: json["date_modified"].string ?? json["updated"].stringValue)!,
             downloadCount: json["downloads"].intValue,
             gameVersions: (json["game_versions"].array ?? json["versions"].arrayValue).map { MinecraftVersion(displayName: $0.stringValue) },
-            loaders: (json["loaders"].array ?? json["categories"].arrayValue).compactMap { ClientBrand(rawValue: $0.stringValue) },
+            categories: json["categories"].arrayValue.union(json["loaders"].arrayValue).map { $0.stringValue },
             iconUrl: json["icon_url"].url,
             infoUrl: URL(string: "https://modrinth.com/mod/\(json["slug"].stringValue)")!,
             versions: json["versions"].array.map { $0.map { $0.stringValue } } // 若 versions 存在，传入 versions 的 [String] 形式，否则传入 nil
@@ -103,7 +115,7 @@ public class ModSearcher {
     public static let shared = ModSearcher()
     
     fileprivate var dateFormatter: ISO8601DateFormatter
-    private var dependencyCache: [String: NewModSummary] = [:]
+    private var dependencyCache: [String: NewModSummary?] = [:]
     
     private init() {
         self.dateFormatter = ISO8601DateFormatter()
@@ -114,27 +126,34 @@ public class ModSearcher {
         return .init(json: try await Requests.get("https://api.modrinth.com/v2/project/\(id)").getJSONOrThrow())
     }
     
-    public func getVersion(_ version: String) async throws -> NewModVersion {
-        let json = try await Requests.get("https://api.modrinth.com/v2/version/\(version)").getJSONOrThrow()
-        
+    private func getDependencies(_ json: JSON) async -> [NewModDependency] {
         var dependencies: [NewModDependency] = []
         for dependency in json["dependencies"].arrayValue {
             guard let projectId = dependency["project_id"].string else { continue }
-            let dependencySummary: NewModSummary
+            guard dependency["dependency_type"] != "incompatible" else { continue }
+            
+            let dependencySummary: NewModSummary?
             if let cache = dependencyCache[projectId] {
                 dependencySummary = cache
             } else {
-                dependencySummary = try await get(projectId)
+                dependencySummary = try? await get(projectId)
                 dependencyCache[projectId] = dependencySummary
             }
             
-            dependencies.append(
-                .init(
-                    summary: dependencySummary,
-                    type: .init(rawValue: dependency["dependency_type"].stringValue) ?? .required
+            if let dependencySummary = dependencySummary {
+                dependencies.append(
+                    .init(
+                        summary: dependencySummary,
+                        type: .init(rawValue: dependency["dependency_type"].stringValue) ?? .required
+                    )
                 )
-            )
+            }
         }
+        return dependencies
+    }
+    
+    public func getVersion(_ version: String) async throws -> NewModVersion {
+        let json = try await Requests.get("https://api.modrinth.com/v2/version/\(version)").getJSONOrThrow()
         
         return .init(
             name: json["name"].stringValue,
@@ -144,7 +163,7 @@ public class ModSearcher {
             updateDate: dateFormatter.date(from: json["date_published"].stringValue)!,
             gameVersions: json["game_versions"].arrayValue.map { MinecraftVersion(displayName: $0.stringValue) },
             loaders: json["loaders"].arrayValue.map { ClientBrand(rawValue: $0.stringValue) ?? .vanilla },
-            dependencies: dependencies
+            dependencies: await getDependencies(json)
         )
     }
     
@@ -153,25 +172,6 @@ public class ModSearcher {
         var versionMap: NewModVersionMap = [:]
         
         for version in json.arrayValue {
-            var dependencies: [NewModDependency] = []
-            for dependency in version["dependencies"].arrayValue {
-                guard let projectId = dependency["project_id"].string else { continue }
-                let dependencySummary: NewModSummary
-                if let cache = dependencyCache[projectId] {
-                    dependencySummary = cache
-                } else {
-                    dependencySummary = try await get(projectId)
-                    dependencyCache[projectId] = dependencySummary
-                }
-                
-                dependencies.append(
-                    .init(
-                        summary: dependencySummary,
-                        type: .init(rawValue: dependency["dependency_type"].stringValue) ?? .required
-                    )
-                )
-            }
-            
             let version = NewModVersion(
                 name: version["name"].stringValue,
                 versionNumber: version["version_number"].stringValue,
@@ -180,7 +180,7 @@ public class ModSearcher {
                 updateDate: dateFormatter.date(from: version["date_published"].stringValue)!,
                 gameVersions: version["game_versions"].arrayValue.map { MinecraftVersion(displayName: $0.stringValue) },
                 loaders: version["loaders"].arrayValue.map { ClientBrand(rawValue: $0.stringValue) ?? .vanilla },
-                dependencies: dependencies
+                dependencies: await getDependencies(version)
             )
             
             for gameVersion in version.gameVersions {
