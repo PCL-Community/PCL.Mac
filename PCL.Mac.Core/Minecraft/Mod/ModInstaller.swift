@@ -40,6 +40,7 @@ public class ModDependency: Hashable, Identifiable, Equatable {
 }
 
 public class ModVersion: Hashable, Identifiable, Equatable {
+    public let projectId: String
     public let name: String
     public let versionNumber: String
     public let type: String
@@ -50,7 +51,8 @@ public class ModVersion: Hashable, Identifiable, Equatable {
     public let dependencies: [ModDependency]
     public let downloadURL: URL
     
-    init(name: String, versionNumber: String, type: String, downloads: Int, updateDate: Date, gameVersions: [MinecraftVersion], loaders: [ClientBrand], dependencies: [ModDependency], downloadURL: URL) {
+    public init(projectId: String, name: String, versionNumber: String, type: String, downloads: Int, updateDate: Date, gameVersions: [MinecraftVersion], loaders: [ClientBrand], dependencies: [ModDependency], downloadURL: URL) {
+        self.projectId = projectId
         self.name = name
         self.versionNumber = versionNumber
         self.type = type
@@ -63,11 +65,12 @@ public class ModVersion: Hashable, Identifiable, Equatable {
     }
     
     public let id: UUID = .init()
-    public func hash(into hasher: inout Hasher) { hasher.combine(id) }
-    public static func == (lhs: ModVersion, rhs: ModVersion) -> Bool { lhs.id == rhs.id }
+    public func hash(into hasher: inout Hasher) { hasher.combine(projectId) }
+    public static func == (lhs: ModVersion, rhs: ModVersion) -> Bool { lhs.projectId == rhs.projectId }
 }
 
-public class ModSummary: Hashable, Identifiable, Equatable, ObservableObject {
+public class ModSummary: Hashable, Identifiable, Equatable {
+    public let projectId: String
     public let modId: String
     public let name: String
     public let description: String
@@ -80,7 +83,8 @@ public class ModSummary: Hashable, Identifiable, Equatable, ObservableObject {
     public let infoUrl: URL
     public let versions: [String]? // 只有通过搜索创建时这个变量的值才为 nil
     
-    init(modId: String, name: String, description: String, lastUpdate: Date, downloadCount: Int, gameVersions: [MinecraftVersion], categories: [String], iconUrl: URL?, infoUrl: URL, versions: [String]?) {
+    init(projectId: String, modId: String, name: String, description: String, lastUpdate: Date, downloadCount: Int, gameVersions: [MinecraftVersion], categories: [String], iconUrl: URL?, infoUrl: URL, versions: [String]?) {
+        self.projectId = projectId
         self.modId = modId
         self.name = name
         self.description = description
@@ -106,6 +110,7 @@ public class ModSummary: Hashable, Identifiable, Equatable, ObservableObject {
     
     convenience init(json: JSON) {
         self.init(
+            projectId: json["project_id"].string ?? json["id"].stringValue,
             modId: json["slug"].stringValue,
             name: json["title"].stringValue,
             description: json["description"].stringValue,
@@ -170,6 +175,7 @@ public class ModSearcher {
         let json = try await Requests.get("https://api.modrinth.com/v2/version/\(version)").getJSONOrThrow()
         
         return .init(
+            projectId: json["project_id"].stringValue,
             name: json["name"].stringValue,
             versionNumber: json["version_number"].stringValue,
             type: json["version_type"].stringValue,
@@ -188,6 +194,7 @@ public class ModSearcher {
         
         for version in json.arrayValue {
             let version = ModVersion(
+                projectId: version["project_id"].stringValue,
                 name: version["name"].stringValue,
                 versionNumber: version["version_number"].stringValue,
                 type: version["version_type"].stringValue,
@@ -242,15 +249,16 @@ public class ModSearcher {
 }
 
 public class ModInstallTask: InstallTask {
-    public let instance: MinecraftInstance
-    public let version: ModVersion
     @Published public var state: InstallState = .waiting
     
-    init(instance: MinecraftInstance, version: ModVersion) {
+    public let instance: MinecraftInstance
+    private let mods: [ModVersion]
+    
+    init(instance: MinecraftInstance, mods: [ModVersion]) {
         self.instance = instance
-        self.version = version
+        self.mods = mods
         super.init()
-        self.totalFiles = version.dependencies.count + 1
+        self.totalFiles = mods.count
         self.remainingFiles = totalFiles
     }
     
@@ -259,34 +267,12 @@ public class ModInstallTask: InstallTask {
             await MainActor.run {
                 self.state = .inprogress
             }
-            let modsURL = instance.runningDirectory.appending(path: "mods")
-            var urls = [version.downloadURL]
-            var destinations = [modsURL.appending(path: version.downloadURL.lastPathComponent)]
-            for dependency in version.dependencies {
-                if dependency.versionId == nil {
-                    if let versionMap = try? await ModSearcher.shared.getVersionMap(id: dependency.summary.modId),
-                       let versions = versionMap[.init(loader: instance.clientBrand, minecraftVersion: instance.version)] {
-                        destinations.append(versions.first!.downloadURL)
-                    } else {
-                        err("依赖不存在: \(dependency.summary.modId)")
-                        continue
-                    }
-                } else {
-                    if let version = try? await ModSearcher.shared.getVersion(dependency.versionId!) {
-                        destinations.append(modsURL.appending(path: version.downloadURL.lastPathComponent))
-                    } else {
-                        err("依赖 \(dependency.summary.modId) 版本 \(dependency.versionId!) 不存在")
-                        continue
-                    }
-                }
-                urls.append(version.downloadURL)
-            }
             
             await withCheckedContinuation { continuation in
                 let downloader = ProgressiveDownloader(
                     task: self,
-                    urls: urls,
-                    destinations: destinations,
+                    urls: mods.map { $0.downloadURL },
+                    destinations: mods.map { instance.runningDirectory.appending(path: "mods").appending(path: $0.downloadURL.lastPathComponent) },
                     skipIfExists: true,
                     completion: continuation.resume
                 )
@@ -297,6 +283,6 @@ public class ModInstallTask: InstallTask {
     }
     
     public override func getInstallStates() -> [InstallStage : InstallState] { [.mods : state] }
-    public override func getTitle() -> String { "\(version.name) 下载" }
+    public override func getTitle() -> String { "模组下载" }
 }
 

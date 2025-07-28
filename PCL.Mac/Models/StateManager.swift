@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// 负责保存页面数据的类
+@MainActor
 class StateManager: ObservableObject {
     static let shared = StateManager()
     
