@@ -45,19 +45,19 @@ jobs:
           SCHEME="PCL.Mac"
 
           if [ -d "$PROJECT" ]; then
-            xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release \
+            xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release -archivePath build \
               -xcconfig Secrets.xcconfig \
               ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
-              CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO build
+              CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO archive
           else
             echo "PCL.Mac.xcodeproj not found!"
             exit 1
           fi
 
-      - name: Find and copy .app to build/Release
+      - name: Copy .app to build/Release
         run: |
           mkdir -p build/Release
-          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type d -path "*/Build/Products/Release/PCL.Mac.app" | head -n 1)
+          APP_PATH="build.xcarchive/Products/Applications/PCL.Mac.app"
           if [ -d "$APP_PATH" ]; then
             cp -R "$APP_PATH" build/Release/
           else
