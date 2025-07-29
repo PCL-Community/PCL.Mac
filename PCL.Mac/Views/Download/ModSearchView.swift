@@ -27,6 +27,7 @@ struct ModListItem: View {
     private static let tagMap: [String: String] = ["technology":"科技","magic":"魔法","adventure":"冒险","utility":"实用","optimization":"性能优化","vanilla-like":"原版风","realistic":"写实风","worldgen":"世界元素","food":"食物/烹饪","game-mechanics":"游戏机制","transportation":"运输","storage":"仓储","decoration":"装饰","mobs":"生物","equipment":"装备","social":"服务器","library":"支持库","multiplayer":"多人","challenging":"硬核","combat":"战斗","quests":"任务","kitchen-sink":"水槽包","lightweight":"轻量","simplistic":"简洁","tweaks":"改良","8x-":"极简","16x":"16x","32x":"32x","48x":"48x","64x":"64x","128x":"128x","256x":"256x","512x+":"超高清","audio":"含声音","fonts":"含字体","models":"含模型","gui":"含 UI","locale":"含语言","core-shaders":"核心着色器","modded":"兼容 Mod","fantasy":"幻想风","semi-realistic":"半写实风","cartoon":"卡通风","colored-lighting":"彩色光照","path-tracing":"路径追踪","pbr":"PBR","reflections":"反射","iris":"Iris","optifine":"OptiFine","vanilla":"原版可用"]
     
     @ObservedObject var state: ModSearchViewState = StateManager.shared.modSearch
+    @State private var isHovered: Bool = false
     private let lastUpdateLabel: String
     private let summary: ModSummary
     
@@ -96,8 +97,40 @@ struct ModListItem: View {
                     Spacer()
                 }
                 Spacer()
+                if isHovered {
+                    Image("PlusIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 16)
+                        .foregroundStyle(Color(hex: 0x8C8C8C))
+                        .padding(.trailing)
+                        .contentShape(Circle())
+                        .onTapGesture {
+                            Task {
+                                if state.pendingDownloadMods.contains(where: { $0.projectId == summary.projectId }) {
+                                    hint("\(summary.name) 已存在！", .critical)
+                                    return
+                                }
+                                guard let instance = DataManager.shared.defaultInstance else {
+                                    hint("请先选择一个实例！", .critical)
+                                    return
+                                }
+                                if let versionMap = try? await ModSearcher.shared.getVersionMap(id: summary.modId),
+                                   let versions = versionMap[.init(loader: instance.clientBrand, minecraftVersion: instance.version)],
+                                   let version = versions.first {
+                                    state.addToQueue(version)
+                                } else {
+                                    hint("未找到 \(instance.config.name) 可用的版本！", .critical)
+                                }
+                            }
+                        }
+                }
             }
             .padding(4)
+        }
+        .animation(.easeInOut(duration: 0.2), value: isHovered)
+        .onHover { isHovered in
+            self.isHovered = isHovered
         }
     }
     
@@ -200,6 +233,43 @@ class ModSearchViewState: ObservableObject {
     @Published var iconCache: [String: Image] = [:]
     @Published var pendingDownloadMods: [ModVersion] = []
     @Published var modQueueOverlayId: UUID?
+    
+    public func addToQueue(_ version: ModVersion) {
+        Task {
+            var dependencies = Set<ModVersion>(pendingDownloadMods)
+            if !dependencies.insert(version).inserted {
+                hint("\(version.name) 已存在！", .critical)
+                return
+            }
+            dependencies.removeAll()
+            
+            guard let instance = DataManager.shared.defaultInstance else {
+                hint("请先选择一个实例！", .critical)
+                return
+            }
+            for dependency in version.dependencies {
+                if dependency.versionId == nil {
+                    if let versionMap = try? await ModSearcher.shared.getVersionMap(id: dependency.summary.modId),
+                       let versions = versionMap[.init(loader: instance.clientBrand, minecraftVersion: instance.version)] {
+                        pendingDownloadMods.append(versions.first!)
+                    } else {
+                        err("依赖不存在: \(dependency.summary.modId)")
+                        continue
+                    }
+                } else {
+                    if let version = try? await ModSearcher.shared.getVersion(dependency.versionId!) {
+                        pendingDownloadMods.append(version)
+                    } else {
+                        err("依赖 \(dependency.summary.modId) 版本 \(dependency.versionId!) 不存在")
+                        continue
+                    }
+                }
+            }
+            pendingDownloadMods = pendingDownloadMods.filter { dependencies.insert($0).inserted }
+            pendingDownloadMods.append(version)
+            hint("已将 \(version.name) 添加至模组下载队列！", .finish)
+        }
+    }
 }
 
 struct ModSearchView: View {
@@ -285,11 +355,10 @@ struct ModQueueOverlay: View {
     @State private var isHovered: Bool = false
     
     var body: some View {
-        VStack {
-            Spacer()
-                .allowsHitTesting(false)
-            
-            if !state.pendingDownloadMods.isEmpty {
+        if !state.pendingDownloadMods.isEmpty && dataManager.router.path.contains(.modSearch) {
+            VStack {
+                Spacer()
+                    .allowsHitTesting(false)
                 ZStack {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(Color("MyCardBackgroundColor"))
@@ -339,13 +408,14 @@ struct ModQueueOverlay: View {
                     .padding(.leading, 2)
                     .padding(.trailing, 2)
                 }
+                .opacity(isHovered ? 1 : 0.5)
                 .onHover { isHover in
                     self.isHovered = isHover
                 }
                 .padding()
             }
+            .animation(.easeInOut(duration: 0.2), value: isHovered)
+            .animation(.easeInOut(duration: 0.2), value: state.pendingDownloadMods)
         }
-        .animation(.easeInOut(duration: 0.2), value: isHovered)
-        .animation(.easeInOut(duration: 0.2), value: state.pendingDownloadMods)
     }
 }

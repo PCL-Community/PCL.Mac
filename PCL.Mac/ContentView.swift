@@ -37,6 +37,7 @@ struct ContentView: View {
                     }
                 }
             }
+            ModQueueOverlay()
             VStack {
                 Spacer()
                 HStack(alignment: .bottom) {

@@ -42,7 +42,7 @@ fileprivate struct ModVersionListView: View {
                                 ForEach(versions) { version in
                                     ModVersionListItem(version: version)
                                     .onTapGesture {
-                                        addToQueue(version)
+                                        state.addToQueue(version)
                                     }
                                 }
                             }
@@ -66,43 +66,6 @@ fileprivate struct ModVersionListView: View {
         summary.gameVersions
             .filter { $0.type == .release }
             .sorted(by: >)
-    }
-    
-    private func addToQueue(_ version: ModVersion) {
-        Task {
-            var dependencies = Set<ModVersion>(state.pendingDownloadMods)
-            if !dependencies.insert(version).inserted {
-                hint("\(version.name) 已存在！", .critical)
-                return
-            }
-            dependencies.removeAll()
-            
-            guard let instance = dataManager.defaultInstance else {
-                hint("请先选择一个实例！", .critical)
-                return
-            }
-            for dependency in version.dependencies {
-                if dependency.versionId == nil {
-                    if let versionMap = try? await ModSearcher.shared.getVersionMap(id: dependency.summary.modId),
-                       let versions = versionMap[.init(loader: instance.clientBrand, minecraftVersion: instance.version)] {
-                        state.pendingDownloadMods.append(versions.first!)
-                    } else {
-                        err("依赖不存在: \(dependency.summary.modId)")
-                        continue
-                    }
-                } else {
-                    if let version = try? await ModSearcher.shared.getVersion(dependency.versionId!) {
-                        state.pendingDownloadMods.append(version)
-                    } else {
-                        err("依赖 \(dependency.summary.modId) 版本 \(dependency.versionId!) 不存在")
-                        continue
-                    }
-                }
-            }
-            state.pendingDownloadMods = state.pendingDownloadMods.filter { dependencies.insert($0).inserted }
-            state.pendingDownloadMods.append(version)
-            hint("已将 \(version.name) 添加至模组下载队列！", .finish)
-        }
     }
 }
 
@@ -194,17 +157,6 @@ struct ModDownloadView: View {
         .task(id: id) {
             summary = nil
             summary = try? await ModSearcher.shared.get(id)
-        }
-        .onAppear {
-            if state.modQueueOverlayId == nil {
-                state.modQueueOverlayId = OverlayManager.shared.addOverlay(view: ModQueueOverlay(), at: CGPoint(x: 0, y: 0))
-            }
-        }
-        .onDisappear {
-            if let id = state.modQueueOverlayId {
-                OverlayManager.shared.removeOverlay(with: id)
-                state.modQueueOverlayId = nil
-            }
         }
     }
 }
