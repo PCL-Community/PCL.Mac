@@ -277,37 +277,41 @@ struct ModSearchView: View {
     
     var body: some View {
         ScrollView {
-            StaticMyCardComponent(title: "搜索 Mod") {
-                VStack(spacing: 30) {
-                    HStack(spacing: 30) {
-                        Text("名称")
-                            .font(.custom("PCL English", size: 14))
-                        MyTextFieldComponent(text: $state.query)
-                            .frame(height: 8)
-                    }
-                    
-                    HStack(spacing: 30) {
-                        Text("版本")
-                            .font(.custom("PCL English", size: 14))
-                        MyTextFieldComponent(text: .constant("全部 (也可自行输入)"))
-                            .frame(height: 8)
-                    }
-                    
-                    HStack(spacing: 25) {
-                        MyButtonComponent(text: "搜索", foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
-                            searchMod()
-                        }
-                        .frame(width: 160, height: 40)
-                        
-                        MyButtonComponent(text: "重制条件") {
-                            state.query = ""
-                        }
-                        .frame(width: 160, height: 40)
-                        Spacer()
-                    }
-                }
-                .foregroundStyle(Color("TextColor"))
-                .padding()
+//            StaticMyCardComponent(title: "搜索 Mod") {
+//                VStack(spacing: 30) {
+//                    HStack(spacing: 30) {
+//                        Text("名称")
+//                            .font(.custom("PCL English", size: 14))
+//                        MyTextFieldComponent(text: $state.query)
+//                            .frame(height: 8)
+//                    }
+//                    
+//                    HStack(spacing: 30) {
+//                        Text("版本")
+//                            .font(.custom("PCL English", size: 14))
+//                        MyTextFieldComponent(text: .constant("全部 (也可自行输入)"))
+//                            .frame(height: 8)
+//                    }
+//                    
+//                    HStack(spacing: 25) {
+//                        MyButtonComponent(text: "搜索", foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
+//                            searchMod()
+//                        }
+//                        .frame(width: 160, height: 40)
+//                        
+//                        MyButtonComponent(text: "重制条件") {
+//                            state.query = ""
+//                        }
+//                        .frame(width: 160, height: 40)
+//                        Spacer()
+//                    }
+//                }
+//                .foregroundStyle(Color("TextColor"))
+//                .padding()
+//            }
+//            .padding()
+            MySearchBox(query: $state.query, name: "Mod") { query in
+                searchMod()
             }
             .padding()
             
@@ -408,7 +412,6 @@ struct ModQueueOverlay: View {
                     .padding(.leading, 2)
                     .padding(.trailing, 2)
                 }
-                .opacity(isHovered ? 1 : 0.5)
                 .onHover { isHover in
                     self.isHovered = isHover
                 }
