@@ -21,6 +21,11 @@ struct VersionSelectView: View, SubRouteContainer {
                 VersionListView(minecraftDirectory: directory)
             default:
                 Spacer()
+                    .onAppear {
+                        if let directory = settings.currentMinecraftDirectory {
+                            dataManager.router.append(.versionList(directory: directory))
+                        }
+                    }
             }
         }
         .onAppear {
@@ -33,7 +38,6 @@ struct VersionSelectView: View, SubRouteContainer {
                         .padding(.top, 20)
                         .padding(.bottom, 4)
                     MyListComponent(
-                        root: .versionSelect,
                         cases: $directoryRoutes,
                         height: 42,
                         content: { type, isSelected in
