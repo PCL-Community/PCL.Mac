@@ -55,9 +55,13 @@ struct VersionListView: View {
     var body: some View {
         VStack {
             if minecraftDirectory.instances.isEmpty {
-                Text("加载中……")
-                    .foregroundStyle(Color("TextColor"))
-                    .font(.custom("PCL English", size: 14))
+                ZStack {
+                    Spacer()
+                        .frame(maxWidth: .infinity)
+                    Text("加载中……")
+                        .foregroundStyle(Color("TextColor"))
+                        .font(.custom("PCL English", size: 14))
+                }
             } else {
                 ScrollView {
                     let notVanillaVersions = minecraftDirectory.instances.filter { $0.clientBrand != .vanilla }
