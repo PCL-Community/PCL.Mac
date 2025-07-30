@@ -74,7 +74,7 @@ struct WindowControlButton: View {
             .foregroundStyle(.white)
             .padding(.top, 3)
     ) {
-        if DataManager.shared.router.getLastView() is SubRouteContainer {
+        if let container = DataManager.shared.router.getLastView() as? SubRouteContainer, container.shouldPop() {
             DataManager.shared.router.removeLast()
         }
         DataManager.shared.router.removeLast()

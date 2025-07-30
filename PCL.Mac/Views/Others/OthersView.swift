@@ -27,8 +27,8 @@ struct OthersView: View {
             dataManager.leftTab(140) {
                 VStack(alignment: .leading, spacing: 0) {
                     MyListComponent(
-                        default: .about,
-                        cases: .constant(SharedConstants.shared.isDevelopment ? [.about, .toolbox, .debug] : [.about])
+                        root: .others,
+                        cases: .constant(SharedConstants.shared.isDevelopment ? [.about, .toolbox, .debug] : [.about, .toolbox])
                     ) { type, isSelected in
                         createListItemView(type)
                             .foregroundStyle(isSelected ? AnyShapeStyle(AppSettings.shared.theme.getTextStyle()) : AnyShapeStyle(Color("TextColor")))

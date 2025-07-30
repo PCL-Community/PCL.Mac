@@ -134,4 +134,10 @@ public class AppRouter: ObservableObject {
 }
 
 /// 若该视图为子页面，且有子路由，需要实现此协议以便正常返回。
-protocol SubRouteContainer { }
+protocol SubRouteContainer {
+    func shouldPop() -> Bool
+}
+
+extension SubRouteContainer {
+    func shouldPop() -> Bool { true }
+}

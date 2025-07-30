@@ -24,7 +24,7 @@ fileprivate struct ImageAndTextComponent: View {
 }
 
 struct ModListItem: View {
-    private static let tagMap: [String: String] = ["technology":"科技","magic":"魔法","adventure":"冒险","utility":"实用","optimization":"性能优化","vanilla-like":"原版风","realistic":"写实风","worldgen":"世界元素","food":"食物/烹饪","game-mechanics":"游戏机制","transportation":"运输","storage":"仓储","decoration":"装饰","mobs":"生物","equipment":"装备","social":"服务器","library":"支持库","multiplayer":"多人","challenging":"硬核","combat":"战斗","quests":"任务","kitchen-sink":"水槽包","lightweight":"轻量","simplistic":"简洁","tweaks":"改良","8x-":"极简","16x":"16x","32x":"32x","48x":"48x","64x":"64x","128x":"128x","256x":"256x","512x+":"超高清","audio":"含声音","fonts":"含字体","models":"含模型","gui":"含 UI","locale":"含语言","core-shaders":"核心着色器","modded":"兼容 Mod","fantasy":"幻想风","semi-realistic":"半写实风","cartoon":"卡通风","colored-lighting":"彩色光照","path-tracing":"路径追踪","pbr":"PBR","reflections":"反射","iris":"Iris","optifine":"OptiFine","vanilla":"原版可用"]
+    public static let tagMap: [String: String] = ["technology":"科技","magic":"魔法","adventure":"冒险","utility":"实用","optimization":"性能优化","vanilla-like":"原版风","realistic":"写实风","worldgen":"世界元素","food":"食物/烹饪","game-mechanics":"游戏机制","transportation":"运输","storage":"仓储","decoration":"装饰","mobs":"生物","equipment":"装备","social":"服务器","library":"支持库","multiplayer":"多人","challenging":"硬核","combat":"战斗","quests":"任务","kitchen-sink":"水槽包","lightweight":"轻量","simplistic":"简洁","tweaks":"改良","8x-":"极简","16x":"16x","32x":"32x","48x":"48x","64x":"64x","128x":"128x","256x":"256x","512x+":"超高清","audio":"含声音","fonts":"含字体","models":"含模型","gui":"含 UI","locale":"含语言","core-shaders":"核心着色器","modded":"兼容 Mod","fantasy":"幻想风","semi-realistic":"半写实风","cartoon":"卡通风","colored-lighting":"彩色光照","path-tracing":"路径追踪","pbr":"PBR","reflections":"反射","iris":"Iris","optifine":"OptiFine","vanilla":"原版可用"]
     
     @ObservedObject var state: ModSearchViewState = StateManager.shared.modSearch
     @State private var isHovered: Bool = false
@@ -277,40 +277,7 @@ struct ModSearchView: View {
     
     var body: some View {
         ScrollView {
-//            StaticMyCardComponent(title: "搜索 Mod") {
-//                VStack(spacing: 30) {
-//                    HStack(spacing: 30) {
-//                        Text("名称")
-//                            .font(.custom("PCL English", size: 14))
-//                        MyTextFieldComponent(text: $state.query)
-//                            .frame(height: 8)
-//                    }
-//                    
-//                    HStack(spacing: 30) {
-//                        Text("版本")
-//                            .font(.custom("PCL English", size: 14))
-//                        MyTextFieldComponent(text: .constant("全部 (也可自行输入)"))
-//                            .frame(height: 8)
-//                    }
-//                    
-//                    HStack(spacing: 25) {
-//                        MyButtonComponent(text: "搜索", foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
-//                            searchMod()
-//                        }
-//                        .frame(width: 160, height: 40)
-//                        
-//                        MyButtonComponent(text: "重制条件") {
-//                            state.query = ""
-//                        }
-//                        .frame(width: 160, height: 40)
-//                        Spacer()
-//                    }
-//                }
-//                .foregroundStyle(Color("TextColor"))
-//                .padding()
-//            }
-//            .padding()
-            MySearchBox(query: $state.query, name: "Mod") { query in
+            MySearchBox(query: $state.query, placeholder: "搜索 Mod 在输入框中按下 Enter 以进行搜索") { query in
                 searchMod()
             }
             .padding()

@@ -17,13 +17,13 @@ struct MyListComponent<Content: View>: View {
     @State private var hovering: AppRoute? = nil
     @State private var appeared: Set<AppRoute> = []
     
-    init(`default`: AppRoute? = nil, cases: Binding<[AppRoute]>, animationIndex: Int = 0, height: CGFloat = 32, @ViewBuilder content: @escaping (AppRoute, Bool) -> Content) {
+    init(root: AppRoute? = nil, cases: Binding<[AppRoute]>, animationIndex: Int = 0, height: CGFloat = 32, @ViewBuilder content: @escaping (AppRoute, Bool) -> Content) {
         self._cases = cases
         self.content = content
         self.animationIndex = animationIndex
         self.height = height
-        if let `default` = `default` {
-            dataManager.router.append(`default`)
+        if let root = root, dataManager.router.getLast() == root {
+            dataManager.router.append(cases.first!.wrappedValue)
         }
     }
     

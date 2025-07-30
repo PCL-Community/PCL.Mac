@@ -25,7 +25,7 @@ struct AccountManagementView: View, SubRouteContainer {
             dataManager.leftTab(130) {
                 VStack(alignment: .leading, spacing: 0) {
                     MyListComponent(
-                        default: .accountList,
+                        root: .accountManagement,
                         cases: .constant([.accountList, .newAccount])
                     ) { type, isSelected in
                         createListItemView(type)

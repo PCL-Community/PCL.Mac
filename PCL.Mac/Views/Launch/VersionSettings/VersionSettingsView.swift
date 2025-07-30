@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import ZIPFoundation
+import SwiftyJSON
 
 struct VersionSettingsView: View, SubRouteContainer {
     @ObservedObject private var dataManager: DataManager = .shared
@@ -30,14 +32,14 @@ struct VersionSettingsView: View, SubRouteContainer {
             case .instanceSettings:
                 InstanceSettingsView(instance: instance)
             default:
-                Spacer()
+                InstanceModsView(instance: instance)
             }
         }
         .onAppear {
             dataManager.leftTab(200) {
                 VStack(alignment: .leading, spacing: 0) {
                     MyListComponent(
-                        default: .instanceOverview,
+                        root: .versionSettings(instance: instance),
                         cases: .constant(
                             [
                                 .instanceOverview,
@@ -68,7 +70,7 @@ struct VersionSettingsView: View, SubRouteContainer {
             text = "设置"
         case .instanceMods:
             imageName = "ModDownloadIcon"
-            text = "Mod 管理"
+            text = "Mod"
         default:
             return AnyView(EmptyView())
         }
@@ -191,6 +193,186 @@ struct InstanceSettingsView: View {
             "默认"
         @unknown default:
             "未知"
+        }
+    }
+}
+
+struct InstanceModsView: View {
+    @ObservedObject private var dataManager: DataManager = .shared
+    @State private var searchQuery: String = ""
+    @State private var mods: [Mod] = []
+    @State private var error: Error?
+    
+    private let taskID: UUID = .init()
+    let instance: MinecraftInstance
+    
+    var body: some View {
+        ScrollView {
+            MySearchBox(query: $searchQuery, placeholder: "搜索资源 名称 / 描述 / 标签", onSubmit: { _ in })
+                .padding()
+            
+            TitlelessMyCardComponent(index: 1) {
+                HStack(spacing: 16) {
+                    MyButtonComponent(text: "打开文件夹", foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
+                        NSWorkspace.shared.open(instance.runningDirectory.appending(path: "mods"))
+                    }
+                    .frame(width: 120, height: 35)
+                    MyButtonComponent(text: "下载新资源") {
+                        dataManager.router.setRoot(.download)
+                        dataManager.router.append(.modSearch)
+                    }
+                    .frame(width: 120, height: 35)
+                    Spacer()
+                }
+                .padding(2)
+            }
+            .padding()
+            
+            TitlelessMyCardComponent(index: 2) {
+                VStack(spacing: 0) {
+                    ForEach(mods) { mod in
+                        ModView(mod: mod)
+                    }
+                }
+            }
+            .padding()
+            
+            Spacer()
+        }
+        .scrollIndicators(.never)
+        .task(id: taskID) {
+            if !mods.isEmpty { return }
+            do {
+                let loader = instance.clientBrand
+                let files = try FileManager.default.contentsOfDirectory(at: instance.runningDirectory.appending(path: "mods"), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
+                let jarFiles = files.filter { $0.pathExtension.lowercased() == "jar" }
+                for jarFile in jarFiles {
+                    do {
+                        let archive = try Archive(url: jarFile, accessMode: .read)
+                        var mod: Mod? = nil
+                        if loader == .fabric {
+                            mod = .fromFabricJSON(try JSON(data: ZipUtil.getEntryOrThrow(archive: archive, name: "fabric.mod.json")))
+                        }
+                        
+                        if let mod = mod {
+                            await MainActor.run {
+                                self.mods.append(mod)
+                            }
+                            loadSummary(mod: mod)
+                        }
+                    } catch {}
+                }
+            } catch {
+                self.error = error
+            }
+        }
+    }
+    
+    private func loadSummary(mod: Mod) {
+        Task {
+            if let summary = try? await ModSearcher.shared.get(mod.id) { // 若 slug 与 Mod ID 一致，使用通过 Mod ID 获取到的 Project
+                await MainActor.run {
+                    mod.summary = summary
+                }
+            } else { // 否则搜索最匹配的 Mod
+                if let summary = try? await ModSearcher.shared.search(
+                    query: mod.name,
+                    version: instance.version,
+                    loader: instance.clientBrand,
+                    limit: 1
+                ).first {
+                    await MainActor.run {
+                        mod.summary = summary
+                    }
+                } else {
+                    warn("未找到 \(mod.id) 对应的 Modrinth Project")
+                }
+            }
+        }
+    }
+    
+    struct ModView: View {
+        @ObservedObject private var dataManager: DataManager = .shared
+        @ObservedObject private var mod: Mod
+        @ObservedObject private var state: ModSearchViewState = StateManager.shared.modSearch
+        @State private var isHovered: Bool = false
+        
+        init(mod: Mod) {
+            self.mod = mod
+        }
+        
+        var body: some View {
+            MyListItemComponent {
+                HStack(alignment: .center) {
+                    getIconImage()
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 34)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 0) {
+                            Text(mod.summary?.name ?? mod.name)
+                                .font(.custom("PCL English", size: 14))
+                                .foregroundStyle(Color("TextColor"))
+                            Text(" | \(mod.version)")
+                                .foregroundStyle(Color(hex: 0x8C8C8C))
+                        }
+                        HStack {
+                            ForEach((mod.summary?.tags ?? []).compactMap { ModListItem.tagMap[$0] }, id: \.self) { tag in
+                                MyTagComponent(label: tag, backgroundColor: Color("TagColor"), fontSize: 12)
+                            }
+                            
+                            Text(mod.summary?.description ?? mod.description)
+                                .font(.custom("PCL English", size: 14))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
+                        .foregroundStyle(Color(hex: 0x8C8C8C))
+                    }
+                    .font(.custom("PCL English", size: 12))
+                    Spacer()
+                    
+                    if let summary = mod.summary, isHovered {
+                        Image("InfoIcon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 16)
+                            .foregroundStyle(AppSettings.shared.theme.getTextStyle())
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                dataManager.router.append(.modDownload(summary: summary))
+                            }
+                    }
+                }
+                .padding(4)
+            }
+            .animation(.easeInOut(duration: 0.2), value: isHovered)
+            .onHover { isHovered in
+                self.isHovered = isHovered
+            }
+        }
+        
+        /// 获取未经任何处理的模组图标 Image
+        private func getIconImage() -> Image {
+            if let summary = mod.summary {
+                if let icon = state.iconCache[summary.projectId] {
+                    return icon
+                } else {
+                    Task {
+                        if let url = summary.iconUrl,
+                           let data = await Requests.get(url).data,
+                           let nsImage = NSImage(data: data) {
+                            DispatchQueue.main.async {
+                                self.state.iconCache[summary.projectId] = Image(nsImage: nsImage)
+                            }
+                        }
+                    }
+                    return Image("ModIconPlaceholder")
+                }
+            }
+            
+            // TODO: 读取 Mod 图标
+            return Image("ModIconPlaceholder")
         }
     }
 }

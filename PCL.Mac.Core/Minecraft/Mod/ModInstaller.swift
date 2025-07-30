@@ -141,7 +141,7 @@ public class ModSearcher {
     }
     
     public func get(_ id: String) async throws -> ModSummary {
-        return .init(json: try await Requests.get("https://api.modrinth.com/v2/project/\(id)").getJSONOrThrow())
+        return .init(json: try await Requests.get("https://api.modrinth.com/v2/project/\(id)", ignoredFailureStatusCodes: [404]).getJSONOrThrow())
     }
     
     private func getDependencies(_ json: JSON) async -> [ModDependency] {
@@ -222,13 +222,16 @@ public class ModSearcher {
     
     // 模组搜索界面调用
     // 不通过此函数获取模组版本列表
-    public func search(query: String, version: MinecraftVersion? = nil, limit: Int = 40) async throws -> [ModSummary] {
+    public func search(query: String, version: MinecraftVersion? = nil, loader: ClientBrand? = nil, limit: Int = 40) async throws -> [ModSummary] {
         var facets = [
             ["project_type:mod"],
         ]
         
         if let version = version {
-            facets.append(["version:\(version.displayName)"])
+            facets.append(["versions:\(version.displayName)"])
+        }
+        if let loader = loader {
+            facets.append(["categories:\(loader.rawValue)"])
         }
         
         let facetsData = try! JSONSerialization.data(withJSONObject: facets)

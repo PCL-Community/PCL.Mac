@@ -13,17 +13,11 @@ public class Util {
     public static func getMainClass(_ jarUrl: URL) -> String? {
         do {
             let archive = try Archive(url: jarUrl, accessMode: .read)
-            if let manifest = archive["META-INF/MANIFEST.MF"] {
-                var data = Data()
-                _ = try archive.extract(manifest, consumer: { (chunk) in
-                    data.append(chunk)
-                })
-                
-                let manifest = String(data: data, encoding: .utf8)!
+            let data = try ZipUtil.getEntryOrThrow(archive: archive, name: "META-INF/MANIFEST.MF")
+            let manifest = String(data: data, encoding: .utf8)!
 
-                if let match = manifest.firstMatch(of: /(?m)^Main-Class:\s*([^\r\n]+)/) {
-                    return String(match.1)
-                }
+            if let match = manifest.firstMatch(of: /(?m)^Main-Class:\s*([^\r\n]+)/) {
+                return String(match.1)
             }
         } catch {
             err("无法获取主类: \(error.localizedDescription)")

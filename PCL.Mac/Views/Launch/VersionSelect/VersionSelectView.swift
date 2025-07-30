@@ -33,7 +33,7 @@ struct VersionSelectView: View, SubRouteContainer {
                         .padding(.top, 20)
                         .padding(.bottom, 4)
                     MyListComponent(
-                        default: .versionList(directory: settings.currentMinecraftDirectory ?? .default),
+                        root: .versionSelect,
                         cases: $directoryRoutes,
                         height: 42,
                         content: { type, isSelected in

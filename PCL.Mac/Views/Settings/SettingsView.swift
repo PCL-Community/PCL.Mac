@@ -27,7 +27,7 @@ struct SettingsView: View {
             dataManager.leftTab(120) {
                 VStack(alignment: .leading, spacing: 0) {
                     MyListComponent(
-                        default: .personalization,
+                        root: .settings,
                         cases: .constant([.personalization, .javaSettings, .otherSettings])
                     ) { type, isSelected in
                         createListItemView(type)

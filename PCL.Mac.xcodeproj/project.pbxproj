@@ -98,6 +98,7 @@
 				Theme/ThemeDownloader.swift,
 				UpdateCheck.swift,
 				Utils/Util.swift,
+				Utils/ZipUtil.swift,
 			);
 			target = EC9EAEC82DD85E48006CEDCC /* PCL.Mac */;
 		};
@@ -138,6 +139,7 @@
 				Theme/ThemeDownloader.swift,
 				UpdateCheck.swift,
 				Utils/Util.swift,
+				Utils/ZipUtil.swift,
 			);
 			publicHeaders = (
 				PCL_Mac_Core.h,
