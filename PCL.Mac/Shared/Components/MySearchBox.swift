@@ -48,6 +48,7 @@ struct MySearchBox: View {
                         .bold()
                         .onTapGesture {
                             query.removeAll()
+                            onSubmit(query)
                         }
                 }
             }

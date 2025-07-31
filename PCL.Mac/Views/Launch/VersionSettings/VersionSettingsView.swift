@@ -202,6 +202,7 @@ struct InstanceModsView: View {
     @State private var searchQuery: String = ""
     @State private var mods: [Mod]? = nil
     @State private var error: Error?
+    @State private var filter: (Mod) -> Bool = { _ in true }
     
     private let taskID: UUID = .init()
     let instance: MinecraftInstance
@@ -249,9 +250,11 @@ struct InstanceModsView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                 
-                MySearchBox(query: $searchQuery, placeholder: "搜索资源 名称 / 描述 / 标签", onSubmit: { _ in })
-                    .padding()
-                    .padding(.top, -25)
+                MySearchBox(query: $searchQuery, placeholder: "搜索资源 名称 / 描述") { query in
+                    filter = { query.isEmpty || $0.name.contains(query) || $0.description.contains(query) }
+                }
+                .padding()
+                .padding(.top, -25)
                 
                 TitlelessMyCardComponent(index: 1) {
                     HStack(spacing: 16) {
@@ -273,7 +276,7 @@ struct InstanceModsView: View {
                 if let mods = mods {
                     TitlelessMyCardComponent(index: 2) {
                         VStack(spacing: 0) {
-                            ForEach(mods) { mod in
+                            ForEach(mods.filter(filter)) { mod in
                                 ModView(mod: mod)
                             }
                             if mods.isEmpty {
