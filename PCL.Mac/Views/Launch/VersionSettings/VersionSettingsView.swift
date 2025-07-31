@@ -200,70 +200,127 @@ struct InstanceSettingsView: View {
 struct InstanceModsView: View {
     @ObservedObject private var dataManager: DataManager = .shared
     @State private var searchQuery: String = ""
-    @State private var mods: [Mod] = []
+    @State private var mods: [Mod]? = nil
     @State private var error: Error?
     
     private let taskID: UUID = .init()
     let instance: MinecraftInstance
     
     var body: some View {
-        ScrollView {
-            MySearchBox(query: $searchQuery, placeholder: "搜索资源 名称 / 描述 / 标签", onSubmit: { _ in })
-                .padding()
-            
-            TitlelessMyCardComponent(index: 1) {
-                HStack(spacing: 16) {
-                    MyButtonComponent(text: "打开文件夹", foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
-                        NSWorkspace.shared.open(instance.runningDirectory.appending(path: "mods"))
-                    }
-                    .frame(width: 120, height: 35)
-                    MyButtonComponent(text: "下载新资源") {
-                        dataManager.router.setRoot(.download)
-                        dataManager.router.append(.modSearch)
-                    }
-                    .frame(width: 120, height: 35)
-                    Spacer()
-                }
-                .padding(2)
-            }
-            .padding()
-            
-            TitlelessMyCardComponent(index: 2) {
-                VStack(spacing: 0) {
-                    ForEach(mods) { mod in
-                        ModView(mod: mod)
-                    }
-                }
-            }
-            .padding()
-            
-            Spacer()
-        }
-        .scrollIndicators(.never)
-        .task(id: taskID) {
-            if !mods.isEmpty { return }
-            do {
-                let loader = instance.clientBrand
-                let files = try FileManager.default.contentsOfDirectory(at: instance.runningDirectory.appending(path: "mods"), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
-                let jarFiles = files.filter { $0.pathExtension.lowercased() == "jar" }
-                for jarFile in jarFiles {
-                    do {
-                        let archive = try Archive(url: jarFile, accessMode: .read)
-                        var mod: Mod? = nil
-                        if loader == .fabric {
-                            mod = .fromFabricJSON(try JSON(data: ZipUtil.getEntryOrThrow(archive: archive, name: "fabric.mod.json")))
+        if instance.clientBrand == .vanilla {
+            VStack {
+                TitlelessMyCardComponent {
+                    VStack {
+                        Text("该实例不可使用 Mod")
+                            .font(.custom("PCL English", size: 22))
+                            .foregroundStyle(AppSettings.shared.theme.getTextStyle())
+                        Rectangle()
+                            .fill(AppSettings.shared.theme.getTextStyle())
+                            .frame(height: 2)
+                        VStack(alignment: .leading) {
+                            Text("你需要先安装 Forge、Fabric 等 Mod 加载器才能使用 Mod，请在下载页面安装这些实例。")
+                            Text("如果你已经安装过了 Mod 加载器，那么你很可能选择了错误的实例，请点击实例选择按钮切换实例。")
                         }
+                        .font(.custom("PCL English", size: 14))
+                        .foregroundStyle(Color("TextColor"))
+                        .padding(4)
                         
-                        if let mod = mod {
-                            await MainActor.run {
-                                self.mods.append(mod)
+                        HStack(spacing: 24) {
+                            MyButtonComponent(text: "转到下载页面", foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
+                                dataManager.router.setRoot(.download)
+                                dataManager.router.append(.minecraftDownload)
                             }
-                            loadSummary(mod: mod)
+                            .frame(width: 170, height: 40)
+                            
+                            MyButtonComponent(text: "实例选择") {
+                                dataManager.router.setRoot(.versionSelect)
+                            }
+                            .frame(width: 170, height: 40)
                         }
-                    } catch {}
+                    }
+                    .padding(4)
                 }
-            } catch {
-                self.error = error
+                .padding(40)
+            }
+            .frame(maxWidth: .infinity)
+        } else {
+            ScrollView {
+                MyTipComponent(text: "目前只支持 Fabric Mod 识别！", color: .blue)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                
+                MySearchBox(query: $searchQuery, placeholder: "搜索资源 名称 / 描述 / 标签", onSubmit: { _ in })
+                    .padding()
+                    .padding(.top, -25)
+                
+                TitlelessMyCardComponent(index: 1) {
+                    HStack(spacing: 16) {
+                        MyButtonComponent(text: "打开文件夹", foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
+                            NSWorkspace.shared.open(instance.runningDirectory.appending(path: "mods"))
+                        }
+                        .frame(width: 120, height: 35)
+                        MyButtonComponent(text: "下载新资源") {
+                            dataManager.router.setRoot(.download)
+                            dataManager.router.append(.modSearch)
+                        }
+                        .frame(width: 120, height: 35)
+                        Spacer()
+                    }
+                    .padding(2)
+                }
+                .padding()
+                
+                if let mods = mods {
+                    TitlelessMyCardComponent(index: 2) {
+                        VStack(spacing: 0) {
+                            ForEach(mods) { mod in
+                                ModView(mod: mod)
+                            }
+                            if mods.isEmpty {
+                                Text("你还没有安装任何模组！")
+                                    .font(.custom("PCL English", size: 14))
+                                    .foregroundStyle(Color("TextColor"))
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                } else {
+                    Text("加载中……")
+                        .font(.custom("PCL English", size: 14))
+                        .foregroundStyle(Color("TextColor"))
+                }
+                
+                Spacer()
+            }
+            .scrollIndicators(.never)
+            .task(id: taskID) {
+                if mods != nil || instance.clientBrand == .vanilla { return }
+                do {
+                    var mods: [Mod] = []
+                    let loader = instance.clientBrand
+                    let files = try FileManager.default.contentsOfDirectory(at: instance.runningDirectory.appending(path: "mods"), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
+                    let jarFiles = files.filter { $0.pathExtension.lowercased() == "jar" }
+                    for jarFile in jarFiles {
+                        do {
+                            let archive = try Archive(url: jarFile, accessMode: .read)
+                            var mod: Mod? = nil
+                            if loader == .fabric {
+                                mod = .fromFabricJSON(try JSON(data: ZipUtil.getEntryOrThrow(archive: archive, name: "fabric.mod.json")))
+                            }
+                            
+                            if let mod = mod {
+                                mods.append(mod)
+                                loadSummary(mod: mod)
+                            }
+                        } catch {}
+                    }
+                    await MainActor.run {
+                        self.mods = mods
+                    }
+                } catch {
+                    self.error = error
+                }
             }
         }
     }
