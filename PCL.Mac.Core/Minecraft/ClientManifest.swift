@@ -91,12 +91,16 @@ public class ClientManifest {
     }
 
     public class Library: Hashable {
-        public let name: String
-        private let split: [String]
-        public var groupId: String
-        public var artifactId: String
-        public var version: String
-        public var classifier: String?
+        public var name: String {
+            didSet {
+                split = name.split(separator: ":").map(String.init)
+            }
+        }
+        private var split: [String]
+        public var groupId: String { split[0] }
+        public var artifactId: String { split[1] }
+        public var version: String { split[2] }
+        public var classifier: String? { split.count >= 4 ? split[3] : nil }
         public let rules: [Rule]
         public let natives: [String: String]
         public let artifact: DownloadInfo?
@@ -108,10 +112,6 @@ public class ClientManifest {
             if split.isEmpty {
                 return nil
             }
-            groupId = split[0]
-            artifactId = split[1]
-            version = split[2]
-            classifier = split.count >= 4 ? split[3] : nil
             
             if json["url"].exists() { // Fabric 依赖
                 self.rules = []
@@ -120,7 +120,7 @@ public class ClientManifest {
                 let path = Util.toPath(mavenCoordinate: name)
                 self.artifact = DownloadInfo(path: path, url: URL(string: json["url"].stringValue)!.appending(path: path).absoluteString)
             } else {
-                if artifactId == "launchwrapper" {
+                if split[1] == "launchwrapper" {
                     self.rules = []
                     self.classifiers = [:]
                     self.natives = [:]
@@ -355,9 +355,7 @@ public class ClientManifest {
     }
 
     public func getNeededLibraries() -> [Library] {
-        getAllowedLibraries().filter { lib in
-            return !lib.name.contains("natives") && lib.artifact != nil
-        }
+        getAllowedLibraries().filter { $0.getNativeArtifact() == nil }
     }
     public func getAllowedLibraries() -> [Library] {
         libraries.filter { lib in
