@@ -20,6 +20,7 @@ public class ChunkedDownloader {
     private let onChunkDownloaded: ((Int, Int) -> Void)?
     private var finishedChunkCount: Int = 0
     private let tempDir: URL
+    private let session = URLSession(configuration: .default)
 
     public init(url: URL, destination: URL, chunkCount: Int, onChunkDownloaded: ((Int, Int) -> Void)? = nil) {
         self.url = url
@@ -111,8 +112,6 @@ public class ChunkedDownloader {
         var request = URLRequest(url: url)
         request.setValue("bytes=\(range.lowerBound)-\(range.upperBound)", forHTTPHeaderField: "Range")
         let tempFile = tempDir.appendingPathComponent("chunk_\(index)")
-        let session = URLSession(configuration: .default)
-
         let task = session.downloadTask(with: request) { [weak self] location, response, error in
             defer { self?.group.leave() }
             guard let self = self else { return }

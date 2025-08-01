@@ -13,6 +13,7 @@
 		EC3C3C4F2E2134A90033107E /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = EC3C3C4E2E2134A90033107E /* SwiftyJSON */; };
 		EC422DAB2E2082D900FE8309 /* PCL_Mac_Core.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EC422DA32E2082D900FE8309 /* PCL_Mac_Core.framework */; };
 		EC422DAD2E2082D900FE8309 /* PCL_Mac_Core.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = EC422DA32E2082D900FE8309 /* PCL_Mac_Core.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		EC91D4FC2E3CAB4100C81583 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = EC91D4FB2E3CAB4100C81583 /* SwiftyJSON */; };
 		EC9507372DFCF17700018EE0 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = EC9507362DFCF17700018EE0 /* SwiftyJSON */; };
 		EC9A7DCA2DE150170018815F /* glfw-patcher.jar in Resources */ = {isa = PBXBuildFile; fileRef = EC9A7DC82DE1500F0018815F /* glfw-patcher.jar */; };
 		ECDBF0CC2E1124C500E81482 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = ECDBF0CB2E1124C500E81482 /* ZIPFoundation */; };
@@ -95,6 +96,7 @@
 				Requests.swift,
 				Storage/AccessTokenStorage.swift,
 				Storage/CacheStorage.swift,
+				Temp/TemperatureDirectory.swift,
 				Theme/ThemeDownloader.swift,
 				UpdateCheck.swift,
 				Utils/Util.swift,
@@ -136,6 +138,7 @@
 				Requests.swift,
 				Storage/AccessTokenStorage.swift,
 				Storage/CacheStorage.swift,
+				Temp/TemperatureDirectory.swift,
 				Theme/ThemeDownloader.swift,
 				UpdateCheck.swift,
 				Utils/Util.swift,
@@ -214,6 +217,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EC91D4FC2E3CAB4100C81583 /* SwiftyJSON in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -342,6 +346,7 @@
 			);
 			name = PCL.Mac.Tests;
 			packageProductDependencies = (
+				EC91D4FB2E3CAB4100C81583 /* SwiftyJSON */,
 			);
 			productName = "PCL-MacTests";
 			productReference = ECA5D8DC2DD99A4C006C58F7 /* PCL.Mac.Tests.xctest */;
@@ -825,6 +830,11 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		EC3C3C4E2E2134A90033107E /* SwiftyJSON */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EC9507352DFCF17700018EE0 /* XCRemoteSwiftPackageReference "SwiftyJSON" */;
+			productName = SwiftyJSON;
+		};
+		EC91D4FB2E3CAB4100C81583 /* SwiftyJSON */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = EC9507352DFCF17700018EE0 /* XCRemoteSwiftPackageReference "SwiftyJSON" */;
 			productName = SwiftyJSON;
