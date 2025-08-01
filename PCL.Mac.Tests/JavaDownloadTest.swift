@@ -8,23 +8,13 @@
 import Foundation
 import Testing
 import PCL_Mac
-import SwiftUI
-import Cocoa
-import UserNotifications
 import SwiftyJSON
 
 struct JavaDownloadTest {
     @Test func testFetchVersions() async throws {
-        let json: JSON = try await Requests.get(
-            "https://api.azul.com/metadata/v1/zulu/packages/",
-            body: [
-                "os": "macos"
-            ],
-            encodeMethod: .urlEncoded
-        ).getJSONOrThrow()
-        
-        for pkg in json.arrayValue {
-            print(pkg["java_version"].arrayValue)
+        let packages = try await JavaDownloader.search(version: "1.8")
+        for package in packages.prefix(10) {
+            print(package.versionString)
         }
     }
     
@@ -62,5 +52,16 @@ struct JavaDownloadTest {
         try? FileManager.default.copyItem(at: javaDirectoryPath, to: saveURL)
         
         print("安装完成")
+    }
+    
+    @Test func testMatchFileName() {
+        if let match = "zulu24.32.13-ca-crac-jdk24.0.2-macosx_aarch64.zip".wholeMatch(of: /zulu.*-ca-fx-(jdk|jre)([0-9.]+)-macosx_(x64|aarch64)\.zip/) {
+            let type = match.1
+            let version = match.2
+            let arch = match.3
+            print("type: \(type), version: \(version), arch: \(arch)")
+        } else {
+            assertionFailure()
+        }
     }
 }

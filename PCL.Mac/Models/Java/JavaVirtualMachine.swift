@@ -10,7 +10,7 @@ import Foundation
 public class JavaVirtualMachine: Identifiable, Equatable {
     static let Error = JavaVirtualMachine(arch: .unknown, version: -1, displayVersion: "错误", executableUrl: URL(fileURLWithPath: "Error"), callMethod: .incompatible, _isError: true)
     
-    public let arch: ExecArchitectury
+    public let arch: Architectury
     public var version: Int
     public var displayVersion: String
     public var implementor: String?
@@ -32,7 +32,7 @@ public class JavaVirtualMachine: Identifiable, Equatable {
     
     public let id = UUID()
     
-    public init(arch: ExecArchitectury, version: Int, displayVersion: String, implementor: String? = nil, executableUrl: URL, callMethod: CallMethod, isJdk: Bool? = nil, _isError: Bool? = nil, _isAddedByUser: Bool? = nil) {
+    public init(arch: Architectury, version: Int, displayVersion: String, implementor: String? = nil, executableUrl: URL, callMethod: CallMethod, isJdk: Bool? = nil, _isError: Bool? = nil, _isAddedByUser: Bool? = nil) {
         self.arch = arch
         self.version = version
         self.displayVersion = displayVersion
@@ -67,11 +67,11 @@ public class JavaVirtualMachine: Identifiable, Equatable {
         }
         
         // 设置架构及调用方式
-        let arch: ExecArchitectury = .getArchOfFile(executableUrl)
+        let arch: Architectury = .getArchOfFile(executableUrl)
         let callMethod: CallMethod?
-        if arch == ExecArchitectury.SystemArch || arch == .fatFile {
+        if arch == Architectury.system || arch == .fatFile {
             callMethod = .direct
-        } else if ExecArchitectury.SystemArch == .arm64 {
+        } else if Architectury.system == .arm64 {
             callMethod = .transition
         } else {
             callMethod = .incompatible
@@ -162,8 +162,8 @@ public class JavaVirtualMachine: Identifiable, Equatable {
     }
 }
 
-public enum ExecArchitectury {
-    public static var SystemArch: ExecArchitectury {
+public enum Architectury {
+    public static var system: Architectury {
         get {
             if _systemArch == nil {
                 var systemInfo = utsname()
@@ -179,7 +179,7 @@ public enum ExecArchitectury {
         }
     }
     
-    public static func getArchOfFile(_ executableUrl: URL) -> ExecArchitectury {
+    public static func getArchOfFile(_ executableUrl: URL) -> Architectury {
         guard let fh = try? FileHandle(forReadingFrom: executableUrl) else { return .unknown }
         defer { try? fh.close() }
 
@@ -200,8 +200,16 @@ public enum ExecArchitectury {
         }
     }
     
-    private static var _systemArch: ExecArchitectury? = nil
+    private static var _systemArch: Architectury? = nil
     case arm64, x64, fatFile, unknown
+    
+    public static func fromString(_ string: String) -> Architectury {
+        switch string {
+        case "aarch64", "arm64", "arm": .arm64
+        case "x86", "x64", "x86_64", "amd64": .x64
+        default: .unknown
+        }
+    }
 }
 
 public enum CallMethod {

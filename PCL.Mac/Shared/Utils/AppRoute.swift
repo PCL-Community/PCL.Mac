@@ -32,6 +32,7 @@ public enum AppRoute: Hashable {
     case instanceOverview
     case instanceSettings
     case instanceMods
+    case javaDownload
     
     case about
     case toolbox
@@ -105,6 +106,8 @@ public class AppRouter: ObservableObject {
             AnnouncementHistoryView()
         case .versionSettings, .instanceOverview, .instanceSettings, .instanceMods:
             VersionSettingsView()
+        case .javaDownload:
+            JavaDownloadView()
         }
     }
     

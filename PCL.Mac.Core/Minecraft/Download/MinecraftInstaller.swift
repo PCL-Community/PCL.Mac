@@ -224,8 +224,8 @@ public class MinecraftInstaller {
             
             // 验证架构
             if fileURL.pathExtension == "dylib" {
-                let arch = ExecArchitectury.getArchOfFile(fileURL)
-                guard arch == .SystemArch || arch == .fatFile else {
+                let arch = Architectury.getArchOfFile(fileURL)
+                guard arch == .system || arch == .fatFile else {
                     try? fileManager.removeItem(at: fileURL)
                     log("已清除架构不匹配的可执行文件: \(fileURL.lastPathComponent)")
                     continue

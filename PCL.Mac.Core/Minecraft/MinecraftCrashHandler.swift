@@ -14,9 +14,9 @@ public class MinecraftCrashHandler {
     
     public static func exportErrorReport(_ instance: MinecraftInstance, _ launcher: MinecraftLauncher, to destination: URL) {
         log("以下是 PCL.Mac 检测到的环境信息:")
-        log("架构: \(ExecArchitectury.SystemArch)")
+        log("架构: \(Architectury.system)")
         log("分支: \(SharedConstants.shared.branch)")
-        log("Java 架构: \(ExecArchitectury.getArchOfFile(URL(fileURLWithPath: instance.config.javaPath!)))")
+        log("Java 架构: \(Architectury.getArchOfFile(URL(fileURLWithPath: instance.config.javaPath!)))")
         do {
             let contents = try FileManager.default.contentsOfDirectory(
                 at: instance.runningDirectory.appending(path: "natives"),
@@ -24,7 +24,7 @@ public class MinecraftCrashHandler {
             )
             for fileURL in contents {
                 if fileURL.pathExtension != "dylib" { continue }
-                log("\(fileURL.lastPathComponent) 架构: \(ExecArchitectury.getArchOfFile(fileURL))")
+                log("\(fileURL.lastPathComponent) 架构: \(Architectury.getArchOfFile(fileURL))")
             }
         } catch {
             err("无法获取本地库: \(error.localizedDescription)")
