@@ -38,6 +38,7 @@ public class JavaDownloader {
                 let arch = String(match.2)
                 
                 packages.append(JavaPackage(
+                    name: String(package["name"].stringValue.dropLast(4)),
                     type: .init(rawValue: type) ?? .jre,
                     arch: .fromString(arch),
                     version: package["java_version"].arrayValue.map { $0.intValue },
@@ -50,7 +51,48 @@ public class JavaDownloader {
     }
 }
 
+public class JavaInstallTask: InstallTask {
+    private let package: JavaPackage
+    
+    public init(package: JavaPackage) {
+        self.package = package
+        super.init()
+        self.totalFiles = 1
+        self.remainingFiles = 1
+    }
+    
+    public override func start() {
+        let temp = TemperatureDirectory(name: "JavaDownload")
+        Task {
+            updateStage(.javaDownload)
+            let zipDestination = temp.root.appending(path: "\(package.name).zip")
+            let downloader = ChunkedDownloader(
+                url: package.downloadURL,
+                destination: zipDestination,
+                chunkCount: 64
+            )
+            await downloader.start()
+            completeOneFile()
+            updateStage(.javaInstall)
+            
+            Util.unzip(archiveUrl: zipDestination, destination: temp.root, replace: false)
+            
+            let javaDirectoryPath = temp.root.appending(path: package.name).appending(path: "bin").resolvingSymlinksInPath().parent().parent().parent()
+            let saveURL = URL(fileURLWithUserPath: "~/Library/Java/JavaVirtualMachines").appending(path: javaDirectoryPath.lastPathComponent)
+            
+            try? FileManager.default.createDirectory(
+                at: saveURL.parent(),
+                withIntermediateDirectories: true
+            )
+            try? FileManager.default.copyItem(at: javaDirectoryPath, to: saveURL)
+            temp.free()
+            complete()
+        }
+    }
+}
+
 public struct JavaPackage {
+    public let name: String
     public let type: JavaType
     public let arch: Architectury
     public let version: [Int]

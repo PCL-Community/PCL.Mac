@@ -15,9 +15,9 @@ public class TemperatureDirectory {
         self.name = name
         if FileManager.default.fileExists(atPath: root.path) {
             warn("\(name) 对应的 URL 已被占用")
-        } else {
-            try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            free()
         }
+        try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     }
     
     public func free() {
@@ -30,7 +30,7 @@ public class TemperatureDirectory {
             for itemURL in contents {
                 try FileManager.default.removeItem(at: itemURL)
             }
-            try FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: root)
         } catch {
             err("在释放 \(name) 时发生错误: \(error)")
         }

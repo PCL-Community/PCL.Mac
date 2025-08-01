@@ -238,8 +238,10 @@ public enum InstallStage: Int {
     case clientLibraries = 6
     case natives = 7
     case end = 8
-    case customFile = 1_1_4_5_1_4
-    case mods = 1_9_1_9_8_1_0
+    case customFile = 1000
+    case mods = 2000
+    case javaDownload = 3000
+    case javaInstall = 3001
     
     public func getDisplayName() -> String {
         switch self {
@@ -254,6 +256,8 @@ public enum InstallStage: Int {
         case .customFile: "下载自定义文件"
         case .mods: "下载模组"
         case .end: "结束"
+        case .javaDownload: "下载 Java"
+        case .javaInstall: "安装 Java"
         }
     }
 }
