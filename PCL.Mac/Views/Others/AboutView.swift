@@ -99,14 +99,9 @@ struct AboutView: View {
             
             StaticMyCardComponent(index: 2, title: "许可与版权声明") {
                 VStack(spacing: 0) {
-                    ForEach(
-                        [
-                            (name: "SwiftyJSON", license: "MIT", repo: "SwiftyJSON/SwiftyJSON"),
-                            (name: "ZIPFoundation", license: "MIT", repo: "weichsel/ZIPFoundation")
-                        ]
-                        , id: \.name) { dependency in
-                            DependencyView(name: dependency.name, license: dependency.license, repo: dependency.repo)
-                        }
+                    DependencyView(name: "SwiftyJSON", license: "MIT", repo: "SwiftyJSON/SwiftyJSON")
+                    DependencyView(name: "ZIPFoundation", license: "MIT", repo: "weichsel/ZIPFoundation")
+                    DependencyView(name: "aria2", description: "作为外部分片下载器", license: "GNU GPL v2", repo: "aria2/aria2")
                 }
             }
             .padding()
@@ -116,15 +111,30 @@ struct AboutView: View {
     }
     
     struct DependencyView: View {
-        let name: String
-        let license: String
-        let repo: String
+        private let name: String
+        private let description: String
+        private let license: String
+        private let repo: String
+        
+        init(name: String, description: String = "", license: String, repo: String) {
+            self.name = name
+            self.description = description
+            self.license = license
+            self.repo = repo
+        }
         
         var body: some View {
             MyListItemComponent {
                 HStack {
                     VStack(alignment: .leading) {
-                        Text(name)
+                        HStack(spacing: 0) {
+                            Text(name)
+                            if !description.isEmpty {
+                                Text(" | \(description)")
+                                    .foregroundStyle(Color(hex: 0x8C8C8C))
+                            }
+                            Spacer()
+                        }
                         Text("\(license) | https://github.com/\(repo)")
                             .foregroundStyle(Color(hex: 0x8C8C8C))
                     }
@@ -132,7 +142,7 @@ struct AboutView: View {
                 }
                 .font(.custom("PCL English", size: 14))
                 .foregroundStyle(Color("TextColor"))
-                .padding()
+                .padding(8)
             }
         }
     }
