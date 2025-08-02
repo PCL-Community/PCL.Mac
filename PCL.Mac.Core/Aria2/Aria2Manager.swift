@@ -6,35 +6,55 @@
 //
 
 import Foundation
+import SwiftyJSON
 
 public class Aria2Manager {
     public static let shared: Aria2Manager = .init()
     
     public let executableURL: URL
     
-    public func download(url: URL, destination: URL) async throws {
+    public func download(url: URL, destination: URL, progress: ((Double, Int) -> Void)? = nil) async throws {
         guard FileManager.default.fileExists(atPath: executableURL.path) else {
-            throw NSError(domain: "aria2", code: 404, userInfo: [NSLocalizedDescriptionKey: "未安装 aria2！"])
+            throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: "\(executableURL.path) 不存在"])
         }
         
-        do {
-            let process = Process()
-            process.executableURL = executableURL
-            process.currentDirectoryURL = executableURL.parent()
-            process.arguments = [url.absoluteString, "-d", destination.parent().path, "-o", destination.lastPathComponent]
-            try process.run()
-            await withCheckedContinuation { continuation in
-                process.waitUntilExit()
-                continuation.resume()
+        let id = try await sendRpc("aria2.addUri", [
+            [url.absoluteString],
+            [
+                "dir": destination.parent().path,
+                "out": destination.lastPathComponent
+            ]
+        ]).stringValue
+        
+        while true {
+            let response = try await sendRpc("aria2.tellStatus", [id, ["downloadSpeed", "totalLength", "completedLength", "status"]])
+            let status = response["status"].stringValue
+            if status == "error" || status == "complete" { break }
+            await MainActor.run {
+                progress?(Double(response["completedLength"].intValue) / Double(response["totalLength"].intValue), response["downloadSpeed"].intValue)
             }
-        } catch {
-            throw error
+            
+            try? await Task.sleep(for: .seconds(1))
         }
+    }
+    
+    public func sendRpc(_ method: String, _ params: [Any]) async throws -> JSON {
+        let body: [String : Any] = [
+            "id": UUID().uuidString,
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params
+        ]
+        let json = try await Requests.post("http://localhost:6800/jsonrpc", body: body, encodeMethod: .json).getJSONOrThrow()
+        if json["error"].exists() {
+            throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: json["error"].rawString()!])
+        }
+        return json["result"]
     }
     
     public func downloadAria2() async throws {
         guard !FileManager.default.fileExists(atPath: executableURL.path) else {
-            throw NSError(domain: "aria2", code: 404, userInfo: [NSLocalizedDescriptionKey: "已安装 aria2！"])
+            throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: "\(executableURL.path) 已存在"])
         }
         let data = try await Requests.get("https://gitee.com/yizhimcqiu/aria2-macos-universal/raw/master/aria2c-macos-universal").getDataOrThrow()
         FileManager.default.createFile(atPath: executableURL.path, contents: data)
@@ -44,5 +64,20 @@ public class Aria2Manager {
     private init() {
         executableURL = SharedConstants.shared.applicationSupportUrl.appending(path: "Aria2").appending(path: "aria2c")
         try? FileManager.default.createDirectory(at: executableURL.parent(), withIntermediateDirectories: true)
+        
+        let process = Process()
+        process.executableURL = executableURL
+        process.currentDirectoryURL = executableURL.parent()
+        process.arguments = ["--enable-rpc", "--rpc-listen-all"]
+        
+        process.standardOutput = nil
+        process.standardError = nil
+        
+        do {
+            try process.run()
+            log("aria2c 已启动")
+        } catch {
+            err("无法启动 aria2c: \(error.localizedDescription)")
+        }
     }
 }
