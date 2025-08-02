@@ -65,6 +65,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Announcement/AnnouncementManager.swift,
+				Aria2/Aria2Manager.swift,
 				Java/JavaSearch.swift,
 				LogManager.swift,
 				Minecraft/AssetIndex.swift,
@@ -106,6 +107,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Announcement/AnnouncementManager.swift,
+				Aria2/Aria2Manager.swift,
 				Java/JavaSearch.swift,
 				LogManager.swift,
 				Minecraft/AssetIndex.swift,
