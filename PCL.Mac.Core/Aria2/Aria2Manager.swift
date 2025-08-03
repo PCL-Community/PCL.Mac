@@ -25,7 +25,9 @@ public class Aria2Manager {
                 "dir": destination.parent().path,
                 "out": destination.lastPathComponent,
                 "split": "64",
-                "min-split-size": "1M"
+                "max-connection-per-server": "16",
+                "enable-http-pipelining": "true",
+                "check-integrity": "false",
             ]
         ]).stringValue
         debug("开始下载 \(url.absoluteString)")
