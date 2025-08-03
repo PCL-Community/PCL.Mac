@@ -214,10 +214,9 @@ public class CustomFileInstallTask: InstallTask {
     
     public override func start() {
         Task {
-            let downloader = ChunkedDownloader(url: url, destination: destination, chunkCount: 64) { finished, total in
-                self.progress = Double(finished) / Double(total)
+            try? await Aria2Manager.shared.download(url: url, destination: destination) { percent, _ in
+                self.progress = percent
             }
-            await downloader.start()
             complete()
         }
     }

@@ -12,6 +12,7 @@ public class Aria2Manager {
     public static let shared: Aria2Manager = .init()
     
     public let executableURL: URL
+    private let port: Int?
     
     public func download(url: URL, destination: URL, progress: ((Double, Int) -> Void)? = nil) async throws {
         guard FileManager.default.fileExists(atPath: executableURL.path) else {
@@ -39,13 +40,16 @@ public class Aria2Manager {
     }
     
     public func sendRpc(_ method: String, _ params: [Any]) async throws -> JSON {
+        guard let port = port else {
+            throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: "进程未正常启动"])
+        }
         let body: [String : Any] = [
             "id": UUID().uuidString,
             "jsonrpc": "2.0",
             "method": method,
             "params": params
         ]
-        let json = try await Requests.post("http://localhost:6800/jsonrpc", body: body, encodeMethod: .json).getJSONOrThrow()
+        let json = try await Requests.post("http://localhost:\(port)/jsonrpc", body: body, encodeMethod: .json).getJSONOrThrow()
         if json["error"].exists() {
             throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: json["error"].rawString()!])
         }
@@ -64,11 +68,16 @@ public class Aria2Manager {
     private init() {
         executableURL = SharedConstants.shared.applicationSupportUrl.appending(path: "Aria2").appending(path: "aria2c")
         try? FileManager.default.createDirectory(at: executableURL.parent(), withIntermediateDirectories: true)
+        guard FileManager.default.fileExists(atPath: executableURL.path) else {
+            self.port = nil
+            return
+        }
+        self.port = Int.random(in: 25566...32768)
         
         let process = Process()
         process.executableURL = executableURL
         process.currentDirectoryURL = executableURL.parent()
-        process.arguments = ["--enable-rpc", "--rpc-listen-all"]
+        process.arguments = ["--enable-rpc", "--rpc-listen-port=\(port!)"]
         
         process.standardOutput = nil
         process.standardError = nil
@@ -79,5 +88,9 @@ public class Aria2Manager {
         } catch {
             err("无法启动 aria2c: \(error.localizedDescription)")
         }
+    }
+    
+    public func shutdown() async {
+        let _ = try? await sendRpc("aria2.shutdown", [])
     }
 }

@@ -60,11 +60,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 )
             )
         }
+        let _ = Aria2Manager.shared
     }
     
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         LogStore.shared.save()
-        return .terminateNow
+        Task {
+            await Aria2Manager.shared.shutdown()
+            NSApplication.shared.terminate(sender)
+        }
+        return .terminateLater
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
