@@ -67,7 +67,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         LogStore.shared.save()
         Task {
             await Aria2Manager.shared.shutdown()
-            NSApplication.shared.terminate(sender)
+            NSApplication.shared.reply(toApplicationShouldTerminate: true)
         }
         return .terminateLater
     }

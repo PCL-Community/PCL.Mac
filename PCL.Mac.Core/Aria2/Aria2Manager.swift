@@ -23,19 +23,27 @@ public class Aria2Manager {
             [url.absoluteString],
             [
                 "dir": destination.parent().path,
-                "out": destination.lastPathComponent
+                "out": destination.lastPathComponent,
+                "split": "64",
+                "min-split-size": "1M"
             ]
         ]).stringValue
+        debug("开始下载 \(url.absoluteString)")
         
         while true {
             let response = try await sendRpc("aria2.tellStatus", [id, ["downloadSpeed", "totalLength", "completedLength", "status"]])
             let status = response["status"].stringValue
-            if status == "error" || status == "complete" { break }
+            if status == "error" {
+                err("\(id) 状态切换为 error: \(response["errorMessage"].stringValue)")
+                throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: response["errorMessage"].stringValue])
+            } else if status == "complete" {
+                break
+            }
             await MainActor.run {
                 progress?(Double(response["completedLength"].intValue) / Double(response["totalLength"].intValue), response["downloadSpeed"].intValue)
             }
             
-            try? await Task.sleep(for: .seconds(1))
+            try? await Task.sleep(for: .seconds(0.2))
         }
     }
     
