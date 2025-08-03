@@ -29,7 +29,7 @@
 
 ## 分片下载器
 
-本启动器支持自定义分片下载，同时可选用 [aria2](https://github.com/aria2/aria2) 作为外部分片下载器，提升下载性能。
+本启动器启动后静默下载 [aria2](https://github.com/aria2/aria2) 作为外部分片下载器，提升下载性能。
 
 已集成的 aria2 Universal Binary 由 [Gitee 仓库](https://gitee.com/yizhimcqiu/aria2-macos-universal) 提供，支持 macOS x86_64 和 arm64 架构。
 
