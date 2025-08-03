@@ -60,7 +60,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 )
             )
         }
-        let _ = Aria2Manager.shared
+        Aria2Manager.shared.checkAndDownloadAria2()
     }
     
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

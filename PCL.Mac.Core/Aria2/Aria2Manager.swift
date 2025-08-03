@@ -65,6 +65,21 @@ public class Aria2Manager {
         chmod(executableURL.path, 0o755)
     }
     
+    public func checkAndDownloadAria2() {
+        if !FileManager.default.fileExists(atPath: executableURL.path) {
+            Task {
+                do {
+                    try await downloadAria2()
+                } catch {
+                    await ContentView.setPopup(PopupOverlay(
+                        "无法下载 aria2c",
+                        "\(error.localizedDescription)\n你可以点击重试，或手动将 aria2 可执行文件下载至 \(executableURL.path)",
+                        [.init(text: "重试", onClick: { PopupButton.Close.onClick() ; self.checkAndDownloadAria2() }), .Ok]))
+                }
+            }
+        }
+    }
+    
     private init() {
         executableURL = SharedConstants.shared.applicationSupportUrl.appending(path: "Aria2").appending(path: "aria2c")
         try? FileManager.default.createDirectory(at: executableURL.parent(), withIntermediateDirectories: true)
