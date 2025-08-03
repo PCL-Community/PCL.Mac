@@ -1,0 +1,61 @@
+name: "Minecraft 崩溃"
+description: "Minecraft 客户端意外退出"
+labels: "✦ Bug"
+
+body:
+- type: checkboxes
+  id: checklist
+  attributes:
+    label: 检查单
+    description: "请逐项确认以下内容："
+    options:
+      - label: "我在其他启动器上未成功复现此问题，只有 PCL.Mac 启动器有这个问题。"
+        required: true
+      - label: "我已将启动器更新至最新版，并且该问题依然存在。"
+        required: true
+      - label: "我确认此问题没有被其他人报告过。"
+        required: true
+- type: textarea
+  id: description
+  attributes:
+    label: 问题描述
+    placeholder: "对错误内容的清晰简洁的描述。"
+  validations:
+    required: true
+- type: textarea
+  id: steps
+  attributes:
+    label: 复现方式
+    placeholder: |
+      1. xxx
+      2. xxx
+  validations:
+    required: true
+- type: textarea
+  id: expected
+  attributes:
+    label: 预期行为
+    placeholder: "清晰简洁地描述你预期会发生什么。"
+  validations:
+    required: false
+- type: textarea
+  id: screenshot
+  attributes:
+    label: 截图
+    placeholder: "如果适用，请添加屏幕截图来帮助解释您的问题。"
+  validations:
+    required: false
+- type: textarea
+  id: log
+  attributes:
+    label: 日志
+    placeholder: "请打开“设置”页面，点击“打开日志”，将选择的文件拖拽至此。"
+  validations:
+    required: false
+- type: textarea
+  id: system
+  attributes:
+    label: 系统信息
+    placeholder: "系统版本：macOS x.x"
+  validations:
+    required: false

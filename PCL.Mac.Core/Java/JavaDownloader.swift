@@ -66,12 +66,7 @@ public class JavaInstallTask: InstallTask {
         Task {
             updateStage(.javaDownload)
             let zipDestination = temp.root.appending(path: "\(package.name).zip")
-            let downloader = ChunkedDownloader(
-                url: package.downloadURL,
-                destination: zipDestination,
-                chunkCount: 64
-            )
-            await downloader.start()
+            try? await Aria2Manager.shared.download(url: package.downloadURL, destination: zipDestination)
             completeOneFile()
             updateStage(.javaInstall)
             

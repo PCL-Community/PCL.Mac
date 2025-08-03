@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 public class InstallTask: ObservableObject, Identifiable, Hashable, Equatable {
     @Published public var stage: InstallStage = .before
@@ -87,7 +88,11 @@ public class InstallTasks: ObservableObject, Identifiable, Hashable, Equatable {
     }
     
     public func getProgress() -> Double {
-        Double(totalFiles - remainingFiles) / Double(totalFiles)
+        var progress: Double = 0
+        for task in tasks.values {
+            progress += task.getProgress()
+        }
+        return progress / Double(tasks.count)
     }
     
     public func getTasks() -> [InstallTask] {
@@ -101,6 +106,24 @@ public class InstallTasks: ObservableObject, Identifiable, Hashable, Equatable {
     
     init(_ tasks: [String : InstallTask]) {
         self.tasks = tasks
+        subscribeToTasks()
+    }
+    
+    private var cancellables: [AnyCancellable] = []
+    
+    private func subscribeToTasks() {
+        cancellables.forEach { $0.cancel() }
+        cancellables = []
+        for task in tasks.values {
+            subscribeToTask(task)
+        }
+    }
+
+    private func subscribeToTask(_ task: InstallTask) {
+        let cancellable = task.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+        cancellables.append(cancellable)
     }
     
     public static func single(_ task: InstallTask, key: String = "minecraft") -> InstallTasks { .init([key : task]) }
@@ -191,10 +214,10 @@ public class FabricInstallTask: InstallTask {
     }
 }
 
-public class CustomFileInstallTask: InstallTask {
+public class CustomFileDownloadTask: InstallTask {
     private let url: URL
     private let destination: URL
-    private var progress: Double = 0
+    @Published private var progress: Double = 0
     
     init(url: URL, destination: URL) {
         self.url = url
@@ -209,15 +232,22 @@ public class CustomFileInstallTask: InstallTask {
     }
     
     public override func getProgress() -> Double {
-        progress
+        currentStagePercentage
     }
     
     public override func start() {
         Task {
-            let downloader = ChunkedDownloader(url: url, destination: destination, chunkCount: 64) { finished, total in
-                self.progress = Double(finished) / Double(total)
+            do {
+                try await Aria2Manager.shared.download(url: url, destination: destination) { percent, speed in
+                    self.currentStagePercentage = percent
+                    DataManager.shared.downloadSpeed = Double(speed)
+                }
+            } catch {
+                hint("\(destination.lastPathComponent) 下载失败: \(error.localizedDescription.replacingOccurrences(of: "\n", with: ""))", .critical)
+                complete()
+                return
             }
-            await downloader.start()
+            hint("\(destination.lastPathComponent) 下载完成！", .finish)
             complete()
         }
     }

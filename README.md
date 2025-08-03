@@ -27,6 +27,15 @@
 > 输入正确的密码，然后进入`设置 > 隐私与安全性 > 安全性`，将「允许以下来源的应用程序」改为「任何来源」。<br>
 > ~~若您认为可能造成安全性问题，请每年V我们七百块钱来签名。~~
 
+## 分片下载器
+
+本启动器支持自定义分片下载，同时可选用 [aria2](https://github.com/aria2/aria2) 作为外部分片下载器，提升下载性能。
+
+已集成的 aria2 Universal Binary 由 [Gitee 仓库](https://gitee.com/yizhimcqiu/aria2-macos-universal) 提供，支持 macOS x86_64 和 arm64 架构。
+
+> aria2 遵循 GPL v2 协议，具体见 [LICENSE](https://gitee.com/yizhimcqiu/aria2-macos-universal/blob/master/COPYING)。
+> 本项目仅分发第三方二进制，非官方编译版本。如需官方源码与说明，请访问 [aria2 项目主页](https://github.com/aria2/aria2)。
+
 ## 兼容性
 
 需要 **macOS 13.0+** 才能运行本 App。
@@ -38,3 +47,4 @@
 - [Glavo](https://github.com/Glavo)
 - [HMCL-Dev](https://github.com/HMCL-Dev)
 - [Copilot](https://github.com/copilot)[ (?](https://www.bilibili.com/video/BV1GJ411x7h7)
+- [aria2](https://github.com/aria2/aria2) 项目及其开发者

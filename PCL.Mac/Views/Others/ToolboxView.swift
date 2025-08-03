@@ -74,10 +74,7 @@ struct ToolboxView: View {
                                 return
                             }
                             
-                            let task = CustomFileInstallTask(url: url, destination: settings.customFilesSaveUrl.appending(path: fileName))
-                            task.onComplete {
-                                hint("下载完成！", .finish)
-                            }
+                            let task = CustomFileDownloadTask(url: url, destination: settings.customFilesSaveUrl.appending(path: fileName))
                             DataManager.shared.inprogressInstallTasks = .single(task, key: "customFile")
                             task.start()
                             hint("开始下载 \(fileName)")

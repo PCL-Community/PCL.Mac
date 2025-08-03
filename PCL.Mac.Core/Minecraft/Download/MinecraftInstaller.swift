@@ -136,12 +136,14 @@ public class MinecraftInstaller {
         var destinations: [URL] = []
         
         for library in task.manifest!.getNeededLibraries() {
-            let dest = task.minecraftDirectory.librariesUrl.appending(path: library.artifact!.path)
-            if CacheStorage.default.copy(name: library.name, to: dest) {
-                continue
+            if let artifact = library.artifact {
+                let dest = task.minecraftDirectory.librariesUrl.appending(path: artifact.path)
+                if CacheStorage.default.copy(name: library.name, to: dest) {
+                    continue
+                }
+                urls.append(URL(string: artifact.url)!)
+                destinations.append(dest)
             }
-            urls.append(URL(string: library.artifact!.url)!)
-            destinations.append(dest)
         }
         
         await withCheckedContinuation { continuation in
