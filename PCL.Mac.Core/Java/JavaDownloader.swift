@@ -56,6 +56,7 @@ public class JavaDownloader {
 
 public class JavaInstallTask: InstallTask {
     private let package: JavaPackage
+    @Published private var progress: Double = 0
     
     public init(package: JavaPackage) {
         self.package = package
@@ -64,9 +65,9 @@ public class JavaInstallTask: InstallTask {
         self.remainingFiles = 1
     }
     
-    public override func getTitle() -> String {
-        "\(package.name) 安装"
-    }
+    public override func getTitle() -> String { "\(package.name) 安装" }
+    
+    public override func getProgress() -> Double { progress }
     
     public override func start() {
         let temp = TemperatureDirectory(name: "JavaDownload")
@@ -74,11 +75,16 @@ public class JavaInstallTask: InstallTask {
             do {
                 updateStage(.javaDownload)
                 let zipDestination = temp.root.appending(path: "\(package.name).zip")
-                try await Aria2Manager.shared.download(url: package.downloadURL, destination: zipDestination)
+                try await Aria2Manager.shared.download(url: package.downloadURL, destination: zipDestination) { progress, speed in
+                    self.progress = progress / 2
+                    self.currentStagePercentage = progress
+                    DataManager.shared.downloadSpeed = Double(speed)
+                }
                 completeOneFile()
                 updateStage(.javaInstall)
                 
                 Util.unzip(archiveUrl: zipDestination, destination: temp.root, replace: false)
+                self.progress = 0.75
                 
                 let javaDirectoryPath = temp.root.appending(path: package.name).appending(path: "bin").resolvingSymlinksInPath().parent().parent().parent()
                 let saveURL = URL(fileURLWithUserPath: "~/Library/Java/JavaVirtualMachines").appending(path: javaDirectoryPath.lastPathComponent)
@@ -91,10 +97,13 @@ public class JavaInstallTask: InstallTask {
                     withIntermediateDirectories: true
                 )
                 try? FileManager.default.copyItem(at: javaDirectoryPath, to: saveURL)
+                self.progress = 1
                 temp.free()
+                hint("Java \(package.versionString) 安装完成！", .finish)
                 complete()
             } catch {
                 hint("无法安装 Java：\(error.localizedDescription)")
+                complete()
             }
         }
     }

@@ -92,9 +92,6 @@ struct JavaPackageView: View {
                         .contentShape(Rectangle())
                         .onTapGesture {
                             let task = JavaInstallTask(package: package)
-                            task.onComplete {
-                                hint("Java \(package.versionString) 安装完成！", .finish)
-                            }
                             DataManager.shared.inprogressInstallTasks = .single(task)
                             task.start()
                             hint("开始安装 Java \(package.versionString)")

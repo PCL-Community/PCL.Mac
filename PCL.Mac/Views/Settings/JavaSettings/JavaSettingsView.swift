@@ -60,7 +60,7 @@ struct JavaSettingsView: View {
             TitlelessMyCardComponent(index: 1) {
                 Text("搜索耗时: \(dataManager.lastTimeUsed)ms")
                     .font(.custom("PCL English", size: 14))
-                VStack {
+                VStack(spacing: 0) {
                     ForEach(dataManager.javaVirtualMachines) { javaEntity in
                         JavaComponent(jvm: javaEntity)
                     }
