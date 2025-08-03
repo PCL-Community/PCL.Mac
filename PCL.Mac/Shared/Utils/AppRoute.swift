@@ -107,7 +107,7 @@ public class AppRouter: ObservableObject {
         case .versionSettings, .instanceOverview, .instanceSettings, .instanceMods:
             VersionSettingsView()
         case .javaDownload:
-            JavaDownloadView()
+            JavaInstallView()
         }
     }
     

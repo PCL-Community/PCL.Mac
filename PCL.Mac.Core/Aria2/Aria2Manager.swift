@@ -36,8 +36,8 @@ public class Aria2Manager {
             let response = try await sendRpc("aria2.tellStatus", [id, ["downloadSpeed", "totalLength", "completedLength", "status"]])
             let status = response["status"].stringValue
             if status == "error" {
-                err("\(id) 状态切换为 error: \(response["errorMessage"].stringValue)")
-                throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: response["errorMessage"].stringValue])
+                err("\(id) 状态切换为 error: \(response.rawString()!)")
+                throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: "发生未知错误"])
             } else if status == "complete" {
                 break
             }

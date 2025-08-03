@@ -10,6 +10,7 @@ import SwiftUI
 struct MyTextFieldComponent: View {
     @Binding var text: String
     @State private var isHovered: Bool = false
+    @FocusState private var isFocused
     
     private let placeholder: String
     private let numberOnly: Bool
@@ -23,10 +24,14 @@ struct MyTextFieldComponent: View {
     var body: some View {
         ZStack {
             TextField(self.placeholder, text: self.$text)
+                .focused($isFocused)
                 .onChange(of: text) { newValue in
                     if numberOnly {
                         text = newValue.filter { $0.isNumber }
                     }
+                }
+                .onSubmit {
+                    isFocused = false
                 }
                 .textFieldStyle(.plain)
                 .font(.custom("PCL English", size: 14))

@@ -13,8 +13,6 @@ struct JavaSettingsView: View {
     var body: some View {
         ScrollView {
             TitlelessMyCardComponent {
-                Text("搜索耗时: \(dataManager.lastTimeUsed)ms")
-                    .font(.custom("PCL English", size: 14))
                 HStack {
                     MyButtonComponent(text: "刷新 Java 列表") {
                         do {
@@ -23,7 +21,7 @@ struct JavaSettingsView: View {
                             print("无法刷新Java列表: \(error.localizedDescription)")
                         }
                     }
-                    .frame(height: 40)
+                    .frame(width: 150, height: 35)
                     MyButtonComponent(text: "手动添加 Java") {
                         let panel = NSOpenPanel()
                         panel.allowsMultipleSelection = false
@@ -49,8 +47,19 @@ struct JavaSettingsView: View {
                             }
                         }
                     }
-                    .frame(height: 40)
+                    .frame(width: 150, height: 35)
+                    MyButtonComponent(text: "安装 Java") {
+                        dataManager.router.append(.javaDownload)
+                    }
+                    .frame(width: 150, height: 35)
+                    Spacer()
                 }
+            }
+            .padding()
+            
+            TitlelessMyCardComponent(index: 1) {
+                Text("搜索耗时: \(dataManager.lastTimeUsed)ms")
+                    .font(.custom("PCL English", size: 14))
                 VStack {
                     ForEach(dataManager.javaVirtualMachines) { javaEntity in
                         JavaComponent(jvm: javaEntity)
