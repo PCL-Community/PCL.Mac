@@ -11,12 +11,15 @@ struct JavaInstallView: View {
     @ObservedObject private var dataManager: DataManager = .shared
     @State private var version: String = ""
     @State private var onlyLTS: Bool = true
-    @State private var packages: [JavaPackage] = []
+    @State private var packages: [JavaPackage]? = nil
     @State private var searchTask: Task<Void, Error>?
     
     var body: some View {
         ScrollView {
-            TitlelessMyCardComponent {
+            MyTipComponent(text: "搜索结果均为 Azul Zulu Java，包含 JDK 和 JRE 版本。", color: .blue)
+                .padding()
+                .padding(.bottom, -28)
+            TitlelessMyCardComponent(index: 1) {
                 HStack {
                     MyTextFieldComponent(text: $version, placeholder: "搜索版本")
                         .onSubmit {
@@ -31,16 +34,24 @@ struct JavaInstallView: View {
                 }
             }
             .padding()
-            TitlelessMyCardComponent(index: 1) {
-                VStack(spacing: 0) {
-                    ForEach(packages) { package in
-                        JavaPackageView(package: package)
+            if let packages = packages {
+                TitlelessMyCardComponent(index: 2) {
+                    VStack(spacing: 0) {
+                        if packages.isEmpty {
+                            Text("无匹配结果")
+                                .font(.custom("PCL English", size: 14))
+                                .foregroundStyle(Color("TextColor"))
+                        } else {
+                            ForEach(packages) { package in
+                                JavaPackageView(package: package)
+                            }
+                        }
                     }
+                    .padding(4)
                 }
-                .padding(4)
+                .padding()
+                .padding(.bottom, 25)
             }
-            .padding()
-            .padding(.bottom, 25)
         }
         .scrollIndicators(.never)
         .onAppear {
@@ -52,7 +63,7 @@ struct JavaInstallView: View {
     private func search() {
         self.searchTask?.cancel()
         searchTask = Task {
-            let packages = try await JavaDownloader.search(version: version.isEmpty ? nil : version)
+            let packages = try? await JavaDownloader.search(version: version.isEmpty ? nil : version)
             await MainActor.run {
                 self.packages = packages
                 self.searchTask = nil

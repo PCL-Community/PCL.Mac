@@ -20,8 +20,8 @@ struct MyTipComponent: View {
                 .font(.custom("PCL English", size: 14))
                 .foregroundStyle(color.textColor)
                 .padding(EdgeInsets(top: 9, leading: 0, bottom: 9, trailing: 12))
+            Spacer()
         }
-        .fixedSize()
         .background(color.backgroundColor)
         .clipShape(RoundedRectangle(cornerRadius: 2))
     }

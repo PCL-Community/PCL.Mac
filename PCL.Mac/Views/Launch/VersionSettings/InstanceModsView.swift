@@ -72,7 +72,7 @@ struct InstanceModsView: View {
                     filter = { query.isEmpty || $0.name.contains(query) || $0.description.contains(query) }
                 }
                 .padding()
-                .padding(.top, -25)
+                .padding(.top, -36)
                 
                 TitlelessMyCardComponent(index: 1) {
                     HStack(spacing: 16) {
