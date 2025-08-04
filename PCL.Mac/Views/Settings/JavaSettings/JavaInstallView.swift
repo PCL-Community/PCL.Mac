@@ -63,7 +63,7 @@ struct JavaInstallView: View {
     private func search() {
         self.searchTask?.cancel()
         searchTask = Task {
-            let packages = try await JavaDownloader.search(version: version.isEmpty ? nil : version)
+            let packages = try await JavaDownloader.search(version: version.isEmpty ? nil : version, onlyLTS: onlyLTS)
             await MainActor.run {
                 self.packages = packages
                 self.searchTask = nil
