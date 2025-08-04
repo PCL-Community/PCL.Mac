@@ -10,6 +10,8 @@ import SwiftyJSON
 
 /// Azul Zulu Java 下载 / 搜索器
 public class JavaDownloader {
+    private static let zuluJavaPackageNameRegex = /zulu.*-ca-fx-(jdk|jre)[0-9.]+-macosx_(x64|aarch64)\.zip/
+    
     public static func search(
         version: String? = nil,
         arch: Architectury? = nil,
@@ -36,7 +38,7 @@ public class JavaDownloader {
         ).getJSONOrThrow()
         
         for package in json.arrayValue {
-            if let match = package["name"].stringValue.wholeMatch(of: /zulu.*-ca-fx-(jdk|jre)[0-9.]+-macosx_(x64|aarch64)\.zip/) {
+            if let match = package["name"].stringValue.wholeMatch(of: JavaDownloader.zuluJavaPackageNameRegex) {
                 let type = String(match.1)
                 let arch = String(match.2)
                 
@@ -55,6 +57,7 @@ public class JavaDownloader {
 }
 
 public class JavaInstallTask: InstallTask {
+    private static let defaultJavaInstallDirectory = URL(fileURLWithUserPath: "~/Library/Java/JavaVirtualMachines")
     private let package: JavaPackage
     @Published private var progress: Double = 0
     
@@ -86,11 +89,13 @@ public class JavaInstallTask: InstallTask {
                 Util.unzip(archiveUrl: zipDestination, destination: temp.root, replace: false)
                 self.progress = 0.75
                 
-                let javaDirectoryPath = temp.root.appending(path: package.name).appending(path: "bin").resolvingSymlinksInPath().parent().parent().parent()
-                let saveURL = URL(fileURLWithUserPath: "~/Library/Java/JavaVirtualMachines").appending(path: javaDirectoryPath.lastPathComponent)
-                if saveURL.lastPathComponent == "Temp" {
+                
+                let javaDirectoryPath = temp.root.appending(path: package.name).appending(path: "zulu-\(package.version[0]).\(package.type.rawValue)")
+                if !FileManager.default.fileExists(atPath: javaDirectoryPath.path) {
                     throw NSError(domain: "JavaDownloader", code: -1, userInfo: [NSLocalizedDescriptionKey: "发生未知错误"])
                 }
+                
+                let saveURL = JavaInstallTask.defaultJavaInstallDirectory.appending(path: javaDirectoryPath.lastPathComponent)
                 
                 try? FileManager.default.createDirectory(
                     at: saveURL.parent(),
