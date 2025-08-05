@@ -42,8 +42,14 @@ public class AppSettings: ObservableObject {
     /// 用户添加的 Java 路径
     @CodableAppStorage("userAddedJvmPaths") public var userAddedJvmPaths: [URL] = []
     
-    /// 主题需要观察 DataManager 才能更新
-    @CodableAppStorage("theme") public var theme: Theme = .pcl
+    @Published public var theme: Theme = .pcl
+    
+    /// 主题 ID (文件名)
+    @CodableAppStorage("themeId") public var themeId: String = "pcl" {
+        didSet {
+            
+        }
+    }
     
     /// 启动时若为空自动设置为第一个版本
     @AppStorage("defaultInstance") public var defaultInstance: String?

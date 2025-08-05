@@ -44,13 +44,6 @@ struct DebugView: View {
             .frame(height: 40)
             .padding()
             .padding(.bottom, -23)
-            MyButtonComponent(text: "测试主题更换") {
-                settings.theme = settings.theme == .colorful ? .pcl : .colorful
-                DataManager.shared.objectWillChange.send()
-            }
-            .frame(height: 40)
-            .padding()
-            .padding(.bottom, -23)
             MyButtonComponent(text: "测试配色方案更换") {
                 settings.colorScheme = (settings.colorScheme == .light ? .dark : .light)
             }

@@ -1,15 +1,14 @@
 {
     "id": "pcl",
     "name": "PCL",
-    "titleStyle": {
+    "mainStyle": {
         "type": "linearGradient",
         "startPoint": [0.0, 0.0],
         "endPoint": [1.0, 0.0],
         "colors": [
-            "#FFAC4A",
-            "#FF3769",
-            "#D29CFF",
-            "#8ACFEA"
+            { "color": "hsl(210, 80, 48)" },
+            { "color": "hsl(210, 80, 54)" },
+            { "color": "hsl(210, 80, 48)" }
         ]
     },
     "backgroundStyle": {
@@ -17,9 +16,10 @@
         "startPoint": [0.9, 0.0],
         "endPoint": [0.1, 1.0],
         "colors": [
-            { "color": "hsl(195, 68, 80)", "darkColor": "hsl(195, 68, 8)", "location": 0.0 },
+            { "color": "hsl(195, 68, 80)", "darkColor": "hsl(195, 68, 8)", "location": -0.1 },
             { "color": "hsl(210, 68, 90)", "darkColor": "hsl(210, 68, 9)", "location": 0.4 },
-            { "color": "hsl(225, 68, 80)", "darkColor": "hsl(225, 68, 8)", "location": 1.0 }
+            { "color": "hsl(225, 68, 80)", "darkColor": "hsl(225, 68, 8)", "location": 1.1 }
         ]
-    }
+    },
+    "textStyle": "#1370F3"
 }

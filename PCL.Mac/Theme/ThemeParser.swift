@@ -11,11 +11,42 @@ import SwiftyJSON
 public class ThemeParser {
     public static let shared: ThemeParser = .init()
     
-    public func fromJSON(_ json: JSON) -> Theme? {
-        return nil
+    public func fromJSON(_ json: JSON) -> Theme {
+        let id = json["id"].stringValue
+        let name = json["name"].stringValue
+        
+        let mainStyle = parseStyle(json["mainStyle"])
+        let backgroundStyle = parseStyle(json["backgroundStyle"])
+        let textStyle = parseStyle(json["textStyle"].exists() ? json["textStyle"] : json["titleStyle"])
+        
+        return Theme(id: id, mainStyle: mainStyle, backgroundStyle: backgroundStyle, textStyle: textStyle)
     }
     
-    public func parseColor(_ str: String) -> Color? {
+    public func parseStyle(_ json: JSON) -> AnyShapeStyle {
+        let type = json["type"].stringValue
+        
+        switch type {
+        case "color", "":
+            if let color = parseColor(json) { return AnyShapeStyle(color) }
+        case "linearGradient":
+            if let gradient = parseGradient(json) { return AnyShapeStyle(gradient) }
+        default:
+            let _: Any? = nil
+        }
+        
+        return AnyShapeStyle(Color(hex: 0x000000))
+    }
+    
+    public func parseColor(_ json: JSON) -> Color? {
+        let str: String
+        if json.type == .string {
+            str = json.stringValue
+//        } else if json["darkColor"].exists() {
+//            str = json["darkColor"].stringValue
+        } else {
+            str = json["color"].stringValue
+        }
+        
         if str.starts(with: "#") { // RGB / ARGB 格式
             let hexStr = String(str.dropFirst())
             if hexStr.count == 6, let rgbInt = UInt(hexStr, radix: 16) { // RGB
@@ -47,14 +78,14 @@ public class ThemeParser {
             if colorsArray[0].type == .string { // 不带 location 的均匀分布 color
                 return AnyShapeStyle(
                     LinearGradient(
-                        gradient: Gradient(colors: colorsArray.map { $0.stringValue }.compactMap(parseColor(_:))),
+                        gradient: Gradient(colors: colorsArray.compactMap(parseColor(_:))),
                         startPoint: startPoint,
                         endPoint: endPoint
                     )
                 )
             } else if colorsArray[0].type == .dictionary { // 带 location 的 Stop
                 let stops: [Gradient.Stop] = colorsArray.compactMap { stop in
-                    guard let color = parseColor(stop["color"].stringValue) else { return nil }
+                    guard let color = parseColor(stop) else { return nil }
                     return Gradient.Stop(color: color, location: stop["location"].doubleValue)
                 }
                 return AnyShapeStyle(

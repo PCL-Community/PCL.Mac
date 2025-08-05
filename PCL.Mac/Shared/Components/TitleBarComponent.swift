@@ -58,7 +58,7 @@ struct GenericTitleBarComponent<Content: View>: View {
         }
         .frame(maxWidth: .infinity, maxHeight: 47)
         .background(
-            AppSettings.shared.theme.getGradientView()
+            AppSettings.shared.theme.getStyle()
         )
     }
 }

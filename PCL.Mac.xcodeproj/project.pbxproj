@@ -98,7 +98,6 @@
 				Storage/AccessTokenStorage.swift,
 				Storage/CacheStorage.swift,
 				Temp/TemperatureDirectory.swift,
-				Theme/ThemeDownloader.swift,
 				UpdateCheck.swift,
 				Utils/Util.swift,
 				Utils/ZipUtil.swift,
@@ -141,7 +140,6 @@
 				Storage/AccessTokenStorage.swift,
 				Storage/CacheStorage.swift,
 				Temp/TemperatureDirectory.swift,
-				Theme/ThemeDownloader.swift,
 				UpdateCheck.swift,
 				Utils/Util.swift,
 				Utils/ZipUtil.swift,
@@ -194,9 +192,9 @@
 			path = PCL.Mac.Tests;
 			sourceTree = "<group>";
 		};
-		ECFAA4FE2E419A3200CE1E6E /* Theme */ = {
+		ECFAA4FE2E419A3200CE1E6E /* Themes */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Theme;
+			path = Themes;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -234,7 +232,7 @@
 		EC01E7E52DDC3BD2006EF529 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				ECFAA4FE2E419A3200CE1E6E /* Theme */,
+				ECFAA4FE2E419A3200CE1E6E /* Themes */,
 				EC23B6322DE5DC5B00CBEA9C /* PCL.ttf */,
 				EC9A7DC82DE1500F0018815F /* glfw-patcher.jar */,
 				EC01E7E62DDC3BEA006EF529 /* log4j2.xml */,
@@ -326,7 +324,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				EC9EAECB2DD85E48006CEDCC /* PCL.Mac */,
-				ECFAA4FE2E419A3200CE1E6E /* Theme */,
+				ECFAA4FE2E419A3200CE1E6E /* Themes */,
 			);
 			name = PCL.Mac;
 			packageProductDependencies = (

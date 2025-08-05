@@ -97,7 +97,7 @@ struct ContentView: View {
                         .zIndex(0)
                 }
                 .background(
-                    AppSettings.shared.theme.getBackgroundView()
+                    AppSettings.shared.theme.getBackgroundStyle()
                 )
                 .overlay {
                     if SharedConstants.shared.isDevelopment {
