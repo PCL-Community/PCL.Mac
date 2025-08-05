@@ -1,6 +1,7 @@
 {
     "id": "pcl",
     "name": "PCL",
+    "accentColor": "#1370F3",
     "mainStyle": {
         "type": "linearGradient",
         "startPoint": [0.0, 0.0],

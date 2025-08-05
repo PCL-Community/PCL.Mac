@@ -49,7 +49,7 @@ struct MyComboBoxItemComponent<Option: Hashable>: View {
             Text(text)
                 .font(.custom("PCL English", size: 14))
         }
-        .foregroundStyle(isHovered ? Color(hex: 0x1370F3) : Color("TextColor"))
+        .foregroundStyle(isHovered ? AppSettings.shared.theme.getTextStyle() : AnyShapeStyle(Color("TextColor")))
         .background(Color.clear)
         .contentShape(Rectangle())
         .onTapGesture {

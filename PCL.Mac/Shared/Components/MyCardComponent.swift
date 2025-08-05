@@ -29,7 +29,7 @@ struct BaseCardContainer<Content: View>: View {
                 RoundedRectangle(cornerRadius: 5)
                     .fill(Color("MyCardBackgroundColor"))
                     .shadow(
-                        color: isHovered ? Color(hex: 0x0B5BCB) : .gray,
+                        color: isHovered ? AppSettings.shared.theme.getAccentColor() : .gray,
                         radius: 2, x: 0.5, y: 0.5
                     )
             )

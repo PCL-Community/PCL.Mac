@@ -24,6 +24,7 @@ struct MyTipComponent: View {
         }
         .background(color.backgroundColor)
         .clipShape(RoundedRectangle(cornerRadius: 2))
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 

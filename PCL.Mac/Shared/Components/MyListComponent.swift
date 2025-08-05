@@ -84,7 +84,7 @@ fileprivate struct RouteView<Content: View>: View {
                 .animation(.easeInOut(duration: 0.2), value: dataManager.router.getLast())
             Spacer()
         }
-        .background(isHovered ? Color(hex: 0x1370F3, alpha: 0.1) : Color.clear)
+        .background(isHovered ? AppSettings.shared.theme.getAccentColor().opacity(0.1) : Color.clear)
         .animation(.easeInOut(duration: 0.2), value: isHovered)
         .contentShape(Rectangle())
         .onHover { hover in

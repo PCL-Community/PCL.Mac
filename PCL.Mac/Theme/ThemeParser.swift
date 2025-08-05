@@ -15,11 +15,12 @@ public class ThemeParser {
         let id = json["id"].stringValue
         let name = json["name"].stringValue
         
+        let accentColor = parseColor(json["accentColor"])
         let mainStyle = parseStyle(json["mainStyle"])
         let backgroundStyle = parseStyle(json["backgroundStyle"])
         let textStyle = parseStyle(json["textStyle"].exists() ? json["textStyle"] : json["titleStyle"])
         
-        return Theme(id: id, mainStyle: mainStyle, backgroundStyle: backgroundStyle, textStyle: textStyle)
+        return Theme(id: id, accentColor: accentColor, mainStyle: mainStyle, backgroundStyle: backgroundStyle, textStyle: textStyle)
     }
     
     public func parseStyle(_ json: JSON) -> AnyShapeStyle {
@@ -27,7 +28,7 @@ public class ThemeParser {
         
         switch type {
         case "color", "":
-            if let color = parseColor(json) { return AnyShapeStyle(color) }
+            return AnyShapeStyle(parseColor(json))
         case "linearGradient":
             if let gradient = parseGradient(json) { return AnyShapeStyle(gradient) }
         default:
@@ -37,7 +38,7 @@ public class ThemeParser {
         return AnyShapeStyle(Color(hex: 0x000000))
     }
     
-    public func parseColor(_ json: JSON) -> Color? {
+    public func parseColor(_ json: JSON) -> Color {
         let str: String
         if json.type == .string {
             str = json.stringValue
@@ -61,7 +62,7 @@ public class ThemeParser {
                   let h = Double(match.1), let s = Double(match.2), let l = Double(match.3) {
             return Color(h2: h, s2: s, l2: l)
         }
-        return nil
+        return Color(hex: 0x000000)
     }
     
     public func parseGradient(_ json: JSON) -> AnyShapeStyle? {
@@ -78,15 +79,14 @@ public class ThemeParser {
             if colorsArray[0].type == .string { // 不带 location 的均匀分布 color
                 return AnyShapeStyle(
                     LinearGradient(
-                        gradient: Gradient(colors: colorsArray.compactMap(parseColor(_:))),
+                        gradient: Gradient(colors: colorsArray.map(parseColor(_:))),
                         startPoint: startPoint,
                         endPoint: endPoint
                     )
                 )
             } else if colorsArray[0].type == .dictionary { // 带 location 的 Stop
-                let stops: [Gradient.Stop] = colorsArray.compactMap { stop in
-                    guard let color = parseColor(stop) else { return nil }
-                    return Gradient.Stop(color: color, location: stop["location"].doubleValue)
+                let stops: [Gradient.Stop] = colorsArray.map { stop in
+                    return Gradient.Stop(color: parseColor(stop), location: stop["location"].doubleValue)
                 }
                 return AnyShapeStyle(
                     LinearGradient(

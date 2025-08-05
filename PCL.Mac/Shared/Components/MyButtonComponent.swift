@@ -30,7 +30,7 @@ struct MyButtonComponent: View {
             RoundedRectangle(cornerRadius: 4)
                 .stroke(self.getForegroundStyle(), lineWidth: 1.3)
             RoundedRectangle(cornerRadius: 6)
-                .foregroundStyle(isHovered ? Color(hex: 0x1370F3, alpha: 0.1) : .clear)
+                .foregroundStyle(isHovered ? AppSettings.shared.theme.getAccentColor().opacity(0.1) : .clear)
             VStack {
                 Spacer()
                 Text(text)

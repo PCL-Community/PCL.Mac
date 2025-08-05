@@ -1,0 +1,26 @@
+{
+    "id": "allium",
+    "name": "绒球葱",
+    "accentColor": "#B572EE",
+    "mainStyle": {
+        "type": "linearGradient",
+        "startPoint": [0.0, 0.0],
+        "endPoint": [1.0, 0.0],
+        "colors": [
+            "#BB56B5",
+            "#C963C3",
+            "#DB74D4"
+        ]
+    },
+    "backgroundStyle": {
+        "type": "linearGradient",
+        "startPoint": [0.9, 0.0],
+        "endPoint": [0.1, 1.0],
+        "colors": [
+            { "color": "hsl(270, 76, 70)", "darkColor": "hsl(270, 76, 7)", "location": -0.1 },
+            { "color": "hsl(277, 83, 80)", "darkColor": "hsl(277, 83, 8)", "location": 0.4 },
+            { "color": "hsl(270, 100, 90)", "darkColor": "hsl(270, 100, 9)", "location": 1.1 }
+        ]
+    },
+    "textStyle": "#B572EE"
+}

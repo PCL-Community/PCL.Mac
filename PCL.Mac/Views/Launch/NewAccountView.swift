@@ -7,34 +7,6 @@
 
 import SwiftUI
 
-fileprivate struct MenuItemComponent: View {
-    @ObservedObject private var state: NewAccountViewState = StateManager.shared.newAccount
-    
-    @State private var isHovered: Bool = false
-    
-    let value: NewAccountViewState.PageType
-    
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 15)
-                .fill(state.type == value ? Color(hex: 0x1370F3) : isHovered ? Color(hex: 0x1370F3, alpha: 0.5) : Color("MyCardBackgroundColor"))
-                .animation(.easeInOut(duration: 0.2), value: state.type)
-                .animation(.easeInOut(duration: 0.2), value: isHovered)
-            Text(value == .microsoft ? "正版" : "离线")
-                .font(.custom("PCL English", size: 14))
-                .foregroundStyle(Color("TextColor"))
-                .padding(5)
-        }
-        .fixedSize()
-        .onTapGesture {
-            state.type = value
-        }
-        .onHover { hover in
-            self.isHovered = hover
-        }
-    }
-}
-
 class NewAccountViewState: ObservableObject {
     enum PageType {
         case offline, microsoft

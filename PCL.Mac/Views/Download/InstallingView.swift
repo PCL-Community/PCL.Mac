@@ -77,11 +77,11 @@ struct InstallingView: View {
                     if state == .inprogress {
                         Text(String(format: "%.0f%%", task.currentStagePercentage * 100))
                             .font(.custom("PCL English", size: 14))
-                            .foregroundStyle(Color(hex: 0x1370F3))
+                            .foregroundStyle(AppSettings.shared.theme.getTextStyle())
                             .padding(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 10))
                     } else {
                         Image(state.getImageName())
-                            .foregroundStyle(Color(hex: 0x1370F3))
+                            .foregroundStyle(AppSettings.shared.theme.getTextStyle())
                             .padding(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 10))
                     }
                     Text(stage.getDisplayName())
@@ -103,9 +103,9 @@ private struct PanelView: View {
         VStack {
             Text(title)
                 .font(.custom("PCL English", size: 16))
-                .foregroundStyle(Color(hex: 0x1370F3))
+                .foregroundStyle(AppSettings.shared.theme.getTextStyle())
             Rectangle()
-                .fill(Color(hex: 0x1370F3))
+                .fill(AppSettings.shared.theme.getTextStyle())
                 .frame(width: 180, height: 2)
             Text(value)
                 .font(.custom("PCL English", size: 20))

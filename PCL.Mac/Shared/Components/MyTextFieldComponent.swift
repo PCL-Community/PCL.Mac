@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct MyTextFieldComponent: View {
+    @ObservedObject private var dataManager: DataManager = .shared
     @Binding var text: String
     @State private var isHovered: Bool = false
     @FocusState private var isFocused
@@ -42,7 +43,7 @@ struct MyTextFieldComponent: View {
                 .padding(.leading, 5)
             
             RoundedRectangle(cornerRadius: 4)
-                .stroke(self.isHovered ? Color(hex: 0x4890F5) : Color(hex: 0x96C0F9), lineWidth: 1)
+                .stroke(AppSettings.shared.theme.getAccentColor().opacity(self.isHovered ? 1.0 : 0.5), lineWidth: 1)
                 .allowsHitTesting(false)
                 .animation(.easeInOut(duration: 0.1), value: self.isHovered)
         }

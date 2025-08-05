@@ -38,10 +38,10 @@ enum PopupType {
         }
     }
     
-    func getTextColor() -> Color {
+    func getTextStyle() -> AnyShapeStyle {
         switch self {
-        case .normal: Color(hex: 0x1370F3)
-        case .error: Color(hex: 0xF50000)
+        case .normal: AppSettings.shared.theme.getTextStyle()
+        case .error: AnyShapeStyle(Color(hex: 0xF50000))
         }
     }
 }
@@ -100,7 +100,7 @@ struct PopupOverlay: View, Identifiable, Equatable {
                         }
                     }
                 }
-                .foregroundStyle(type.getTextColor())
+                .foregroundStyle(type.getTextStyle())
             }
             .frame(width: Width, height: Height)
         }
