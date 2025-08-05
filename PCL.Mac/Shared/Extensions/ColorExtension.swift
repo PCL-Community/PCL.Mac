@@ -6,11 +6,18 @@
 //
 
 import SwiftUI
+import AppKit
 
 class ColorConstants {
+    public static var colorScheme: ColorSchemeOption = .light
+    
     public static var isLight: Bool {
-        let appearance = NSApp.appearance ?? NSAppearance(named: .aqua)
-        return appearance?.bestMatch(from: [.aqua, .darkAqua]) == .aqua
+        if colorScheme != .system {
+            return colorScheme == .light
+        }
+        let appearance = NSApp.effectiveAppearance
+        let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return !isDark
     }
     
     public static var L1: Double { isLight ? 25 : 96 }

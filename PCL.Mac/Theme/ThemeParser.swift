@@ -41,8 +41,8 @@ public class ThemeParser {
         let str: String
         if json.type == .string {
             str = json.stringValue
-//        } else if json["darkColor"].exists() {
-//            str = json["darkColor"].stringValue
+        } else if json["darkColor"].exists() && !ColorConstants.isLight {
+            str = json["darkColor"].stringValue
         } else {
             str = json["color"].stringValue
         }

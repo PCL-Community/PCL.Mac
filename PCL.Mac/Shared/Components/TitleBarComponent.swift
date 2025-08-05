@@ -56,7 +56,7 @@ struct GenericTitleBarComponent<Content: View>: View {
                 .padding()
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: 47)
+        .frame(maxWidth: .infinity, maxHeight: 48)
         .background(
             AppSettings.shared.theme.getStyle()
         )

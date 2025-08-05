@@ -87,6 +87,9 @@ public class AppSettings: ObservableObject {
         } else {
             NSApp.appearance = nil
         }
+        ColorConstants.colorScheme = colorScheme
+        self.theme = .load(id: themeId)
+        DataManager.shared.objectWillChange.send()
     }
     
     private init() {

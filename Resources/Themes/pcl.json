@@ -6,9 +6,9 @@
         "startPoint": [0.0, 0.0],
         "endPoint": [1.0, 0.0],
         "colors": [
-            { "color": "hsl(210, 80, 48)" },
-            { "color": "hsl(210, 80, 54)" },
-            { "color": "hsl(210, 80, 48)" }
+            "hsl(210, 80, 48)",
+            "hsl(210, 80, 54)",
+            "hsl(210, 80, 48)"
         ]
     },
     "backgroundStyle": {

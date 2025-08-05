@@ -9,17 +9,7 @@ import SwiftUI
 import SwiftyJSON
 
 public class Theme: Codable, Hashable, Equatable {
-    public static var pcl: Theme = {
-        do {
-            let url = SharedConstants.shared.applicationResourcesUrl.appending(path: "pcl.json")
-            let data = try FileHandle(forReadingFrom: url).readToEnd()!
-            let json = try JSON(data: data)
-            return ThemeParser.shared.fromJSON(json)
-        } catch {
-            err("无法加载默认主题: \(error.localizedDescription)")
-            return Theme(id: "pcl", mainStyle: Color(hex: 0x000000), backgroundStyle: Color(hex: 0x000000), textStyle: Color(hex: 0x000000))
-        }
-    }()
+    public static var pcl: Theme = load(id: "pcl")
     
     private let id: String
     private let mainStyle: AnyShapeStyle
@@ -45,6 +35,18 @@ public class Theme: Codable, Hashable, Equatable {
     
     public func getTextStyle() -> AnyShapeStyle {
         return textStyle
+    }
+    
+    public static func load(id: String) -> Theme {
+        do {
+            let url = SharedConstants.shared.applicationResourcesUrl.appending(path: "pcl.json")
+            let data = try FileHandle(forReadingFrom: url).readToEnd()!
+            let json = try JSON(data: data)
+            return ThemeParser.shared.fromJSON(json)
+        } catch {
+            err("无法加载主题: \(error.localizedDescription)")
+            return Theme(id: "pcl", mainStyle: Color(hex: 0x000000), backgroundStyle: Color(hex: 0x000000), textStyle: Color(hex: 0x000000))
+        }
     }
     
     public required init(from decoder: any Decoder) throws {
