@@ -10,10 +10,27 @@ import SwiftyJSON
 
 public class ThemeParser {
     public static let shared: ThemeParser = .init()
+    public let themes = {
+        var result: [ThemeInfo] = []
+        
+        for folder in [SharedConstants.shared.applicationResourcesUrl, SharedConstants.shared.applicationSupportUrl.appending(path: "Themes")] {
+            if let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
+                let jsonFiles = files.filter { $0.pathExtension.lowercased() == "json" }
+                for jsonFile in jsonFiles {
+                    if let data = try? FileHandle(forReadingFrom: jsonFile).readToEnd(),
+                       let json = try? JSON(data: data),
+                       let id = json["id"].string {
+                        result.append(.init(weight: json["__weight"].intValue, id: id, name: json["name"].stringValue))
+                    }
+                }
+            }
+        }
+        
+        return result.sorted { $0.weight > $1.weight }
+    }()
     
     public func fromJSON(_ json: JSON) -> Theme {
         let id = json["id"].stringValue
-        let name = json["name"].stringValue
         
         let accentColor = parseColor(json["accentColor"])
         let mainStyle = parseStyle(json["mainStyle"])
@@ -102,4 +119,16 @@ public class ThemeParser {
     }
     
     private init() {}
+}
+
+public struct ThemeInfo: Identifiable, Hashable {
+    fileprivate let weight: Int
+    public let id: String
+    public let name: String
+    
+    init(weight: Int = 0, id: String, name: String) {
+        self.weight = weight
+        self.id = id
+        self.name = name
+    }
 }

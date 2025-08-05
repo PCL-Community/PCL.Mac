@@ -47,7 +47,8 @@ public class AppSettings: ObservableObject {
     /// 主题 ID (文件名)
     @CodableAppStorage("themeId") public var themeId: String = "pcl" {
         didSet {
-            
+            self.theme = .load(id: themeId)
+            DataManager.shared.objectWillChange.send()
         }
     }
     
