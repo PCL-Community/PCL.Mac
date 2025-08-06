@@ -115,6 +115,7 @@ struct SubviewTitleBarComponent: View {
         case .announcementHistory: return "历史公告"
         case .versionSettings, .instanceOverview, .instanceSettings, .instanceMods: return "版本设置 - \(AppSettings.shared.defaultInstance ?? "")"
         case .javaDownload: return "Java 下载"
+        case .themeUnlock: return "主题解锁"
         default:
             return "发现问题请在 https://github.com/PCL-Community/PCL.Mac/issues/new 上反馈！"
         }

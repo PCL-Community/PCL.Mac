@@ -82,6 +82,9 @@ public class AppSettings: ObservableObject {
     /// 下载自定义文件时的保存 URL
     @AppStorage("customFilesSaveUrl") public var customFilesSaveUrl: URL = URL(fileURLWithUserPath: "~/Downloads")
     
+    /// 使用过的主题解锁码
+    @CodableAppStorage("usedThemeCodes") public var usedThemeCodes: [String] = []
+    
     public func updateColorScheme() {
         if colorScheme != .system {
             NSApp.appearance = colorScheme == .light ? NSAppearance(named: .aqua) : NSAppearance(named: .darkAqua)

@@ -21,7 +21,8 @@ struct JavaSettingsView: View {
                             print("无法刷新Java列表: \(error.localizedDescription)")
                         }
                     }
-                    .frame(width: 150, height: 35)
+                    .frame(height: 35)
+                    .fixedSize(horizontal: true, vertical: false)
                     MyButtonComponent(text: "手动添加 Java") {
                         let panel = NSOpenPanel()
                         panel.allowsMultipleSelection = false
@@ -47,11 +48,13 @@ struct JavaSettingsView: View {
                             }
                         }
                     }
-                    .frame(width: 150, height: 35)
+                    .frame(height: 35)
+                    .fixedSize(horizontal: true, vertical: false)
                     MyButtonComponent(text: "安装 Java") {
                         dataManager.router.append(.javaDownload)
                     }
-                    .frame(width: 150, height: 35)
+                    .frame(height: 35)
+                    .fixedSize(horizontal: true, vertical: false)
                     Spacer()
                 }
             }

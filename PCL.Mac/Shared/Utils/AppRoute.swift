@@ -41,6 +41,7 @@ public enum AppRoute: Hashable {
     case personalization
     case javaSettings
     case otherSettings
+    case themeUnlock
     
     var isRoot: Bool {
         switch self {
@@ -108,6 +109,8 @@ public class AppRouter: ObservableObject {
             VersionSettingsView()
         case .javaDownload:
             JavaInstallView()
+        case .themeUnlock:
+            ThemeUnlockView()
         }
     }
     

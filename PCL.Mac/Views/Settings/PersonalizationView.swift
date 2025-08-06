@@ -8,20 +8,22 @@
 import SwiftUI
 
 struct PersonalizationView: View {
+    @ObservedObject private var dataManager: DataManager = .shared
     @ObservedObject private var settings: AppSettings = .shared
     @State private var selectedTheme: ThemeInfo = .init(id: "pcl", name: "PCL")
+    @State private var themes: [ThemeInfo] = []
     
     var body: some View {
         ScrollView {
             StaticMyCardComponent(title: "基础") {
-                VStack {
+                VStack(spacing: 15) {
                     ZStack(alignment: .topLeading) {
                         Spacer()
                         MyComboBoxComponent(
-                            options: ThemeParser.shared.themes,
+                            options: themes,
                             selection: $selectedTheme,
                             label: { $0.name }) { content in
-                                HStack(spacing: 40) {
+                                HStack(spacing: 120) {
                                     content
                                 }
                             }
@@ -32,8 +34,15 @@ struct PersonalizationView: View {
                         RoundedRectangle(cornerRadius: 5)
                             .stroke(settings.theme.getAccentColor(), style: .init(lineWidth: 1))
                     }
-                    .frame(height: 150)
-                    .padding(.bottom)
+                    
+                    HStack {
+                        MyButtonComponent(text: "解锁更多主题") {
+                            dataManager.router.append(.themeUnlock)
+                        }
+                        .frame(height: 35)
+                        .fixedSize(horizontal: true, vertical: false)
+                        Spacer()
+                    }
                     
                     HStack {
                         Text("配色方案")
@@ -76,6 +85,7 @@ struct PersonalizationView: View {
         .font(.custom("PCL English", size: 14))
         .foregroundStyle(.text)
         .onAppear {
+            self.themes = ThemeParser.shared.themes.filter(ThemeOwnershipChecker.shared.isUnlocked(_:))
             self.selectedTheme = ThemeParser.shared.themes.find { $0.id == settings.themeId } ?? .init(id: "pcl", name: "PCL")
         }
     }
