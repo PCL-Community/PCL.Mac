@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftyJSON
 
 public class Theme: Codable, Hashable, Equatable {
-    public static var pcl: Theme = load(id: "allium")
+    public static var pcl: Theme = load(id: "pcl")
     
     private let id: String
     private let accentColor: Color
