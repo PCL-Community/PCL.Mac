@@ -43,7 +43,7 @@ struct ThemeUnlockView: View {
                     }
                     MyTextFieldComponent(text: $code, placeholder: "解锁码")
                         .onSubmit {
-                            if AppSettings.shared.usedThemeCodes.contains(code) {
+                            if Set(AppSettings.shared.usedThemeCodes).contains(code) {
                                 hint("你已经使用过这个解锁码了！", .critical)
                             } else {
                                 if let theme = ThemeOwnershipChecker.shared.tryUnlock(code: code) {
