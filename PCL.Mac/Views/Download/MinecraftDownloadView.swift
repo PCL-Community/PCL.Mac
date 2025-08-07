@@ -103,7 +103,7 @@ struct MinecraftDownloadView: View {
         .onAppear {
             var versions: [String: [VersionManifest.GameVersion]] = [:]
             versions["release"] = dataManager.versionManifest!.versions.filter { $0.type == "release" }
-            versions["snapshot"] = dataManager.versionManifest!.versions.filter { $0.type == "snapshot" }
+            versions["snapshot"] = dataManager.versionManifest!.versions.filter { $0.type == "snapshot" || $0.type == "pending" }
             versions["old"] = dataManager.versionManifest!.versions.filter { $0.type == "old_beta" || $0.type == "old_alpha" }
             versions["april_fool"] = dataManager.versionManifest!.versions.filter { $0.type == "april_fool" }
             self.versions = versions

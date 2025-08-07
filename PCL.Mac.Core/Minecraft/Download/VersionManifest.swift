@@ -12,7 +12,7 @@ public class VersionManifest: Codable {
     public static var aprilFoolVersions: [String] = []
     
     public let latest: LatestVersions
-    public let versions: [GameVersion]
+    public fileprivate(set) var versions: [GameVersion]
     
     public init(_ json: JSON) {
         self.latest = LatestVersions(json["latest"])
@@ -29,18 +29,10 @@ public class VersionManifest: Codable {
         }
     }
     
-    public struct GameVersion: Codable, Hashable {
-        public enum VersionType: String, Codable {
-            case release = "release"
-            case snapshot = "snapshot"
-            case oldBeta = "old_beta"
-            case alpha = "old_alpha"
-            case aprilFool = "april_fool"
-        }
-        
+    public class GameVersion: Codable, Hashable {
         public let id: String
         public let type: String
-        public let url: String
+        public fileprivate(set) var url: String
         public let time: Date
         public let releaseTime: Date
         
@@ -56,6 +48,11 @@ public class VersionManifest: Codable {
         public func parse() -> MinecraftVersion {
             MinecraftVersion(displayName: id, type: .init(rawValue: type))
         }
+        
+        public static func == (lhs: GameVersion, rhs: GameVersion) -> Bool { lhs.id == rhs.id }
+        public func hash(into hasher: inout Hasher) {
+            hasher.combine(id)
+        }
     }
     
     public static func fetchLatestData() async -> VersionManifest? {
@@ -68,13 +65,24 @@ public class VersionManifest: Codable {
             }
         }
         
-        if let json = await Requests.get(
-            "https://bmclapi.bangbang93.com/mc/game/version_manifest.json"
-        ).json {
-            return .init(json)
+        do {
+            let versions = VersionManifest(try await Requests.get("https://piston-meta.mojang.com/mc/game/version_manifest.json").getJSONOrThrow())
+            if let unlistedVersions = await Requests.get("https://alist.8mi.tech/d/mirror/unlisted-versions-of-minecraft/Auto/version_manifest.json").json.map(VersionManifest.init(_:)) {
+                for version in unlistedVersions.versions {
+                    version.url = Util.replaceRoot(
+                        url: version.url,
+                        root: "https://zkitefly.github.io/unlisted-versions-of-minecraft",
+                        target: "https://alist.8mi.tech/d/mirror/unlisted-versions-of-minecraft/Auto"
+                    ).url.absoluteString
+                }
+                versions.versions.append(contentsOf: unlistedVersions.versions)
+                versions.versions.sort { $0.releaseTime > $1.releaseTime }
+            }
+            return versions
+        } catch {
+            err("无法获取版本清单: \(error.localizedDescription)")
+            return nil
         }
-        
-        return nil
     }
     
     public func getLatestRelease() -> GameVersion {

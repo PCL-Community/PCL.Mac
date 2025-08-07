@@ -36,12 +36,12 @@ public class MinecraftVersion: Comparable, Hashable {
     }
     
     public func getIconName() -> String {
-        switch type.rawValue {
-        case "release": "ReleaseVersionIcon"
-        case "snapshot": "SnapshotVersionIcon"
-        case "old_beta", "old_alpha": "OldVersionIcon"
-        case "april_fool": "AprilFoolVersionIcon"
-        default: "Release"
+        switch type {
+        case .release: "ReleaseVersionIcon"
+        case .snapshot, .pending: "SnapshotVersionIcon"
+        case .beta, .alpha: "OldVersionIcon"
+        case .aprilFool: "AprilFoolVersionIcon"
+        default: "ReleaseVersionIcon"
         }
     }
 }
@@ -54,6 +54,7 @@ public enum VersionType: String {
     case alpha = "old_alpha"
     case beta = "old_beta"
     case aprilFool = "april_fool"
+    case pending = "pending"
     
     public static func parse(_ displayVersion: String) -> VersionType {
         guard let manifest = DataManager.shared.versionManifest else {

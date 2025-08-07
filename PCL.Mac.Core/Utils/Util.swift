@@ -150,6 +150,10 @@ public class Util {
         }
         return urlString
     }
+    
+    public static func replaceRoot(url: any URLConvertible, root: String, target: String) -> any URLConvertible {
+        return URL(string: url.url.absoluteString.replacingOccurrences(of: root, with: target))!
+    }
 }
 
 public struct MavenCoordinate {
