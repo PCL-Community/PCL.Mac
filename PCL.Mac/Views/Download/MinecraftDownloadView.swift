@@ -21,7 +21,7 @@ fileprivate struct VersionView: View, Identifiable {
         
         var description = SharedConstants.shared.dateFormatter.string(from: version.releaseTime)
         if isLatest {
-            description = "最新\(version.type == "release" ? "正式" : "预览")版，发布于 " + description
+            description = "最新\(version.type == .release ? "正式" : "预览")版，发布于 " + description
         }
         self.description = description
         
@@ -102,10 +102,10 @@ struct MinecraftDownloadView: View {
         .animation(.easeInOut(duration: 0.2), value: currentDownloadPage == nil)
         .onAppear {
             var versions: [String: [VersionManifest.GameVersion]] = [:]
-            versions["release"] = dataManager.versionManifest!.versions.filter { $0.type == "release" }
-            versions["snapshot"] = dataManager.versionManifest!.versions.filter { $0.type == "snapshot" || $0.type == "pending" }
-            versions["old"] = dataManager.versionManifest!.versions.filter { $0.type == "old_beta" || $0.type == "old_alpha" }
-            versions["april_fool"] = dataManager.versionManifest!.versions.filter { $0.type == "april_fool" }
+            versions["release"] = dataManager.versionManifest!.versions.filter { $0.type == .release }
+            versions["snapshot"] = dataManager.versionManifest!.versions.filter { $0.type == .snapshot || $0.type == .pending }
+            versions["old"] = dataManager.versionManifest!.versions.filter { $0.type == .beta || $0.type == .alpha }
+            versions["april_fool"] = dataManager.versionManifest!.versions.filter { $0.type == .aprilFool }
             self.versions = versions
         }
     }

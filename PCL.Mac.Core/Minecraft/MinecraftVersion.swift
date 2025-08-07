@@ -46,7 +46,7 @@ public class MinecraftVersion: Comparable, Hashable {
     }
 }
 
-public enum VersionType: String {
+public enum VersionType: String, Codable {
     case release = "release"
     case snapshot = "snapshot"
     case prerelease = "pre-release"
@@ -66,6 +66,6 @@ public enum VersionType: String {
             return .release
         }
         
-        return .init(rawValue: version.type) ?? .release
+        return version.type
     }
 }

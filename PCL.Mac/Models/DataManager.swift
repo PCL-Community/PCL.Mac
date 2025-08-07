@@ -45,9 +45,9 @@ class DataManager: ObservableObject {
         versionManifest = AppSettings.shared.lastVersionManifest
         if NetworkTest.shared.hasNetworkConnection() {
             Task {
-                if let _versionManifest = await VersionManifest.fetchLatestData() {
+                if let versionManifest = await VersionManifest.getVersionManifest() {
                     await MainActor.run {
-                        self.versionManifest = _versionManifest
+                        self.versionManifest = versionManifest
                         AppSettings.shared.lastVersionManifest = self.versionManifest
                         log("版本清单获取成功")
                     }

@@ -9,8 +9,6 @@ import Foundation
 import SwiftyJSON
 
 public class VersionManifest: Codable {
-    public static var aprilFoolVersions: [String] = []
-    
     public let latest: LatestVersions
     public fileprivate(set) var versions: [GameVersion]
     
@@ -31,7 +29,7 @@ public class VersionManifest: Codable {
     
     public class GameVersion: Codable, Hashable {
         public let id: String
-        public let type: String
+        public fileprivate(set) var type: VersionType
         public fileprivate(set) var url: String
         public let time: Date
         public let releaseTime: Date
@@ -39,14 +37,18 @@ public class VersionManifest: Codable {
         public init(_ json: JSON) {
             let formatter = ISO8601DateFormatter()
             self.id = json["id"].stringValue.replacing(" Pre-Release ", with: "-pre")
-            self.type = aprilFoolVersions.contains(id) ? "april_fool" : json["type"].stringValue
+            self.type = .init(rawValue: json["type"].stringValue) ?? .release
             self.url = json["url"].stringValue
             self.time = formatter.date(from: json["time"].stringValue)!
             self.releaseTime = formatter.date(from: json["releaseTime"].stringValue)!
+            
+            if VersionManifest.isAprilFoolVersion(self) {
+                self.type = .aprilFool
+            }
         }
         
         public func parse() -> MinecraftVersion {
-            MinecraftVersion(displayName: id, type: .init(rawValue: type))
+            MinecraftVersion(displayName: id, type: type)
         }
         
         public static func == (lhs: GameVersion, rhs: GameVersion) -> Bool { lhs.id == rhs.id }
@@ -55,16 +57,8 @@ public class VersionManifest: Codable {
         }
     }
     
-    public static func fetchLatestData() async -> VersionManifest? {
-        debug("正在获取最新版本数据")
-        Task {
-            if let json = await Requests.get(
-                "https://gitee.com/yizhimcqiu/pcl-mac-announcements/raw/main/april_fool_versions.json"
-            ).json {
-                aprilFoolVersions = json.arrayValue.map { $0.stringValue }
-            }
-        }
-        
+    public static func getVersionManifest() async -> VersionManifest? {
+        debug("正在获取版本清单")
         do {
             let versions = VersionManifest(try await Requests.get("https://piston-meta.mojang.com/mc/game/version_manifest.json").getJSONOrThrow())
             if let unlistedVersions = await Requests.get("https://alist.8mi.tech/d/mirror/unlisted-versions-of-minecraft/Auto/version_manifest.json").json.map(VersionManifest.init(_:)) {
@@ -100,5 +94,12 @@ public class VersionManifest: Codable {
             warn("正在获取 \(version.displayName) 的发布日期，但版本清单未初始化完成") // 哦天呐，不会吧哥们
         }
         return nil
+    }
+    
+    public static func isAprilFoolVersion(_ version: GameVersion) -> Bool {
+        let calendar = Calendar.current
+        let releaseDateWithOffset = version.releaseTime.addingTimeInterval(2 * 3600)
+        let components = calendar.dateComponents([.month, .day], from: releaseDateWithOffset)
+        return components.month == 4 && components.day == 1
     }
 }
