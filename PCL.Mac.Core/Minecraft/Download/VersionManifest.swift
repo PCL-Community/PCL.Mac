@@ -9,6 +9,7 @@ import Foundation
 import SwiftyJSON
 
 public class VersionManifest: Codable {
+    private static let aprilFoolVersions: [String] = ["15w14a", "1.rv-pre1", "3d shareware v1.34", "20w14infinite", "22w13oneblockatatime", "23w13a_or_b", "24w14potato", "25w14craftmine"]
     public let latest: LatestVersions
     public fileprivate(set) var versions: [GameVersion]
     
@@ -97,9 +98,44 @@ public class VersionManifest: Codable {
     }
     
     public static func isAprilFoolVersion(_ version: GameVersion) -> Bool {
-        let calendar = Calendar.current
-        let releaseDateWithOffset = version.releaseTime.addingTimeInterval(2 * 3600)
-        let components = calendar.dateComponents([.month, .day], from: releaseDateWithOffset)
-        return components.month == 4 && components.day == 1
+        if aprilFoolVersions.contains(version.id.lowercased()) { return true }
+        if version.id.wholeMatch(of: /[0-9]{2}w[0-9]{2}.{1}/) == nil
+            && version.type == .snapshot && version.id.rangeOfCharacter(from: .letters) != nil && !version.id.contains("-pre") && !version.id.contains("-rc") {
+            return true // 这是一坨 shit，但是能 work
+        }
+        return false
+    }
+    
+    public static func getAprilFoolDescription(_ name: String) -> String {
+        let name = name.lowercased()
+        var tag = ""
+        if name.hasPrefix("2.0") || name.hasPrefix("2point0") {
+            if name.hasSuffix("red") {
+                tag = "（红色版本）"
+            } else if name.hasSuffix("blue") {
+                tag = "（蓝色版本）"
+            } else if name.hasSuffix("purple") {
+                tag = "（紫色版本）"
+            }
+            return "2013 | 这个秘密计划了两年的更新将游戏推向了一个新高度！" + tag
+        } else if name == "15w14a" {
+            return "2015 | 作为一款全年龄向的游戏，我们需要和平，需要爱与拥抱。"
+        } else if name == "1.rv-pre1" {
+            return "2016 | 是时候将现代科技带入 Minecraft 了！"
+        } else if name == "3d shareware v1.34" {
+            return "2019 | 我们从地下室的废墟里找到了这个开发于 1994 年的杰作！"
+        } else if name.hasPrefix("20w14inf") || name == "20w14∞" {
+            return "2020 | 我们加入了 20 亿个新的维度，让无限的想象变成了现实！"
+        } else if name == "22w13oneblockatatime" {
+            return "2022 | 一次一个方块更新！迎接全新的挖掘、合成与骑乘玩法吧！"
+        } else if name == "23w13a_or_b" {
+            return "2023 | 研究表明：玩家喜欢作出选择——越多越好！"
+        } else if name == "24w14potato" {
+            return "2024 | 毒马铃薯一直都被大家忽视和低估，于是我们超级加强了它！"
+        } else if name == "25w14craftmine" {
+            return "2025 | 你可以合成任何东西——包括合成你的世界！"
+        } else {
+            return ""
+        }
     }
 }

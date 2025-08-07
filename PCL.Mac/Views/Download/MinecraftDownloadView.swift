@@ -22,6 +22,8 @@ fileprivate struct VersionView: View, Identifiable {
         var description = SharedConstants.shared.dateFormatter.string(from: version.releaseTime)
         if isLatest {
             description = "最新\(version.type == .release ? "正式" : "预览")版，发布于 " + description
+        } else if version.type == .aprilFool {
+            description = VersionManifest.getAprilFoolDescription(version.id)
         }
         self.description = description
         
