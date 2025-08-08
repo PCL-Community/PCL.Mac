@@ -160,7 +160,7 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
             launchOptions.playerName = account.name
             launchOptions.uuid = account.uuid
             log("正在登录")
-            launchOptions.accessToken = await account.getAccessToken()
+            await account.putAccessToken(options: launchOptions)
         }
         launchOptions.javaPath = URL(fileURLWithPath: config.javaPath)
         

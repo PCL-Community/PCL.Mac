@@ -10,12 +10,12 @@ import Foundation
 public protocol Account: Codable {
     var uuid: UUID { get }
     var name: String { get }
-    func getAccessToken() async -> String
+    func putAccessToken(options: LaunchOptions) async
 }
 
 public enum AnyAccount: Account, Identifiable, Equatable {
     case offline(OfflineAccount)
-    case microsoft(MsAccount)
+    case microsoft(MicrosoftAccount)
     
     public var id: UUID {
         switch self {
@@ -48,12 +48,12 @@ public enum AnyAccount: Account, Identifiable, Equatable {
         lhs.id == rhs.id
     }
     
-    public func getAccessToken() async -> String {
+    public func putAccessToken(options: LaunchOptions) async {
         switch self {
         case .offline(let offlineAccount):
-            offlineAccount.getAccessToken()
+            offlineAccount.putAccessToken(options: options)
         case .microsoft(let msAccount):
-            await msAccount.getAccessToken()
+            await msAccount.putAccessToken(options: options)
         }
     }
     
@@ -69,7 +69,7 @@ public enum AnyAccount: Account, Identifiable, Equatable {
             let value = try container.decode(OfflineAccount.self, forKey: .payload)
             self = .offline(value)
         case .microsoft:
-            let value = try container.decode(MsAccount.self, forKey: .payload)
+            let value = try container.decode(MicrosoftAccount.self, forKey: .payload)
             self = .microsoft(value)
         }
     }

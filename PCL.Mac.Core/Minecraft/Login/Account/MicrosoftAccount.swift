@@ -1,5 +1,5 @@
 //
-//  MsAccount.swift
+//  MicrosoftAccount.swift
 //  PCL.Mac
 //
 //  Created by YiZhiMCQiu on 2025/6/29.
@@ -23,7 +23,7 @@ public class PlayerProfile: Codable {
     }
 }
 
-public class MsAccount: Codable, Identifiable, Account {
+public class MicrosoftAccount: Codable, Identifiable, Account {
     public let id: UUID
     public var refreshToken: String
     public var profile: PlayerProfile
@@ -62,7 +62,7 @@ public class MsAccount: Codable, Identifiable, Account {
         self.profile = profile
     }
     
-    public static func create(_ authToken: AuthToken) async -> MsAccount? {
+    public static func create(_ authToken: AuthToken) async -> MicrosoftAccount? {
         guard let accessToken = authToken.minecraftAccessToken else {
             return nil
         }
@@ -78,8 +78,8 @@ public class MsAccount: Codable, Identifiable, Account {
         return nil
     }
     
-    public func getAccessToken() async -> String {
+    public func putAccessToken(options: LaunchOptions) async {
         await self.refreshAccessToken()
-        return AccessTokenStorage.shared.getTokenInfo(for: id)?.accessToken ?? UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+        options.accessToken = AccessTokenStorage.shared.getTokenInfo(for: id)?.accessToken ?? UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
     }
 }

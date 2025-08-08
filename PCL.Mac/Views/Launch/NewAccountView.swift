@@ -230,7 +230,7 @@ fileprivate struct NewMicrosoftAccountView: View {
             HintManager.default.add(.init(text: "登录成功！正在检测你是否拥有 Minecraft……", type: .finish))
             if try await MsLogin.hasMinecraftGame(authToken) {
                 HintManager.default.add(.init(text: "你购买了 Minecraft！正在保存账号数据……", type: .finish))
-                if let msAccount = await MsAccount.create(authToken) {
+                if let msAccount = await MicrosoftAccount.create(authToken) {
                     DispatchQueue.main.async { AccountManager.shared.accounts.append(.microsoft(msAccount)) }
                     HintManager.default.add(.init(text: "登录成功！", type: .finish))
                     AppSettings.shared.hasMicrosoftAccount = true
