@@ -16,6 +16,7 @@ public protocol Account: Codable {
 public enum AnyAccount: Account, Identifiable, Equatable {
     case offline(OfflineAccount)
     case microsoft(MicrosoftAccount)
+    case yggdrasil(YggdrasilAccount)
     
     public var id: UUID {
         switch self {
@@ -23,6 +24,8 @@ public enum AnyAccount: Account, Identifiable, Equatable {
             offlineAccount.id
         case .microsoft(let msAccount):
             msAccount.id
+        case .yggdrasil(let yggdrasilAccount):
+            yggdrasilAccount.id
         }
     }
     
@@ -32,6 +35,8 @@ public enum AnyAccount: Account, Identifiable, Equatable {
             offlineAccount.uuid
         case .microsoft(let msAccount):
             msAccount.uuid
+        case .yggdrasil(let yggdrasilAccount):
+            yggdrasilAccount.uuid
         }
     }
     
@@ -41,6 +46,8 @@ public enum AnyAccount: Account, Identifiable, Equatable {
             offlineAccount.name
         case .microsoft(let msAccount):
             msAccount.name
+        case .yggdrasil(let yggdrasilAccount):
+            yggdrasilAccount.name
         }
     }
     
@@ -54,12 +61,14 @@ public enum AnyAccount: Account, Identifiable, Equatable {
             offlineAccount.putAccessToken(options: options)
         case .microsoft(let msAccount):
             await msAccount.putAccessToken(options: options)
+        case .yggdrasil(let yggdrasilAccount):
+            await yggdrasilAccount.putAccessToken(options: options)
         }
     }
     
     // MARK: - Codable
     private enum CodingKeys: String, CodingKey { case type, payload }
-    private enum AccountType: String, Codable { case offline, microsoft }
+    private enum AccountType: String, Codable { case offline, microsoft, yggdrasil }
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -71,6 +80,9 @@ public enum AnyAccount: Account, Identifiable, Equatable {
         case .microsoft:
             let value = try container.decode(MicrosoftAccount.self, forKey: .payload)
             self = .microsoft(value)
+        case .yggdrasil:
+            let value = try container.decode(YggdrasilAccount.self, forKey: .payload)
+            self = .yggdrasil(value)
         }
     }
     
@@ -83,6 +95,9 @@ public enum AnyAccount: Account, Identifiable, Equatable {
         case .microsoft(let value):
             try container.encode(AccountType.microsoft, forKey: .type)
             try container.encode(value, forKey: .payload)
+        case .yggdrasil(let value):
+            try container.encode(AccountType.yggdrasil, forKey: .type)
+            try container.encode(value, forKey: .payload)
         }
     }
 }
@@ -94,7 +109,7 @@ public class AccountManager: ObservableObject {
     
     @CodableAppStorage("accountId") public var accountId: UUID? = nil
     
-    public func getAccount() -> Account? {
+    public func getAccount() -> AnyAccount? {
         if accountId == nil {
             if let id = accounts.first?.id {
                 accountId = id

@@ -92,7 +92,7 @@ public class JavaInstallTask: InstallTask {
                 
                 let javaDirectoryPath = temp.root.appending(path: package.name).appending(path: "zulu-\(package.version[0]).\(package.type.rawValue)")
                 if !FileManager.default.fileExists(atPath: javaDirectoryPath.path) {
-                    throw NSError(domain: "JavaDownloader", code: -1, userInfo: [NSLocalizedDescriptionKey: "发生未知错误"])
+                    throw MyLocalizedError(reason: "发生未知错误")
                 }
                 
                 let saveURL = JavaInstallTask.defaultJavaInstallDirectory.appending(path: javaDirectoryPath.lastPathComponent)

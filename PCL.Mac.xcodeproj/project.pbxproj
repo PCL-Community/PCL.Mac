@@ -103,6 +103,7 @@
 				Temp/TemperatureDirectory.swift,
 				Theme/ThemeOwnershipChecker.swift,
 				UpdateCheck.swift,
+				Utils/MyLocalizedError.swift,
 				Utils/Util.swift,
 				Utils/ZipUtil.swift,
 			);
@@ -147,6 +148,7 @@
 				Temp/TemperatureDirectory.swift,
 				Theme/ThemeOwnershipChecker.swift,
 				UpdateCheck.swift,
+				Utils/MyLocalizedError.swift,
 				Utils/Util.swift,
 				Utils/ZipUtil.swift,
 			);

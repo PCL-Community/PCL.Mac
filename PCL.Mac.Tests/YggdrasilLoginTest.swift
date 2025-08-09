@@ -14,7 +14,7 @@ struct YggdrasilLoginTest {
         let account = try await YggdrasilAccount(
             authenticationServer: URL(string: "https://littleskin.cn/api/yggdrasil")!,
             accountIdentifier: "YiZhiMCQiu",
-            password: "自己猜去"
+            password: "你猜"
         )
         print(account.name)
         print(account.uuid.uuidString)

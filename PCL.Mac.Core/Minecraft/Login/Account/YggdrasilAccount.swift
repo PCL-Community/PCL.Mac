@@ -8,6 +8,7 @@
 import Foundation
 
 public class YggdrasilAccount: Account {
+    public let id: UUID
     /// 账户所属验证服务器
     public let authenticationServer: URL
     
@@ -24,6 +25,7 @@ public class YggdrasilAccount: Account {
     public var clientToken: String
     
     public init(authenticationServer: URL, accountIdentifier: String, password: String) async throws {
+        self.id = UUID()
         self.authenticationServer = authenticationServer
         self.accountIdentifier = accountIdentifier
         
@@ -42,7 +44,7 @@ public class YggdrasilAccount: Account {
         
         if json["error"].exists() {
             err("验证服务器返回了错误: \(json["errorMessage"].stringValue) \(json["cause"].stringValue)")
-            throw NSError(domain: "YggdrasilAccount", code: -1, userInfo: [NSLocalizedDescriptionKey: json["errorMessage"]])
+            throw MyLocalizedError(reason: json["errorMessage"].stringValue)
         }
         
         self.accessToken = json["accessToken"].stringValue
@@ -53,7 +55,7 @@ public class YggdrasilAccount: Account {
             options: .regularExpression
         )) else {
             err("无效的 UUID: \(json["selectedProfile"]["id"].stringValue)")
-            throw NSError(domain: "YggdrasilAccount", code: -1, userInfo: [NSLocalizedDescriptionKey: "无效的 UUID: \(json["selectedProfile"]["id"].stringValue)"])
+            throw MyLocalizedError(reason: "无效的 UUID: \(json["selectedProfile"]["id"].stringValue)")
         }
         self.uuid = uuid
         self.name = json["selectedProfile"]["name"].stringValue

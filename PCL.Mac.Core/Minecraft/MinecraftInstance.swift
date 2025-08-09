@@ -236,7 +236,7 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
         do {
             let archive = try Archive(url: runningDirectory.appending(path: "\(config.name).jar"), accessMode: .read)
             guard let entry = archive["version.json"] else {
-                throw NSError(domain: "MinecraftInstance", code: -1, userInfo: [NSLocalizedDescriptionKey: "version.json 不存在"])
+                throw MyLocalizedError(reason: "version.json 不存在")
             }
             
             var data = Data()

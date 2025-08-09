@@ -13,13 +13,23 @@ enum AvatarInputType {
 }
 
 struct MinecraftAvatar: View {
+    private static var skinCache: [String: Data] = [:]
+    private static var loadingKeys: Set<String> = []
+
     let type: AvatarInputType
     let src: String
-    private(set) var size: CGFloat = 58
-    
+    let size: CGFloat
+
     @State private var imageData: Data?
 
-    var skinURL: URL {
+    init(type: AvatarInputType, src: String, size: CGFloat = 58) {
+        self.type = type
+        self.src = src
+        self.size = size
+        self._imageData = State(initialValue: Self.skinCache[src])
+    }
+
+    private var skinURL: URL {
         switch type {
         case .username:
             return URL(string: "https://minotar.net/skin/\(src)")!
@@ -38,18 +48,28 @@ struct MinecraftAvatar: View {
                 SkinLayerView(imageData: data, startX: 40, startY: 16, width: 7.99 * 6.1 / 58 * size, height: 7.99 * 6.1 / 58 * size)
             }
         }
-        .onAppear {
-            Task {
-                if let data = await Requests.get(skinURL).data {
-                    DispatchQueue.main.async {
-                        self.imageData = data
-                    }
-                }
-            }
-        }
         .frame(width: size, height: size)
         .clipped()
         .padding(6)
+        .task { await loadIfNeeded() }
+    }
+
+    private func loadIfNeeded() async {
+        if imageData != nil { return }
+        if let cached = Self.skinCache[src] {
+            imageData = cached
+            return
+        }
+        if Self.loadingKeys.contains(src) { return }
+        Self.loadingKeys.insert(src)
+        defer { Self.loadingKeys.remove(src) }
+
+        if let data = await Requests.get(skinURL).data {
+            await MainActor.run {
+                Self.skinCache[src] = data
+                self.imageData = data
+            }
+        }
     }
 }
 

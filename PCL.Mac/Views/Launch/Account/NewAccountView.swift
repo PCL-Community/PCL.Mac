@@ -9,7 +9,7 @@ import SwiftUI
 
 class NewAccountViewState: ObservableObject {
     enum PageType {
-        case offline, microsoft
+        case offline, microsoft, yggdrasil
     }
     
     @Published var type: PageType? = nil
@@ -32,12 +32,16 @@ struct NewAccountView: View {
             case .microsoft:
                 NewMicrosoftAccountView()
                     .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .yggdrasil:
+                NewYggdrasilAccountView()
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             default:
                 Group {
                     let card = StaticMyCard(title: "登录方式") {
                         VStack(spacing: 0) {
                             AuthMethodComponent(type: .microsoft)
                             AuthMethodComponent(type: .offline)
+                            AuthMethodComponent(type: .yggdrasil)
                         }
                     }
                     if isAppeared { card.noAnimation() } else { card }
@@ -66,16 +70,14 @@ fileprivate struct AuthMethodComponent: View {
                     .frame(width: 25)
                 VStack(alignment: .leading) {
                     let title = switch type {
-                    case .offline:
-                        "离线验证"
-                    case .microsoft:
-                        "正版验证"
+                    case .offline: "离线登录"
+                    case .microsoft: "正版验证"
+                    case .yggdrasil: "外置登录"
                     }
                     let desc = switch type {
-                    case .offline:
-                        "可自定义玩家名，可能无法加入部分服务器"
-                    case .microsoft:
-                        "需要购买 Minecraft"
+                    case .offline: "可自定义玩家名，可能无法加入部分服务器"
+                    case .microsoft: "需要购买 Minecraft"
+                    case .yggdrasil: "添加外置登录账号（如 LittleSkin）"
                     }
                     
                     Text(title)
@@ -190,12 +192,17 @@ fileprivate struct NewMicrosoftAccountView: View {
                 .padding()
                 
                 HStack {
+                    Spacer()
                     MyButton(text: "取消") {
                         state.type = nil
                     }
+                    .frame(height: 35)
+                    .fixedSize(horizontal: true, vertical: false)
                     MyButton(text: "购买 Minecraft") {
                         NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!)
                     }
+                    .frame(height: 35)
+                    .fixedSize(horizontal: true, vertical: false)
                     MyButton(text: "登录") {
                         if !NetworkTest.shared.hasNetworkConnection() {
                             HintManager.default.add(.init(text: "请先联网！", type: .critical))
@@ -208,8 +215,9 @@ fileprivate struct NewMicrosoftAccountView: View {
                             await signIn()
                         }
                     }
+                    .frame(height: 35)
+                    .fixedSize(horizontal: true, vertical: false)
                 }
-                .frame(height: 40)
             }
         }
         .noAnimation()
@@ -245,5 +253,109 @@ fileprivate struct NewMicrosoftAccountView: View {
             err(error.localizedDescription)
             ContentView.setPopup(.init("登录时发生错误", "\(error.localizedDescription)\n请不要退出启动器，在 设置 > 其他 中打开日志，将选中的文件反馈给开发者。", [.Ok]))
         }
+    }
+}
+
+// MARK: - 添加外置登录账号页面
+fileprivate struct NewYggdrasilAccountView: View {
+    @ObservedObject private var state: NewAccountViewState = StateManager.shared.newAccount
+    @ObservedObject private var dataManager: DataManager = .shared
+    @State private var authenticationServer: String = ""
+    @State private var errorMessage: String = ""
+    @State private var accountIdentifier: String = ""
+    @State private var password: String = ""
+    
+    var body: some View {
+        StaticMyCard(title: "外置登录账号") {
+            VStack {
+                VStack {
+                    HStack {
+                        Text("验证服务器")
+                        MyTextField(text: $authenticationServer, placeholder: "例如 https://littleskin.cn/api/yggdrasil")
+                            .onChange(of: authenticationServer) {
+                                if !isValidServer(authenticationServer) {
+                                    errorMessage = "输入的 URL 无效！"
+                                    return
+                                }
+                                
+                                errorMessage.removeAll()
+                            }
+                    }
+                    
+                    if !errorMessage.isEmpty {
+                        Text(errorMessage)
+                            .foregroundStyle(Color(hex: 0xFF4C4C))
+                    }
+                    
+                    HStack {
+                        Text("账户")
+                        MyTextField(text: $accountIdentifier, placeholder: "邮箱或用户名")
+                    }
+                    
+                    HStack {
+                        Text("密码")
+                        MyTextField(text: $password)
+                    }
+                }
+                .padding()
+                
+                HStack {
+                    Spacer()
+                    MyButton(text: "添加") {
+                        guard isValidServer(authenticationServer) else {
+                            hint("输入的 URL 无效！", .critical)
+                            return
+                        }
+                        
+                        guard !accountIdentifier.isEmpty else {
+                            hint("账户不能为空！", .critical)
+                            return
+                        }
+                        
+                        guard !password.isEmpty else {
+                            hint("密码不能为空！", .critical)
+                            return
+                        }
+                        
+                        Task {
+                            do {
+                                let account = try await YggdrasilAccount(
+                                    authenticationServer: URL(string: authenticationServer)!,
+                                    accountIdentifier: accountIdentifier,
+                                    password: password
+                                )
+                                AccountManager.shared.accounts.append(.yggdrasil(account))
+                                hint("添加成功！", .finish)
+                                await MainActor.run {
+                                    dataManager.router.removeLast()
+                                    dataManager.router.append(.accountList)
+                                    StateManager.shared.newAccount = .init()
+                                }
+                            } catch {
+                                hint("登录失败：\(error.localizedDescription)", .critical)
+                            }
+                        }
+                    }
+                    .frame(height: 35)
+                    .fixedSize(horizontal: true, vertical: false)
+                    
+                    MyButton(text: "取消") {
+                        state.type = nil
+                    }
+                    .frame(height: 35)
+                    .fixedSize(horizontal: true, vertical: false)
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: errorMessage)
+            .font(.custom("PCL English", size: 14))
+            .foregroundStyle(Color("TextColor"))
+        }
+        .noAnimation()
+        .padding()
+    }
+    
+    private func isValidServer(_ str: String) -> Bool {
+        let url = URL(string: str)
+        return url != nil && url!.host() != nil
     }
 }

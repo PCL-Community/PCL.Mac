@@ -136,7 +136,7 @@ public class JavaVirtualMachine: Identifiable, Equatable {
             
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             guard let output = String(data: data, encoding: .utf8) else {
-                throw NSError(domain: "JavaVersionDetector", code: 1, userInfo: [NSLocalizedDescriptionKey: "Output decoding failed"])
+                throw MyLocalizedError(reason: "Output decoding failed")
             }
             
             let versionPattern = #"(?:openjdk|java)\s+version\s+"([0-9]{1,3}(?:[\.\-\+][\w\.\+]+)?)""#
@@ -150,7 +150,7 @@ public class JavaVirtualMachine: Identifiable, Equatable {
                     return (majorVersion, displayVersion)
                 }
             }
-            throw NSError(domain: "JavaVersionDetector", code: 2, userInfo: [NSLocalizedDescriptionKey: "\(url.path) 中的 Java 版本未找到"])
+            throw MyLocalizedError(reason: "\(url.path) 中的 Java 版本未找到")
         } catch {
             err("无法检测 java 版本: \(error.localizedDescription)")
         }
