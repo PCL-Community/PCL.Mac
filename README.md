@@ -46,3 +46,4 @@ SwiftUI 重构的 macOS 版 [PCL2](https://github.com/Hex-Dragon/PCL2)，追求�
 - [Copilot](https://github.com/copilot)
 - [aria2](https://github.com/aria2/aria2)
 - NT | Krnl32
+- 阿鱼 | 🐟🐟🐟
