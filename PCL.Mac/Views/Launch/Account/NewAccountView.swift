@@ -285,6 +285,7 @@ fileprivate struct NewYggdrasilAccountView: View {
                     if !errorMessage.isEmpty {
                         Text(errorMessage)
                             .foregroundStyle(Color(hex: 0xFF4C4C))
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     
                     HStack {
@@ -301,6 +302,12 @@ fileprivate struct NewYggdrasilAccountView: View {
                 
                 HStack {
                     Spacer()
+                    
+                    MyButton(text: "取消") {
+                        state.type = nil
+                    }
+                    .fixedSize()
+                    
                     MyButton(text: "添加") {
                         guard isValidServer(authenticationServer) else {
                             hint("输入的 URL 无效！", .critical)
@@ -336,14 +343,7 @@ fileprivate struct NewYggdrasilAccountView: View {
                             }
                         }
                     }
-                    .frame(height: 35)
-                    .fixedSize(horizontal: true, vertical: false)
-                    
-                    MyButton(text: "取消") {
-                        state.type = nil
-                    }
-                    .frame(height: 35)
-                    .fixedSize(horizontal: true, vertical: false)
+                    .fixedSize()
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: errorMessage)
