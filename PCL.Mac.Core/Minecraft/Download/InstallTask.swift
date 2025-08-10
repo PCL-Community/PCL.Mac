@@ -140,12 +140,14 @@ public class MinecraftInstallTask: InstallTask {
     public let minecraftVersion: MinecraftVersion
     public let minecraftDirectory: MinecraftDirectory
     public let startTask: (MinecraftInstallTask) async -> Void
+    public let architecture: Architecture
     
-    public init(minecraftVersion: MinecraftVersion, minecraftDirectory: MinecraftDirectory, name: String, startTask: @escaping (MinecraftInstallTask) async -> Void) {
+    public init(minecraftVersion: MinecraftVersion, minecraftDirectory: MinecraftDirectory, name: String, architecture: Architecture = .system, startTask: @escaping (MinecraftInstallTask) async -> Void) {
         self.minecraftVersion = minecraftVersion
         self.minecraftDirectory = minecraftDirectory
         self.name = name
         self.startTask = startTask
+        self.architecture = architecture
     }
     
     public override func start() {

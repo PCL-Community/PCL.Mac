@@ -14,7 +14,7 @@ public class JavaDownloader {
     
     public static func search(
         version: String? = nil,
-        arch: Architectury? = nil,
+        arch: Architecture? = nil,
         type: JavaPackage.JavaType? = nil,
         onlyLTS: Bool = false,
         page: Int = 1
@@ -135,7 +135,7 @@ public struct JavaPackage: Identifiable {
     public let id: UUID = .init()
     public let name: String
     public let type: JavaType
-    public let arch: Architectury
+    public let arch: Architecture
     public let version: [Int]
     public var versionString: String { version.map { String($0) }.joined(separator: ".") }
     public let downloadURL: URL

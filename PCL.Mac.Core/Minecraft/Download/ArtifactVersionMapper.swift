@@ -8,8 +8,11 @@
 import Foundation
 
 public struct ArtifactVersionMapper {
-    public static func map(_ manifest: ClientManifest) {
-        if Architectury.system != .arm64 {
+    public static func map(_ manifest: ClientManifest, arch: Architecture = .system) {
+        if arch != .arm64 {
+            for (library, _) in manifest.getNeededNatives() {
+                library.name = "org.lwjgl:\(library.artifactId):3.3.2:natives-macos"
+            }
             return
         }
         
@@ -54,6 +57,7 @@ public struct ArtifactVersionMapper {
                 if library.version.starts(with: "3.") && library.version != "3.3.3" {
                     changeVersion(library, "3.3.2")
                 }
+                library.name = "org.lwjgl:\(library.artifactId):3.3.2:natives-macos-arm64"
                 artifact.url = "https://libraries.minecraft.net/org/lwjgl/\(library.artifactId)/\(library.version)/\(library.artifactId)-\(library.version)-natives-macos-arm64.jar"
             case "org.lwjgl.lwjgl":
                 if library.artifactId == "lwjgl-platform" {

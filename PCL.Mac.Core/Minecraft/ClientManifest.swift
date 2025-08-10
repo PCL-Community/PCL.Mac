@@ -96,49 +96,43 @@ public class ClientManifest {
         public let rules: [Rule]
         public let natives: [String: String]
         public let artifact: DownloadInfo?
-        public let classifiers: [String: DownloadInfo]
+        public let isNativeLibrary: Bool
 
         public init?(json: JSON) {
-            name = json["name"].stringValue
-            split = name.split(separator: ":").map(String.init)
+            self.name = json["name"].stringValue
+            self.split = name.split(separator: ":").map(String.init)
             if split.isEmpty {
                 return nil
             }
             
             if json["url"].exists() { // Fabric 依赖
                 self.rules = []
-                self.classifiers = [:]
                 self.natives = [:]
                 let path = Util.toPath(mavenCoordinate: name)
                 self.artifact = DownloadInfo(path: path, url: URL(string: json["url"].stringValue)!.appending(path: path).absoluteString)
             } else {
                 if split[1] == "launchwrapper" {
                     self.rules = []
-                    self.classifiers = [:]
                     self.natives = [:]
                     let path = Util.toPath(mavenCoordinate: name)
                     self.artifact = DownloadInfo(path: path, url: URL(string: "https://libraries.minecraft.net")!.appending(path: path).absoluteString)
                 } else {
-                    rules = json["rules"].arrayValue.map { Rule(json: $0) }
-                    natives = json["natives"].dictionaryObject as? [String: String] ?? [:]
-                    artifact = json["downloads"]["artifact"].exists() ? DownloadInfo(json: json["downloads"]["artifact"]) : nil
-                    if let cls = json["downloads"]["classifiers"].dictionary {
-                        var result: [String: DownloadInfo] = [:]
-                        for (k, v) in cls {
-                            result[k] = DownloadInfo(json: v)
-                        }
-                        classifiers = result
+                    self.rules = json["rules"].arrayValue.map { Rule(json: $0) }
+                    self.natives = json["natives"].dictionaryObject as? [String: String] ?? [:]
+                    
+                    if let classifiers = json["downloads"]["classifiers"].dictionary,
+                       let key = natives["osx"],
+                       let json = classifiers[key] {
+                        self.artifact = DownloadInfo(json: json)
+                        self.isNativeLibrary = true
+                        return
                     } else {
-                        classifiers = [:]
+                        self.artifact = json["downloads"]["artifact"].exists() ? DownloadInfo(json: json["downloads"]["artifact"]) : nil
                     }
                 }
             }
-        }
-        
-        public func getNativeArtifact() -> DownloadInfo? {
-            let key = natives["osx"]
-            guard let key, let nativeDl = classifiers[key] else { return nil }
-            return nativeDl
+            
+            self.isNativeLibrary = false
         }
         
         public static func == (lhs: Library, rhs: Library) -> Bool { lhs.name == rhs.name }
@@ -351,7 +345,7 @@ public class ClientManifest {
     }
 
     public func getNeededLibraries() -> [Library] {
-        getAllowedLibraries().filter { $0.getNativeArtifact() == nil }
+        getAllowedLibraries().filter { !$0.isNativeLibrary }
     }
     
     public func getAllowedLibraries() -> [Library] {
@@ -362,9 +356,9 @@ public class ClientManifest {
     
     public func getNeededNatives() -> [Library: DownloadInfo] {
         var result: [Library: DownloadInfo] = [:]
-        for lib in getAllowedLibraries() {
-            if let artifact = lib.getNativeArtifact() {
-                result[lib] = artifact
+        for library in getAllowedLibraries() {
+            if library.isNativeLibrary {
+                result[library] = library.artifact
             }
         }
         return result

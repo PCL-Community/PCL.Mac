@@ -47,7 +47,6 @@ public class MinecraftInstaller {
                 if let data = try? Data(contentsOf: clientJsonURL),
                    let manifest: ClientManifest = try? .parse(data, instanceURL: nil) {
                     task.manifest = manifest
-                    ArtifactVersionMapper.map(task.manifest!)
                 } else {
                     err("无法解析 JSON")
                 }
@@ -213,12 +212,12 @@ public class MinecraftInstaller {
         for (_, native) in task.manifest!.getNeededNatives() {
             let jarURL: URL = task.minecraftDirectory.librariesURL.appending(path: native.path)
             Util.unzip(archiveURL: jarURL, destination: nativesURL, replace: true)
-            processLibs(nativesURL)
+            processLibs(task, nativesURL)
         }
     }
     
     // MARK: 处理解压结果
-    private static func processLibs(_ nativesURL: URL) {
+    private static func processLibs(_ task: MinecraftInstallTask, _ nativesURL: URL) {
         let fileManager = FileManager.default
         guard let enumerator = fileManager.enumerator(
             at: nativesURL, includingPropertiesForKeys: [.isDirectoryKey],
@@ -231,8 +230,8 @@ public class MinecraftInstaller {
             
             // 验证架构
             if fileURL.pathExtension == "dylib" {
-                let arch = Architectury.getArchOfFile(fileURL)
-                guard arch == .system || arch == .fatFile else {
+                let arch = Architecture.getArchOfFile(fileURL)
+                guard arch == task.architecture || arch == .fatFile else {
                     try? fileManager.removeItem(at: fileURL)
                     log("已清除架构不匹配的可执行文件: \(fileURL.lastPathComponent)")
                     continue
@@ -328,7 +327,15 @@ public class MinecraftInstaller {
     
     // MARK: 创建补全资源任务
     public static func createCompleteTask(_ instance: MinecraftInstance, _ callback: (() -> Void)? = nil) -> InstallTask {
-        let task = MinecraftInstallTask(minecraftVersion: instance.version!, minecraftDirectory: instance.minecraftDirectory, name: instance.config.name) { task in
+        let arch: Architecture
+        if Architecture.system == .x64 { arch = .x64 }
+        else { arch = instance.isUsingRosetta ? .x64 : .arm64 }
+        let task = MinecraftInstallTask(
+            minecraftVersion: instance.version!,
+            minecraftDirectory: instance.minecraftDirectory,
+            name: instance.config.name,
+            architecture: arch
+        ) { task in
             task.manifest = instance.manifest
             await downloadAssetIndex(task)
             await downloadClientJar(task, skipIfExists: true)

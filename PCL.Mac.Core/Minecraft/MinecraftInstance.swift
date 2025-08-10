@@ -25,6 +25,7 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
     public private(set) var manifest: ClientManifest!
     public var config: MinecraftConfig!
     public var clientBrand: ClientBrand!
+    public var isUsingRosetta: Bool = false
     
     public let id: UUID = UUID()
     
@@ -164,6 +165,16 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
         }
         launchOptions.javaPath = URL(fileURLWithPath: config.javaPath)
         
+        let _ = loadManifest()
+        if Architecture.getArchOfFile(launchOptions.javaPath) == .arm64 && Architecture.system == .arm64 {
+            ArtifactVersionMapper.map(manifest)
+            isUsingRosetta = false
+        } else {
+            ArtifactVersionMapper.map(manifest, arch: .x64)
+            isUsingRosetta = true
+            warn("正在使用 Rosetta 运行 Minecraft")
+        }
+        
         if !config.skipResourcesCheck && !launchOptions.skipResourceCheck {
             log("正在进行资源完整性检查")
             await withCheckedContinuation { continuation in
@@ -220,7 +231,7 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
             }
             guard let manifest = manifest else { return false }
             self.manifest = manifest
-            ArtifactVersionMapper.map(self.manifest)
+//            ArtifactVersionMapper.map(self.manifest)
         } catch {
             err("无法加载客户端清单: \(error.localizedDescription)")
             return false
