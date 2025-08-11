@@ -161,6 +161,9 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
             launchOptions.uuid = account.uuid
             log("正在登录")
             await account.putAccessToken(options: launchOptions)
+            if case .yggdrasil = account {
+                try? await MinecraftLauncher.downloadAuthlibInjector() // 后面改成可抛出 + 多阶段
+            }
         }
         launchOptions.javaPath = URL(fileURLWithPath: config.javaPath)
         

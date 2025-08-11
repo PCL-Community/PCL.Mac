@@ -14,7 +14,7 @@ public class LaunchOptions {
     public var playerName: String = ""
     public var uuid: UUID = .init()
     public var accessToken: String = ""
-    public var account: Account?
+    public var account: AnyAccount?
     public var yggdrasilArguments: [String] = []
     
     public init() {}
