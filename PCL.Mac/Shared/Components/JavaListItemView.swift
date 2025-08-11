@@ -19,7 +19,7 @@ struct JavaListItemView: View {
             return nil
         }
         
-        return URL(fileURLWithPath: instance.config.javaPath ?? "")
+        return instance.config.javaURL
     }
     
     init(jvm: JavaVirtualMachine) {
@@ -69,7 +69,7 @@ struct JavaListItemView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: javaPath)
         .onTapGesture {
-            self.instance?.config.javaPath = jvm.executableURL.path
+            self.instance?.config.javaURL = jvm.executableURL
             self.instance?.saveConfig()
             dataManager.objectWillChange.send()
         }

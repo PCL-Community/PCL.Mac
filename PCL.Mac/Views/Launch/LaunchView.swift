@@ -98,56 +98,66 @@ fileprivate struct LeftTab: View {
     }
     
     private func launchPrecheck(_ launchOptions: LaunchOptions) async -> Bool {
-        var returnValue: Bool = false
-        switch LaunchPrecheck.check(instance!, launchOptions) {
-        case .success():
-            returnValue = true
-        case .failure(let error):
+        // MARK: - Java 检查
+        if case .failure(let error) = LaunchPrecheck.checkJava(instance!, launchOptions) {
             switch error {
-            case .invalidMemoryConfiguration:
-                PopupManager.shared.show(.init(.error, "错误", "无效的内存配置：0MB。\n请在 版本设置 > 设置 中调整游戏内存配置", [.ok]))
-            case .missingAccount:
-                PopupManager.shared.show(.init(.error, "错误", "请先创建一个账号并选择再启动游戏！", [.ok]))
             case .javaNotFound:
                 PopupManager.shared.show(.init(.error, "错误", "你还没有安装 Java\n如果你安装过 Java 并且没有在 Java 管理中看到，请点击“手动添加 Java”", [.init(label: "安装 Java", style: .normal), .close])) { button in
                     if button == 0 {
                         dataManager.router.path = [.settings, .javaSettings, .javaDownload]
                     }
                 }
+                return false
             case .noUsableJava(let minVersion):
                 PopupManager.shared.show(.init(.error, "错误", "当前没有满足条件的 Java 版本\n你需要安装 \(minVersion) 及以上版本的 Java！", [.init(label: "安装 Java", style: .normal), .close])) { button in
                     if button == 0 {
                         dataManager.router.path = [.settings, .javaSettings, .javaDownload]
                     }
                 }
+                return false
+            case .javaNotSupport:
+                PopupManager.shared.show(.init(.error, "错误", "你安装 / 选择了一个 ARM64 架构的 Java，但你的电脑不支持。\n请进入 设置 > Java 管理，安装 / 选择一个 x64 架构的 Java。", [.init(label: "安装 Java", style: .normal), .close])) { button in
+                    if button == 0 {
+                        dataManager.router.path = [.settings, .javaSettings, .javaDownload]
+                    }
+                }
+                return false
+            case .invalidMemoryConfiguration:
+                PopupManager.shared.show(.init(.error, "错误", "无效的内存配置：0MB。\n请在 版本设置 > 设置 中调整游戏内存配置", [.ok]))
+            case .rosetta:
+                if await PopupManager.shared.showAsync(.init(.normal, "警告", "你安装 / 选择了一个 x64 架构的 Java，需要通过转译运行，这将会损耗大部分性能。\n你可以进入 设置 > Java 管理，安装 / 选择一个 ARM64 架构的 Java。", [.init(label: "继续启动", style: .normal), .close]))
+                == 1 {
+                    return false
+                }
+            }
+        }
+        
+        if case .failure(let error) = LaunchPrecheck.checkAccount(instance!, launchOptions) {
+            switch error {
+            case .missingAccount:
+                PopupManager.shared.show(.init(.error, "错误", "请先创建一个账号并选择再启动游戏！", [.ok]))
             case .noMicrosoftAccount:
                 if Locale.current.region?.identifier == "CN" {
-                    switch AppSettings.shared.launchCount {
-                    case 3, 8, 15, 30, 50, 70, 90, 110, 130, 180, 220, 280, 330, 380, 450, 550, 660, 750, 880, 950, 1100, 1300, 1500, 1700, 1900:
+                    if [3, 8, 15, 30, 50, 70, 90, 110, 130, 180, 220, 280, 330, 380, 450, 550, 660, 750, 880, 950, 1100, 1300, 1500, 1700, 1900].contains(AppSettings.shared.launchCount) {
                         let button = await PopupManager.shared.showAsync(.init(.normal, "考虑一下正版？", "你已经启动了 \(AppSettings.shared.launchCount) 次 Minecraft 啦！\n如果觉得 Minecraft 还不错，可以购买正版支持一下，毕竟开发游戏也真的很不容易……不要一直白嫖啦。\n在登录一次正版账号后，就不会再出现这个提示了！", [.init(label: "支持正版游戏！", style: .normal), .init(label: "下次一定", style: .normal)]))
                         if button == 0 {
                             NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!)
-                        } else if button == 1 {
-                            returnValue = true
+                            return false
                         }
-                    default:
-                        returnValue = true
                     }
                 } else {
                     let button = await PopupManager.shared.showAsync(.init(.normal, "正版验证", "你必须先登录正版账号才能启动游戏！", [.init(label: "购买正版", style: .normal), .init(label: "试玩", style: .normal), .init(label: "返回", style: .normal)]))
                     if button == 0 {
                         NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!)
+                        return false
                     } else if button == 1 {
                         launchOptions.isDemo = true
-                        returnValue = true
                     }
                 }
-            case .cancelled:
-                returnValue = false
             }
         }
-        
-        return returnValue
+            
+        return true
     }
 }
 

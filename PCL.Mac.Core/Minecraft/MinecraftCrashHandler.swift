@@ -16,7 +16,7 @@ public class MinecraftCrashHandler {
         log("以下是 PCL.Mac 检测到的环境信息:")
         log("架构: \(Architecture.system)")
         log("分支: \(SharedConstants.shared.branch)")
-        log("Java 架构: \(Architecture.getArchOfFile(URL(fileURLWithPath: instance.config.javaPath!)))")
+        log("Java 架构: \(Architecture.getArchOfFile(instance.config.javaURL!))")
         do {
             let contents = try FileManager.default.contentsOfDirectory(
                 at: instance.runningDirectory.appending(path: "natives"),
