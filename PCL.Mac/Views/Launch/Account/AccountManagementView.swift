@@ -79,7 +79,7 @@ fileprivate struct AccountView: View {
     var body: some View {
         MyListItem {
             HStack {
-                MinecraftAvatar(type: .username, src: account.name, size: 40)
+                MinecraftAvatar(account: account, src: account.name, size: 40)
                 VStack(alignment: .leading) {
                     ZStack(alignment: .leading) {
                         Text(account.name)

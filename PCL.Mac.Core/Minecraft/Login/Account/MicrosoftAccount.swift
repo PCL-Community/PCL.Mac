@@ -23,7 +23,7 @@ public class PlayerProfile: Codable {
     }
 }
 
-public class MicrosoftAccount: Codable, Identifiable, Account {
+public class MicrosoftAccount: Account {
     public let id: UUID
     public var refreshToken: String
     public var profile: PlayerProfile

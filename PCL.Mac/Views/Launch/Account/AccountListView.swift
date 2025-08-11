@@ -57,7 +57,7 @@ fileprivate struct AccountView: View {
     var body: some View {
         MyListItem(isSelected: accountManager.accountId == account.id) {
             HStack {
-                MinecraftAvatar(type: .uuid, src: account.uuid.uuidString, size: 40)
+                MinecraftAvatar(account: account, src: account.uuid.uuidString, size: 40)
                 VStack(alignment: .leading, spacing: 4) {
                     ZStack(alignment: .leading) {
                         Text(account.name)

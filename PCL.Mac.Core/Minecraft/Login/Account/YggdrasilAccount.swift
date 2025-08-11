@@ -9,8 +9,13 @@ import Foundation
 
 public class YggdrasilAccount: Account {
     public let id: UUID
+    public lazy var client: YggdrasilClient = { YggdrasilClient(authenticationServer) }()
+    
     /// 账户所属验证服务器
     public let authenticationServer: URL
+    
+    /// 验证服务器名称
+    public let authenticationServerName: String
     
     /// 账户的标识 (如邮箱)
     public let accountIdentifier: String
@@ -27,38 +32,16 @@ public class YggdrasilAccount: Account {
     public init(authenticationServer: URL, accountIdentifier: String, password: String) async throws {
         self.id = UUID()
         self.authenticationServer = authenticationServer
+        self.authenticationServerName = try await Requests.get(authenticationServer).getJSONOrThrow()["meta"]["serverName"].stringValue
         self.accountIdentifier = accountIdentifier
         
-        let json = try await Requests.post(
-            authenticationServer.appending(path: "/authserver/authenticate"),
-            body: [
-                "username": accountIdentifier,
-                "password": password,
-                "requestUser": true,
-                "agent": [
-                    "name": "Minecraft",
-                    "version": 1
-                ]
-            ]
-        ).getJSONOrThrow()
+        let client = YggdrasilClient(authenticationServer)
+        let response = try await client.authenticate(identifier: accountIdentifier, password: password)
         
-        if json["error"].exists() {
-            err("验证服务器返回了错误: \(json["errorMessage"].stringValue) \(json["cause"].stringValue)")
-            throw MyLocalizedError(reason: json["errorMessage"].stringValue)
-        }
-        
-        self.accessToken = json["accessToken"].stringValue
-        self.clientToken = json["clientToken"].stringValue
-        guard let uuid = UUID(uuidString: json["selectedProfile"]["id"].stringValue.replacingOccurrences(
-            of: #"([0-9a-fA-F]{8})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{12})"#,
-            with: "$1-$2-$3-$4-$5",
-            options: .regularExpression
-        )) else {
-            err("无效的 UUID: \(json["selectedProfile"]["id"].stringValue)")
-            throw MyLocalizedError(reason: "无效的 UUID: \(json["selectedProfile"]["id"].stringValue)")
-        }
-        self.uuid = uuid
-        self.name = json["selectedProfile"]["name"].stringValue
+        self.accessToken = response.accessToken
+        self.clientToken = response.clientToken
+        self.uuid = response.profileUUID
+        self.name = response.profileName
     }
     
     public func putAccessToken(options: LaunchOptions) async {

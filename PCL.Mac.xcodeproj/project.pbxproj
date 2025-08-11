@@ -106,6 +106,7 @@
 				Utils/MyLocalizedError.swift,
 				Utils/Util.swift,
 				Utils/ZipUtil.swift,
+				YggdrasilClient.swift,
 			);
 			target = EC9EAEC82DD85E48006CEDCC /* PCL.Mac */;
 		};
@@ -151,6 +152,7 @@
 				Utils/MyLocalizedError.swift,
 				Utils/Util.swift,
 				Utils/ZipUtil.swift,
+				YggdrasilClient.swift,
 			);
 			publicHeaders = (
 				PCL_Mac_Core.h,

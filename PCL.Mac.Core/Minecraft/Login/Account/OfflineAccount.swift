@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class OfflineAccount: Codable, Identifiable, Account {
+public class OfflineAccount: Account {
     public let id: UUID
     public var uuid: UUID
     public var name: String

@@ -8,35 +8,19 @@
 import SwiftUI
 import CoreGraphics
 
-enum AvatarInputType {
-    case username, uuid, url
-}
-
 struct MinecraftAvatar: View {
-    private static var skinCache: [String: Data] = [:]
-    private static var loadingKeys: Set<String> = []
-
-    let type: AvatarInputType
-    let src: String
-    let size: CGFloat
-
     @State private var imageData: Data?
+    
+    private let account: AnyAccount
+    private let src: String
+    private let size: CGFloat
 
-    init(type: AvatarInputType, src: String, size: CGFloat = 58) {
-        self.type = type
+    init(account: AnyAccount, src: String, size: CGFloat = 58) {
+        self.account = account
         self.src = src
         self.size = size
-        self._imageData = State(initialValue: Self.skinCache[src])
-    }
-
-    private var skinURL: URL {
-        switch type {
-        case .username:
-            return URL(string: "https://minotar.net/skin/\(src)")!
-        case .uuid:
-            return URL(string: "https://crafatar.com/skins/\(src)")!
-        case .url:
-            return URL(string: src)!
+        if let cached = SkinCacheStorage.shared.skinCache[account.uuid] {
+            self._imageData = State(initialValue: cached)
         }
     }
 
@@ -51,23 +35,16 @@ struct MinecraftAvatar: View {
         .frame(width: size, height: size)
         .clipped()
         .padding(6)
-        .task { await loadIfNeeded() }
-    }
-
-    private func loadIfNeeded() async {
-        if imageData != nil { return }
-        if let cached = Self.skinCache[src] {
-            imageData = cached
-            return
-        }
-        if Self.loadingKeys.contains(src) { return }
-        Self.loadingKeys.insert(src)
-        defer { Self.loadingKeys.remove(src) }
-
-        if let data = await Requests.get(skinURL).data {
-            await MainActor.run {
-                Self.skinCache[src] = data
-                self.imageData = data
+        .task {
+            // 只在没缓存时加载
+            if imageData == nil {
+                do {
+                    let skinData = try await account.getSkinData()
+                    SkinCacheStorage.shared.skinCache[account.uuid] = skinData
+                    self.imageData = skinData
+                } catch {
+                    err("无法加载头像: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -105,8 +82,4 @@ fileprivate struct SkinLayerView: View {
             }
         }
     }
-}
-
-#Preview {
-    MinecraftAvatar(type: .username, src: "MinecraftVenti")
 }
