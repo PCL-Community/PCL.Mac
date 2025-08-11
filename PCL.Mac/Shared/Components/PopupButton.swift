@@ -8,34 +8,35 @@
 import SwiftUI
 import AppKit
 
-struct PopupButton: View, Identifiable {
+struct PopupButton: View {
     @State private var isHovered = false
     
-    let id = UUID()
-    let text: String
-    let color: Color?
-    let onClick: () -> Void
+    private let model: PopupButtonModel
+    private let color: Color
     
-    init(text: String, color: Color? = nil, onClick: @escaping () -> Void) {
-        self.text = text
-        self.color = color
-        self.onClick = onClick
+    init(model: PopupButtonModel) {
+        self.model = model
+        self.color = switch model.style {
+        case .normal: Color("TextColor")
+        case .accent: AppSettings.shared.theme.getAccentColor()
+        case .danger: Color(hex: 0xFF4C4C)
+        }
     }
     
     var body: some View {
         ZStack {
-            Text(text)
-                .foregroundStyle(color ?? Color("TextColor"))
+            Text(model.label)
+                .foregroundStyle(color)
                 .overlay(
                     RoundedRectangle(cornerRadius: 3)
-                        .stroke(color ?? Color("TextColor"))
+                        .stroke(color)
                         .background(
                             Color(hex: 0x000000, alpha: self.isHovered ? 0.1 : 0.0)
                                 .onHover { hovering in
                                     self.isHovered = hovering
                                 }
                                 .onTapGesture {
-                                    self.onClick()
+                                    PopupManager.shared.onClick(id: model.id)
                                 }
                         )
                         .frame(height: 30)
@@ -44,14 +45,6 @@ struct PopupButton: View, Identifiable {
                         .frame(minWidth: 0, maxWidth: .infinity)
                 )
         }
+        .animation(.easeInOut(duration: 0.2), value: isHovered)
     }
-    
-    static let Close = PopupButton(text: "关闭") {
-        DataManager.shared.popupState = .afterCollapse
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            ContentView.setPopup(nil)
-        }
-    }
-    
-    static let Ok = PopupButton(text: "好的", onClick: Close.onClick)
 }

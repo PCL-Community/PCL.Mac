@@ -243,7 +243,7 @@ fileprivate struct NewMicrosoftAccountView: View {
             }
         } catch {
             err(error.localizedDescription)
-            ContentView.setPopup(.init("登录时发生错误", "\(error.localizedDescription)\n请不要退出启动器，在 设置 > 其他 中打开日志，将选中的文件反馈给开发者。", [.Ok]))
+            PopupManager.shared.show(.init(.error, "登录时发生错误", "\(error.localizedDescription)\n请不要退出启动器，在 设置 > 其他 中打开日志，将选中的文件反馈给开发者。", [.ok]))
         }
     }
 }

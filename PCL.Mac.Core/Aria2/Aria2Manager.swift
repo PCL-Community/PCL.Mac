@@ -88,10 +88,11 @@ public class Aria2Manager {
                 do {
                     try await downloadAria2()
                 } catch {
-                    await ContentView.setPopup(PopupOverlay(
-                        "无法下载 aria2c",
-                        "\(error.localizedDescription)\n你可以点击重试，或手动将 aria2 可执行文件下载至 \(executableURL.path)",
-                        [.init(text: "重试", onClick: { PopupButton.Close.onClick() ; self.checkAndDownloadAria2() }), .Ok]))
+                    await PopupManager.shared.show(
+                        .init(.error, "无法下载 aria2c", "\(error.localizedDescription)\n你可以点击重试，或手动将 aria2c 可执行文件下载至 \(executableURL.path)", [.init(label: "重试", style: .normal), .ok]),
+                    ) { button in
+                        if button == 0 { self.checkAndDownloadAria2() }
+                    }
                 }
             }
         }

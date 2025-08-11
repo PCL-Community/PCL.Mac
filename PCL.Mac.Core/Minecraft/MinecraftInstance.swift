@@ -189,9 +189,10 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
             if exitCode != 0 {
                 log("检测到非 0 退出代码")
                 hint("检测到 Minecraft 出现错误，错误分析已开始……")
-                ContentView.setPopup(.init("Minecraft 出现错误", "很抱歉，PCL.Mac 暂时没有分析功能。\n如果要寻求帮助，请把错误报告文件发给对方，而不是发送这个窗口的照片或者截图。\n不要截图！不要截图！！不要截图！！！", [
-                    .Ok,
-                    .init(text: "导出错误报告", onClick: {
+                Task {
+                    if await PopupManager.shared.showAsync(
+                        .init(.error, "Minecraft 出现错误", "很抱歉，PCL.Mac 暂时没有分析功能。\n如果要寻求帮助，请把错误报告文件发给对方，而不是发送这个窗口的照片或者截图。\n不要截图！不要截图！！不要截图！！！", [.ok, .init(label: "导出错误报告", style: .accent)])
+                    ) == 1 {
                         let savePanel = NSSavePanel()
                         savePanel.title = "选择导出位置"
                         savePanel.prompt = "导出"
@@ -206,9 +207,8 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
                                 }
                             }
                         }
-                        PopupButton.Close.onClick()
-                    })
-                ]))
+                    }
+                }
             }
         }
     }

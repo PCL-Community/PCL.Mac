@@ -68,6 +68,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Announcement/AnnouncementManager.swift,
+				Architecture.swift,
 				Aria2/Aria2Manager.swift,
 				Java/JavaDownloader.swift,
 				Java/JavaSearch.swift,
@@ -111,6 +112,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Announcement/AnnouncementManager.swift,
+				Architecture.swift,
 				Aria2/Aria2Manager.swift,
 				Java/JavaDownloader.swift,
 				Java/JavaSearch.swift,

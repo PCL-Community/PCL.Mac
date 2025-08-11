@@ -14,8 +14,6 @@ class DataManager: ObservableObject {
     
     @Published var javaVirtualMachines: [JavaVirtualMachine] = []
     @Published var lastTimeUsed: Int = 0
-    @Published var currentPopup: PopupOverlay?
-    @Published var popupState: PopupAnimationState = .beforePop
     @Published var networkMonitor: NetworkSpeedMonitor = NetworkSpeedMonitor()
     @Published var versionManifest: VersionManifest?
     @Published var router: AppRouter = .init()

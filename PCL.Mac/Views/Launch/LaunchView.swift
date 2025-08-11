@@ -53,8 +53,8 @@ fileprivate struct LeftTab: View {
                 MyButton(text: "启动游戏", descriptionText: instance.config.name, foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
                     let launchOptions: LaunchOptions = .init()
                     
-                    guard launchPrecheck(launchOptions) else { return }
                     Task {
+                        guard await launchPrecheck(launchOptions) else { return }
                         debug("正在启动游戏")
                         await instance.launch(launchOptions)
                     }
@@ -97,7 +97,7 @@ fileprivate struct LeftTab: View {
         }
     }
     
-    private func launchPrecheck(_ launchOptions: LaunchOptions) -> Bool {
+    private func launchPrecheck(_ launchOptions: LaunchOptions) async -> Bool {
         var returnValue: Bool = false
         switch LaunchPrecheck.check(instance!, launchOptions) {
         case .success():
@@ -105,36 +105,42 @@ fileprivate struct LeftTab: View {
         case .failure(let error):
             switch error {
             case .invalidMemoryConfiguration:
-                ContentView.setPopup(.init("错误", "就给 0MB 内存你打算咋跑啊！\n请在 版本设置 > 设置 中调整游戏内存配置", [.Ok], .error))
+                PopupManager.shared.show(.init(.error, "错误", "无效的内存配置：0MB。\n请在 版本设置 > 设置 中调整游戏内存配置", [.ok]))
             case .missingAccount:
-                ContentView.setPopup(PopupOverlay("错误", "请先创建一个账号并选择再启动游戏！", [.Ok], .error))
+                PopupManager.shared.show(.init(.error, "错误", "请先创建一个账号并选择再启动游戏！", [.ok]))
             case .javaNotFound:
-                ContentView.setPopup(.init("错误", "你还没有安装 Java\n如果你安装过 Java 并且没有在 Java 管理中看到，请点击“手动添加 Java”", [.init(text: "安装 Java", onClick: { NSWorkspace.shared.open(URL(string: "https://www.azul.com/downloads/?package=jdk#zulu")!) ; PopupButton.Close.onClick() }), .Close], .error))
+                PopupManager.shared.show(.init(.error, "错误", "你还没有安装 Java\n如果你安装过 Java 并且没有在 Java 管理中看到，请点击“手动添加 Java”", [.init(label: "安装 Java", style: .normal), .close])) { button in
+                    if button == 0 {
+                        dataManager.router.path = [.settings, .javaSettings, .javaDownload]
+                    }
+                }
             case .noUsableJava(let minVersion):
-                ContentView.setPopup(.init("错误", "当前没有满足条件的 Java 版本\n你需要安装 \(minVersion) 及以上版本的 Java！", [.init(text: "安装 Java", onClick: { NSWorkspace.shared.open(URL(string: "https://www.azul.com/downloads/?package=jdk#zulu")!) ; PopupButton.Close.onClick() }), .Close], .error))
+                PopupManager.shared.show(.init(.error, "错误", "当前没有满足条件的 Java 版本\n你需要安装 \(minVersion) 及以上版本的 Java！", [.init(label: "安装 Java", style: .normal), .close])) { button in
+                    if button == 0 {
+                        dataManager.router.path = [.settings, .javaSettings, .javaDownload]
+                    }
+                }
             case .noMicrosoftAccount:
-                if Locale.current.identifier.starts(with: "zh") {
+                if Locale.current.region?.identifier == "CN" {
                     switch AppSettings.shared.launchCount {
                     case 3, 8, 15, 30, 50, 70, 90, 110, 130, 180, 220, 280, 330, 380, 450, 550, 660, 750, 880, 950, 1100, 1300, 1500, 1700, 1900:
-                        ContentView.setPopup(.init(
-                            "考虑一下正版？",
-                            "你已经启动了 \(AppSettings.shared.launchCount) 次 Minecraft 啦！\n如果觉得 Minecraft 还不错，可以购买正版支持一下，毕竟开发游戏也真的很不容易……不要一直白嫖啦。\n在登录一次正版账号后，就不会再出现这个提示了！",
-                            [
-                                .init(text: "支持正版游戏！", onClick: { NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!) ; PopupButton.Close.onClick() }),
-                                .init(text: "下次一定", onClick: { PopupButton.Close.onClick() ; returnValue = true })
-                            ]))
+                        let button = await PopupManager.shared.showAsync(.init(.normal, "考虑一下正版？", "你已经启动了 \(AppSettings.shared.launchCount) 次 Minecraft 啦！\n如果觉得 Minecraft 还不错，可以购买正版支持一下，毕竟开发游戏也真的很不容易……不要一直白嫖啦。\n在登录一次正版账号后，就不会再出现这个提示了！", [.init(label: "支持正版游戏！", style: .normal), .init(label: "下次一定", style: .normal)]))
+                        if button == 0 {
+                            NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!)
+                        } else if button == 1 {
+                            returnValue = true
+                        }
                     default:
                         returnValue = true
                     }
                 } else {
-                    ContentView.setPopup(.init(
-                        "正版验证",
-                        "你必须先登录正版账号才能启动游戏！",
-                        [
-                            .init(text: "购买正版", onClick: { NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!) ; PopupButton.Close.onClick() }),
-                            .init(text: "试玩", onClick: { launchOptions.isDemo = true ; returnValue = true ; PopupButton.Close.onClick() }),
-                            .init(text: "返回", onClick: PopupButton.Close.onClick)
-                        ]))
+                    let button = await PopupManager.shared.showAsync(.init(.normal, "正版验证", "你必须先登录正版账号才能启动游戏！", [.init(label: "购买正版", style: .normal), .init(label: "试玩", style: .normal), .init(label: "返回", style: .normal)]))
+                    if button == 0 {
+                        NSWorkspace.shared.open(URL(string: "https://www.xbox.com/zh-cn/games/store/minecraft-java-bedrock-edition-for-pc/9nxp44l49shj")!)
+                    } else if button == 1 {
+                        launchOptions.isDemo = true
+                        returnValue = true
+                    }
                 }
             case .cancelled:
                 returnValue = false

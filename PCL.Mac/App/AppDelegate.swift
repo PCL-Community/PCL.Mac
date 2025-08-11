@@ -61,13 +61,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         if AppSettings.shared.showPclMacPopup {
-            ContentView.setPopup(
-                PopupOverlay(
-                    "欢迎使用 PCL.Mac！",
-                    "若要反馈问题，请到 QQ 群 1047463389，或直接在 GitHub 上开 Issue，而不是去 CE 群！",
-                    [.init(text: "永久关闭") { AppSettings.shared.showPclMacPopup = false ; PopupButton.Close.onClick() }, .Ok]
-                )
-            )
+            Task {
+                if await PopupManager.shared.showAsync(
+                    .init(.normal, "欢迎使用 PCL.Mac！", "本启动器是 Plain Craft Launcher（作者：龙腾猫跃）的非官方衍生版。\n若要反馈问题，请到 QQ 群 1047463389，或直接在 GitHub 上开 Issue。", [.init(label: "永久关闭", style: .normal), .close])
+                ) == 0 {
+                    AppSettings.shared.showPclMacPopup = false
+                }
+            }
         }
         Aria2Manager.shared.checkAndDownloadAria2()
     }

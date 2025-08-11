@@ -64,12 +64,12 @@ public class MsLogin {
             trigger: nil // 立即触发
         )
         try? await UNUserNotificationCenter.current().add(request)
-        await ContentView.setPopup(.init("登录 Minecraft", """
+        await PopupManager.shared.show(.init(.normal, "登录 Minecraft", """
 登录网页将自动开启，请在网页中输入 \(authResponse.userCode)（已自动复制）。
 
 如果网络环境不佳，网页可能一直加载不出来，届时请使用使用加速器或 VPN 以改善网络环境。
 你也可以用其他设备打开 \(authResponse.verificationUri) 并输入上述代码。
-""", [.Ok]))
+""", [.ok]))
         
         return authResponse
     }

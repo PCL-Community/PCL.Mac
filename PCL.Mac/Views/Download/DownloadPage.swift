@@ -67,7 +67,7 @@ struct DownloadPage: View {
                         }
                     } onClick: {
                         guard NetworkTest.shared.hasNetworkConnection() else {
-                            ContentView.setPopup(PopupOverlay("无互联网连接", "请确保当前设备已联网！", [.Ok]))
+                            PopupManager.shared.show(.init(.error, "无互联网连接", "请确保当前设备已联网！", [.ok]))
                             warn("试图下载新版本，但无网络连接")
                             return
                         }

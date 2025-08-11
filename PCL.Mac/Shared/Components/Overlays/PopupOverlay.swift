@@ -47,25 +47,19 @@ enum PopupType {
 }
 
 struct PopupOverlay: View, Identifiable, Equatable {
-    @ObservedObject private var dataManager: DataManager = .shared
+    @ObservedObject private var popupManager: PopupManager = .shared
     
-    @State private var stateNoAnim: PopupAnimationState = DataManager.shared.popupState
+    @State private var stateNoAnim: PopupAnimationState = PopupManager.shared.popupState
     
-    private let Width: CGFloat = 560
-    private let Height: CGFloat = 280
+    private let width: CGFloat = 560
+    private let height: CGFloat = 280
     
-    public let title: String
-    public let content: String
-    public let buttons: [PopupButton]
-    public let type: PopupType
+    private let model: PopupModel
     
     public let id: UUID = UUID()
     
-    public init(_ title: String, _ content: String, _ buttons: [PopupButton], _ type: PopupType = .normal) {
-        self.title = title
-        self.content = content
-        self.buttons = buttons
-        self.type = type
+    public init(_ model: PopupModel) {
+        self.model = model
     }
     
     public static func == (_ var1: PopupOverlay, _ var2: PopupOverlay) -> Bool {
@@ -76,43 +70,43 @@ struct PopupOverlay: View, Identifiable, Equatable {
         ZStack {
             RoundedRectangle(cornerRadius: 10)
                 .fill(Color("MyCardBackgroundColor"))
-                .frame(width: Width + 20, height: Height + 20)
+                .frame(width: width + 20, height: height + 20)
                 .shadow(color: Color("TextColor"), radius: 2)
             HStack {
                 VStack {
-                    Text(title)
+                    Text(model.title)
                         .font(.custom("PCL English", size: 30))
-                        .frame(maxWidth: Width - 40, alignment: .leading)
+                        .frame(maxWidth: width - 40, alignment: .leading)
                     Rectangle()
-                        .frame(width: Width - 20, height: 2)
+                        .frame(width: width - 20, height: 2)
                         .padding(.top, -10)
-                    Text(content)
+                    Text(model.content)
                         .font(.custom("PCL English", size: 14))
                         .foregroundStyle(Color("TextColor"))
-                        .frame(maxWidth: Width - 40, alignment: .leading)
+                        .frame(maxWidth: width - 40, alignment: .leading)
                     Spacer()
                     HStack {
                         Spacer()
-                        ForEach(buttons) { button in
-                            button
+                        ForEach(model.buttons, id: \.self) { button in
+                            PopupButton(model: button)
                                 .padding()
-                                .foregroundStyle(.black)
+                                .foregroundStyle(Color("MyCardBackgroundColor"))
                         }
                     }
                 }
-                .foregroundStyle(type.getTextStyle())
+                .foregroundStyle(model.type.getTextStyle())
             }
-            .frame(width: Width, height: Height)
+            .frame(width: width, height: height)
         }
-        .rotationEffect(dataManager.popupState.getRotation(), anchor: stateNoAnim.getRotationAnchor())
-        .opacity(dataManager.popupState == .popped ? 1 : 0)
-        .animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0), value: dataManager.popupState)
+        .rotationEffect(popupManager.popupState.getRotation(), anchor: stateNoAnim.getRotationAnchor())
+        .opacity(popupManager.popupState == .popped ? 1 : 0)
+        .animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0), value: popupManager.popupState)
         .onAppear {
-            dataManager.popupState = .popped
+            popupManager.popupState = .popped
         }
-        .onChange(of: dataManager.popupState) {
+        .onChange(of: popupManager.popupState) {
             withAnimation(nil) {
-                stateNoAnim = dataManager.popupState
+                stateNoAnim = popupManager.popupState
             }
         }
     }

@@ -91,7 +91,7 @@ public enum AppRoute: Hashable {
 }
 
 public class AppRouter: ObservableObject {
-    @Published public private(set) var path: [AppRoute] = [.launch]
+    @Published public var path: [AppRoute] = [.launch]
     
     public func append(_ route: AppRoute) {
         path.append(route)

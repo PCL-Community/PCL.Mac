@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject private var dataManager: DataManager = .shared
     @ObservedObject private var overlayManager: OverlayManager = .shared
+    @ObservedObject private var popupManager: PopupManager = .shared
     
     @State private var isLeftTabVisible: Bool = true
     
@@ -48,10 +49,10 @@ struct ContentView: View {
     
     var popupOverlay: some View {
         Group {
-            if let currentPopup = dataManager.currentPopup {
+            if let currentPopup = popupManager.currentPopup {
                 Rectangle()
                     .fill(currentPopup.type.getMaskColor())
-                currentPopup
+                PopupOverlay(currentPopup)
                     .padding()
             }
         }
@@ -126,18 +127,6 @@ struct ContentView: View {
             .background(AppSettings.shared.theme.getBackgroundStyle())
         }
         .frame(minWidth: 700, minHeight: 420)
-    }
-    
-    static func setPopup(_ popup: PopupOverlay?) {
-        DispatchQueue.main.async {
-            if popup != nil {
-                NSApp.windows.forEach { $0.isMovableByWindowBackground = true }
-                DataManager.shared.popupState = .beforePop
-            } else {
-                NSApp.windows.forEach { $0.isMovableByWindowBackground = false }
-            }
-            DataManager.shared.currentPopup = popup
-        }
     }
 }
 
