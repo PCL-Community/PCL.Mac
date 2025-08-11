@@ -57,8 +57,8 @@ fileprivate struct AccountView: View {
     var body: some View {
         MyListItem(isSelected: accountManager.accountId == account.id) {
             HStack {
-                MinecraftAvatar(type: .username, src: account.name, size: 40)
-                VStack(alignment: .leading) {
+                MinecraftAvatar(account: account, src: account.uuid.uuidString, size: 40)
+                VStack(alignment: .leading, spacing: 4) {
                     ZStack(alignment: .leading) {
                         Text(account.name)
                             .font(.custom("PCL English", size: 14))
@@ -71,17 +71,9 @@ fileprivate struct AccountView: View {
                             .offset(x: 200)
                     }
                     
-                    let authMethodName: String = switch account {
-                    case .microsoft(_): "微软"
-                    case .offline(_): "离线"
-                    }
-                    
-                    HStack {
-                        MyTag(label: "\(authMethodName)验证", backgroundColor: Color(hex: 0x8C8C8C, alpha: 0.2))
-                            .font(.custom("PCL English", size: 12))
-                            .foregroundStyle(Color("TextColor"))
-                        Spacer()
-                    }
+                    MyTag(label: account.authMethodName, backgroundColor: Color(hex: 0x8C8C8C, alpha: 0.2))
+                        .font(.custom("PCL English", size: 12))
+                        .foregroundStyle(Color("TextColor"))
                 }
                 Spacer()
                 if isHovered {
@@ -105,6 +97,16 @@ fileprivate struct AccountView: View {
         }
         .onTapGesture {
             accountManager.accountId = account.id
+        }
+    }
+}
+
+public extension AnyAccount {
+    var authMethodName: String {
+        switch self {
+        case .microsoft:  return "微软账号"
+        case .offline:    return "离线账号"
+        case .yggdrasil:  return "外置登录"
         }
     }
 }

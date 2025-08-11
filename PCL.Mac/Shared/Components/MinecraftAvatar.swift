@@ -8,25 +8,19 @@
 import SwiftUI
 import CoreGraphics
 
-enum AvatarInputType {
-    case username, uuid, url
-}
-
 struct MinecraftAvatar: View {
-    let type: AvatarInputType
-    let src: String
-    private(set) var size: CGFloat = 58
-    
     @State private var imageData: Data?
+    
+    private let account: AnyAccount
+    private let src: String
+    private let size: CGFloat
 
-    var skinURL: URL {
-        switch type {
-        case .username:
-            return URL(string: "https://minotar.net/skin/\(src)")!
-        case .uuid:
-            return URL(string: "https://crafatar.com/skins/\(src)")!
-        case .url:
-            return URL(string: src)!
+    init(account: AnyAccount, src: String, size: CGFloat = 58) {
+        self.account = account
+        self.src = src
+        self.size = size
+        if let cached = SkinCacheStorage.shared.skinCache[account.uuid] {
+            self._imageData = State(initialValue: cached)
         }
     }
 
@@ -38,18 +32,21 @@ struct MinecraftAvatar: View {
                 SkinLayerView(imageData: data, startX: 40, startY: 16, width: 7.99 * 6.1 / 58 * size, height: 7.99 * 6.1 / 58 * size)
             }
         }
-        .onAppear {
-            Task {
-                if let data = await Requests.get(skinURL).data {
-                    DispatchQueue.main.async {
-                        self.imageData = data
-                    }
-                }
-            }
-        }
         .frame(width: size, height: size)
         .clipped()
         .padding(6)
+        .task {
+            // 只在没缓存时加载
+            if imageData == nil {
+                do {
+                    let skinData = try await account.getSkinData()
+                    SkinCacheStorage.shared.skinCache[account.uuid] = skinData
+                    self.imageData = skinData
+                } catch {
+                    err("无法加载头像: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 }
 
@@ -85,8 +82,4 @@ fileprivate struct SkinLayerView: View {
             }
         }
     }
-}
-
-#Preview {
-    MinecraftAvatar(type: .username, src: "MinecraftVenti")
 }

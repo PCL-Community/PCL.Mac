@@ -17,7 +17,7 @@ fileprivate struct LeftTab: View {
         MyListItem {
             VStack {
                 if let account = accountManager.getAccount() {
-                    MinecraftAvatar(type: .username, src: account.name)
+                    MinecraftAvatar(account: account, src: account.uuid.uuidString)
                     Text(account.name)
                         .font(.custom("PCL English", size: 16))
                         .foregroundStyle(Color("TextColor"))

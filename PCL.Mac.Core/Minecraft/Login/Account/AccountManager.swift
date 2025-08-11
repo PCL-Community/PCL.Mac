@@ -6,71 +6,57 @@
 //
 
 import Foundation
+import SwiftyJSON
 
-public protocol Account: Codable {
+public protocol Account: Codable, Identifiable {
+    var id: UUID { get }
     var uuid: UUID { get }
     var name: String { get }
-    func getAccessToken() async -> String
+    func putAccessToken(options: LaunchOptions) async
 }
 
 public enum AnyAccount: Account, Identifiable, Equatable {
     case offline(OfflineAccount)
-    case microsoft(MsAccount)
+    case microsoft(MicrosoftAccount)
+    case yggdrasil(YggdrasilAccount)
     
-    public var id: UUID {
+    private var account: any Account {
         switch self {
-        case .offline(let offlineAccount):
-            offlineAccount.id
-        case .microsoft(let msAccount):
-            msAccount.id
+        case .offline(let a): return a
+        case .microsoft(let a): return a
+        case .yggdrasil(let a): return a
         }
     }
     
-    public var uuid: UUID {
-        switch self {
-        case .offline(let offlineAccount):
-            offlineAccount.uuid
-        case .microsoft(let msAccount):
-            msAccount.uuid
-        }
-    }
-    
-    public var name: String {
-        switch self {
-        case .offline(let offlineAccount):
-            offlineAccount.name
-        case .microsoft(let msAccount):
-            msAccount.name
-        }
-    }
+    public var id: UUID { account.id }
+    public var uuid: UUID { account.uuid }
+    public var name: String { account.name }
     
     public static func == (lhs: AnyAccount, rhs: AnyAccount) -> Bool {
         lhs.id == rhs.id
     }
     
-    public func getAccessToken() async -> String {
+    public func putAccessToken(options: LaunchOptions) async {
         switch self {
         case .offline(let offlineAccount):
-            offlineAccount.getAccessToken()
+            offlineAccount.putAccessToken(options: options)
         case .microsoft(let msAccount):
-            await msAccount.getAccessToken()
+            await msAccount.putAccessToken(options: options)
+        case .yggdrasil(let yggdrasilAccount):
+            await yggdrasilAccount.putAccessToken(options: options)
         }
     }
     
     // MARK: - Codable
     private enum CodingKeys: String, CodingKey { case type, payload }
-    private enum AccountType: String, Codable { case offline, microsoft }
+    private enum AccountType: String, Codable { case offline, microsoft, yggdrasil }
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let type = try container.decode(AccountType.self, forKey: .type)
-        switch type {
-        case .offline:
-            let value = try container.decode(OfflineAccount.self, forKey: .payload)
-            self = .offline(value)
-        case .microsoft:
-            let value = try container.decode(MsAccount.self, forKey: .payload)
-            self = .microsoft(value)
+        switch try container.decode(AccountType.self, forKey: .type) {
+        case .offline:    self = .offline(try container.decode(OfflineAccount.self, forKey: .payload))
+        case .microsoft:  self = .microsoft(try container.decode(MicrosoftAccount.self, forKey: .payload))
+        case .yggdrasil:  self = .yggdrasil(try container.decode(YggdrasilAccount.self, forKey: .payload))
         }
     }
     
@@ -83,7 +69,24 @@ public enum AnyAccount: Account, Identifiable, Equatable {
         case .microsoft(let value):
             try container.encode(AccountType.microsoft, forKey: .type)
             try container.encode(value, forKey: .payload)
+        case .yggdrasil(let value):
+            try container.encode(AccountType.yggdrasil, forKey: .type)
+            try container.encode(value, forKey: .payload)
         }
+    }
+    
+    public func getSkinData() async throws -> Data {
+        let url: URL
+        switch self {
+        case .offline(_), .microsoft(_):
+            url = URL(string: "https://crafatar.com/skins/\(id.uuidString.replacingOccurrences(of: "-", with: "").lowercased())")!
+        case .yggdrasil(let yggdrasilAccount):
+            let textures = try await yggdrasilAccount.client.getProfile(id: yggdrasilAccount.uuid).properties["textures"]!
+            let json = try JSON(data: Data(base64Encoded: textures) ?? .init())
+            url = URL(string: json["textures"]["SKIN"]["url"].stringValue)!
+        }
+        
+        return try await Requests.get(url).getDataOrThrow()
     }
 }
 
@@ -94,7 +97,7 @@ public class AccountManager: ObservableObject {
     
     @CodableAppStorage("accountId") public var accountId: UUID? = nil
     
-    public func getAccount() -> Account? {
+    public func getAccount() -> AnyAccount? {
         if accountId == nil {
             if let id = accounts.first?.id {
                 accountId = id

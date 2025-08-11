@@ -120,6 +120,7 @@ struct ContentView: View {
                                 }
                             }
                     )
+                    .zIndex(1)
                 AnyView(dataManager.router.getLastView())
                     .foregroundStyle(Color("TextColor"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

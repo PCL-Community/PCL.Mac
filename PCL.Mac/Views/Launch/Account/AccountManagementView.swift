@@ -79,7 +79,7 @@ fileprivate struct AccountView: View {
     var body: some View {
         MyListItem {
             HStack {
-                MinecraftAvatar(type: .username, src: account.name, size: 40)
+                MinecraftAvatar(account: account, src: account.name, size: 40)
                 VStack(alignment: .leading) {
                     ZStack(alignment: .leading) {
                         Text(account.name)
@@ -92,13 +92,8 @@ fileprivate struct AccountView: View {
                             .offset(x: 200)
                     }
                     
-                    let authMethodName: String = switch account {
-                    case .microsoft(_): "微软"
-                    case .offline(_): "离线"
-                    }
-                    
                     HStack {
-                        MyTag(label: "\(authMethodName)验证", backgroundColor: Color(hex: 0x8C8C8C, alpha: 0.2))
+                        MyTag(label: account.authMethodName, backgroundColor: Color(hex: 0x8C8C8C, alpha: 0.2))
                             .font(.custom("PCL English", size: 12))
                             .foregroundStyle(Color("TextColor"))
                         Spacer()

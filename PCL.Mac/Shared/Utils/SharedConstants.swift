@@ -15,6 +15,7 @@ public struct SharedConstants {
     public let logURL: URL
     public let applicationSupportURL: URL = .applicationSupportDirectory.appending(path: "PCL-Mac")
     public let temperatureURL: URL
+    public let authlibInjectorURL: URL
     
     public let dateFormatter = DateFormatter()
     
@@ -27,6 +28,7 @@ public struct SharedConstants {
         self.applicationResourcesURL = self.applicationContentsURL.appending(path: "Resources")
         self.logURL = applicationSupportURL.appending(path: "Logs").appending(path: "app.log")
         self.temperatureURL = applicationSupportURL.appending(path: "Temp")
+        self.authlibInjectorURL = applicationSupportURL.appending(path: "authlib-injector.jar")
         
         self.dateFormatter.dateFormat = "yyyy/MM/dd HH:mm"
         self.dateFormatter.timeZone = TimeZone(identifier: "Asia/Shanghai")

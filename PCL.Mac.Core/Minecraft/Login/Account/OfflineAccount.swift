@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class OfflineAccount: Codable, Identifiable, Account {
+public class OfflineAccount: Account {
     public let id: UUID
     public var uuid: UUID
     public var name: String
@@ -18,7 +18,7 @@ public class OfflineAccount: Codable, Identifiable, Account {
         self.uuid = uuid ?? UUID.nameUUIDFromBytes(Array("OfflinePlayer:\(name)".utf8))
     }
     
-    public func getAccessToken() -> String {
-        UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+    public func putAccessToken(options: LaunchOptions) {
+        options.accessToken = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
     }
 }

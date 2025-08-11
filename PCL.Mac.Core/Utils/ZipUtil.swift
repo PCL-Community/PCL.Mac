@@ -17,7 +17,7 @@ public class ZipUtil {
             })
             return data
         }
-        throw NSError(domain: "ZipUtil", code: -1, userInfo: [NSLocalizedDescriptionKey: "项 \(name) 不存在！"])
+        throw MyLocalizedError(reason: "项 \(name) 不存在！")
     }
     
     public static func getEntry(archive: Archive, name: String) -> Data? {

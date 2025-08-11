@@ -97,7 +97,8 @@ public class MinecraftLauncher {
             "classpath": buildClasspath(),
             "classpath_separator": ":",
             "library_directory": instance.minecraftDirectory.librariesURL.path,
-            "version_name": instance.config.name
+            "version_name": instance.config.name,
+            "authlib_injector_path": SharedConstants.shared.authlibInjectorURL.path
         ]
         
         var args: [String] = [
@@ -105,7 +106,9 @@ public class MinecraftLauncher {
             "-Djna.tmpdir=${natives_directory}"
         ]
         
+        args.insert(contentsOf: options.yggdrasilArguments, at: 0)
         args.append(contentsOf: instance.manifest.getArguments().getAllowedJVMArguments())
+        
         return Util.replaceTemplateStrings(args, with: values)
     }
     
@@ -141,6 +144,16 @@ public class MinecraftLauncher {
         }
         
         return Util.replaceTemplateStrings(instance.manifest.getArguments().getAllowedGameArguments(), with: values).union(args)
+    }
+    
+    public static func downloadAuthlibInjector() async throws {
+        if FileManager.default.fileExists(atPath: SharedConstants.shared.authlibInjectorURL.path) { return }
+        let json = try await Requests.get("https://bmclapi2.bangbang93.com/mirrors/authlib-injector/artifact/latest.json").getJSONOrThrow()
+        guard let downloadURL = json["download_url"].url else {
+            throw MyLocalizedError(reason: "无效的 authlib-injector 下载 URL")
+        }
+        try await Aria2Manager.shared.download(url: downloadURL, destination: SharedConstants.shared.authlibInjectorURL)
+        log("authlib-injector 下载完成")
     }
 }
 

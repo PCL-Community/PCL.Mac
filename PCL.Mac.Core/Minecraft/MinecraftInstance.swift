@@ -161,7 +161,10 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
             launchOptions.playerName = account.name
             launchOptions.uuid = account.uuid
             log("正在登录")
-            launchOptions.accessToken = await account.getAccessToken()
+            await account.putAccessToken(options: launchOptions)
+            if case .yggdrasil = account {
+                try? await MinecraftLauncher.downloadAuthlibInjector() // 后面改成可抛出 + 多阶段
+            }
         }
         launchOptions.javaPath = config.javaURL
         
@@ -247,7 +250,7 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
         do {
             let archive = try Archive(url: runningDirectory.appending(path: "\(config.name).jar"), accessMode: .read)
             guard let entry = archive["version.json"] else {
-                throw NSError(domain: "MinecraftInstance", code: -1, userInfo: [NSLocalizedDescriptionKey: "version.json 不存在"])
+                throw MyLocalizedError(reason: "version.json 不存在")
             }
             
             var data = Data()

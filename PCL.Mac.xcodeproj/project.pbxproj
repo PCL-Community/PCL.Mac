@@ -84,8 +84,9 @@
 				Minecraft/Launch/LaunchPrecheck.swift,
 				Minecraft/Launch/MinecraftLauncher.swift,
 				Minecraft/Login/Account/AccountManager.swift,
-				Minecraft/Login/Account/MsAccount.swift,
+				Minecraft/Login/Account/MicrosoftAccount.swift,
 				Minecraft/Login/Account/OfflineAccount.swift,
+				Minecraft/Login/Account/YggdrasilAccount.swift,
 				Minecraft/Login/MsLogin.swift,
 				Minecraft/MinecraftCrashHandler.swift,
 				Minecraft/MinecraftDirectory.swift,
@@ -103,8 +104,10 @@
 				Temp/TemperatureDirectory.swift,
 				Theme/ThemeOwnershipChecker.swift,
 				UpdateCheck.swift,
+				Utils/MyLocalizedError.swift,
 				Utils/Util.swift,
 				Utils/ZipUtil.swift,
+				YggdrasilClient.swift,
 			);
 			target = EC9EAEC82DD85E48006CEDCC /* PCL.Mac */;
 		};
@@ -128,8 +131,9 @@
 				Minecraft/Launch/LaunchPrecheck.swift,
 				Minecraft/Launch/MinecraftLauncher.swift,
 				Minecraft/Login/Account/AccountManager.swift,
-				Minecraft/Login/Account/MsAccount.swift,
+				Minecraft/Login/Account/MicrosoftAccount.swift,
 				Minecraft/Login/Account/OfflineAccount.swift,
+				Minecraft/Login/Account/YggdrasilAccount.swift,
 				Minecraft/Login/MsLogin.swift,
 				Minecraft/MinecraftCrashHandler.swift,
 				Minecraft/MinecraftDirectory.swift,
@@ -147,8 +151,10 @@
 				Temp/TemperatureDirectory.swift,
 				Theme/ThemeOwnershipChecker.swift,
 				UpdateCheck.swift,
+				Utils/MyLocalizedError.swift,
 				Utils/Util.swift,
 				Utils/ZipUtil.swift,
+				YggdrasilClient.swift,
 			);
 			publicHeaders = (
 				PCL_Mac_Core.h,

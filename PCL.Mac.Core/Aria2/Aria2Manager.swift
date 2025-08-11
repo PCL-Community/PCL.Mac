@@ -20,7 +20,7 @@ public class Aria2Manager {
     
     public func download(urls: [URL], destination: URL, progress: ((Double, Int) -> Void)? = nil) async throws {
         guard FileManager.default.fileExists(atPath: executableURL.path) else {
-            throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: "\(executableURL.path) 不存在"])
+            throw MyLocalizedError(reason: "\(executableURL.path) 不存在")
         }
         
         let id = try await sendRpc("aria2.addUri", [
@@ -44,7 +44,7 @@ public class Aria2Manager {
             let status = response["status"].stringValue
             if status == "error" {
                 err("\(id) 状态切换为 error: \(response.rawString()!)")
-                throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: "发生未知错误"])
+                throw MyLocalizedError(reason: "发生未知错误")
             } else if status == "complete" {
                 break
             }
@@ -58,7 +58,7 @@ public class Aria2Manager {
     
     public func sendRpc(_ method: String, _ params: [Any]) async throws -> JSON {
         guard let port = port else {
-            throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: "进程未正常启动"])
+            throw MyLocalizedError(reason: "进程未正常启动")
         }
         let body: [String : Any] = [
             "id": UUID().uuidString,
@@ -68,14 +68,14 @@ public class Aria2Manager {
         ]
         let json = try await Requests.post("http://localhost:\(port)/jsonrpc", body: body, encodeMethod: .json).getJSONOrThrow()
         if json["error"].exists() {
-            throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: json["error"].rawString()!])
+            throw MyLocalizedError(reason: json["error"].rawString()!)
         }
         return json["result"]
     }
     
     public func downloadAria2() async throws {
         guard !FileManager.default.fileExists(atPath: executableURL.path) else {
-            throw NSError(domain: "aria2", code: -1, userInfo: [NSLocalizedDescriptionKey: "\(executableURL.path) 已存在"])
+            throw MyLocalizedError(reason: "\(executableURL.path) 已存在")
         }
         let data = try await Requests.get("https://gitee.com/yizhimcqiu/aria2-macos-universal/raw/master/aria2c-macos-universal").getDataOrThrow()
         FileManager.default.createFile(atPath: executableURL.path, contents: data)
