@@ -165,7 +165,7 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
         }
         launchOptions.javaPath = config.javaURL
         
-        let _ = loadManifest()
+        loadManifest()
         if Architecture.getArchOfFile(launchOptions.javaPath) == .arm64 && Architecture.system == .arm64 {
             ArtifactVersionMapper.map(manifest)
             isUsingRosetta = false
@@ -213,6 +213,7 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
         }
     }
     
+    @discardableResult
     private func loadManifest() -> Bool {
         do {
             let data = try FileHandle(forReadingFrom: runningDirectory.appending(path: runningDirectory.lastPathComponent + ".json")).readToEnd()!
@@ -231,7 +232,6 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
             }
             guard let manifest = manifest else { return false }
             self.manifest = manifest
-//            ArtifactVersionMapper.map(self.manifest)
         } catch {
             err("无法加载客户端清单: \(error.localizedDescription)")
             return false
