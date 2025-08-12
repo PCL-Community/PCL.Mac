@@ -300,7 +300,7 @@ fileprivate struct NewYggdrasilAccountView: View {
                     
                     HStack {
                         Text("密码")
-                        MyTextField(text: $password)
+                        MyTextField(text: $password, secure: true)
                     }
                 }
                 .padding()
