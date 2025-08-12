@@ -64,7 +64,12 @@ fileprivate struct AuthMethodComponent: View {
     var body: some View {
         MyListItem {
             HStack {
-                Image("\(String(describing: type).capitalized)LoginIcon")
+                let iconName = switch type {
+                case .offline: "OfflineLoginIcon"
+                case .microsoft: "MicrosoftLoginIcon"
+                case .yggdrasil: "ServerIcon"
+                }
+                Image(iconName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 25)

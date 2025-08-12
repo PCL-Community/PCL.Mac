@@ -9,7 +9,7 @@ import SwiftUI
 import CoreGraphics
 
 struct MinecraftAvatar: View {
-    @State private var imageData: Data?
+    @State private var skinData: Data?
     
     private let account: AnyAccount
     private let src: String
@@ -20,13 +20,13 @@ struct MinecraftAvatar: View {
         self.src = src
         self.size = size
         if let cached = SkinCacheStorage.shared.skinCache[account.uuid] {
-            self._imageData = State(initialValue: cached)
+            self._skinData = State(initialValue: cached)
         }
     }
 
     var body: some View {
         ZStack {
-            if let data = imageData {
+            if let data = skinData {
                 SkinLayerView(imageData: data, startX: 8, startY: 16, width: 8 * 5.4 / 58 * size, height: 8 * 5.4 / 58 * size)
                     .shadow(color: Color.black.opacity(0.2), radius: 1)
                 SkinLayerView(imageData: data, startX: 40, startY: 16, width: 7.99 * 6.1 / 58 * size, height: 7.99 * 6.1 / 58 * size)
@@ -36,12 +36,9 @@ struct MinecraftAvatar: View {
         .clipped()
         .padding(6)
         .task {
-            // 只在没缓存时加载
-            if imageData == nil {
+            if skinData == nil {
                 do {
-                    let skinData = try await account.getSkinData()
-                    SkinCacheStorage.shared.skinCache[account.uuid] = skinData
-                    self.imageData = skinData
+                    self.skinData = try await SkinCacheStorage.shared.loadSkin(account: account)
                 } catch {
                     err("无法加载头像: \(error.localizedDescription)")
                 }

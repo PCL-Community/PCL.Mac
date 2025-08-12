@@ -12,5 +12,12 @@ class SkinCacheStorage {
     
     @CodableAppStorage("skinCache") var skinCache: [UUID : Data] = [:]
     
+    @discardableResult
+    public func loadSkin(account: AnyAccount) async throws -> Data {
+        let skinData = try await account.getSkinData()
+        skinCache[account.uuid] = skinData
+        return skinData
+    }
+    
     private init() {}
 }

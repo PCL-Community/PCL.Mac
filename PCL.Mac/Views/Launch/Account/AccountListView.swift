@@ -77,16 +77,29 @@ fileprivate struct AccountView: View {
                 }
                 Spacer()
                 if isHovered {
-                    MyListItem {
+                    HStack {
+                        Image("RefreshIcon")
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                Task {
+                                    do {
+                                        try await SkinCacheStorage.shared.loadSkin(account: account)
+                                        hint("刷新成功！", .finish)
+                                    } catch {
+                                        hint("无法刷新头像：\(error.localizedDescription)", .critical)
+                                    }
+                                }
+                            }
+                        
                         Image(systemName: "xmark")
                             .bold()
-                            .foregroundStyle(Color("TextColor"))
-                            .padding(2)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                accountManager.accounts.removeAll(where: { $0.id == account.id })
+                            }
                     }
+                    .foregroundStyle(AppSettings.shared.theme.getTextStyle())
                     .padding()
-                    .onTapGesture {
-                        accountManager.accounts.removeAll(where: { $0.id == account.id })
-                    }
                 }
             }
         }
@@ -106,7 +119,7 @@ public extension AnyAccount {
         switch self {
         case .microsoft:  return "微软账号"
         case .offline:    return "离线账号"
-        case .yggdrasil:  return "外置登录"
+        case .yggdrasil(let account):  return account.authenticationServerName
         }
     }
 }
