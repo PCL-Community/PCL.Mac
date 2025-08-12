@@ -28,6 +28,7 @@ public enum AppRoute: Hashable {
     // MyList 导航
     case minecraftDownload
     case modSearch
+    case resourcePackSearch
     case versionList(directory: MinecraftDirectory)
     case instanceOverview
     case instanceSettings
@@ -46,7 +47,7 @@ public enum AppRoute: Hashable {
     var isRoot: Bool {
         switch self {
         case .launch, .download, .multiplayer, .settings, .others,
-                .minecraftDownload, .modSearch,
+                .minecraftDownload, .modSearch, .resourcePackSearch,
                 .about, .toolbox, .debug,
                 .personalization, .javaSettings, .otherSettings:
             return true
@@ -103,7 +104,7 @@ public class AppRouter: ObservableObject {
             LaunchView()
         case .accountManagement, .accountList, .newAccount:
             AccountManagementView()
-        case .download, .minecraftDownload, .modSearch:
+        case .download, .minecraftDownload, .modSearch, .resourcePackSearch:
             DownloadView()
         case .multiplayer:
             MultiplayerView()

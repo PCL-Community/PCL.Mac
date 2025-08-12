@@ -82,6 +82,7 @@ struct ContentView: View {
             }
             installTaskButtonOverlay
             ModQueueOverlay()
+            ResourcePackQueueOverlay()
             hintOverlay
             popupOverlay
         }

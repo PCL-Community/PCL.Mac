@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BE5F912C2E4AF17C00D3AFD2 /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = BE5F912B2E4AF17A00D3AFD2 /* Secrets.xcconfig */; };
 		EC01E7E82DDC3BEA006EF529 /* log4j2.xml in Resources */ = {isa = PBXBuildFile; fileRef = EC01E7E62DDC3BEA006EF529 /* log4j2.xml */; };
 		EC01E7E92DDC3BEA006EF529 /* log4j2-1.12-.xml in Resources */ = {isa = PBXBuildFile; fileRef = EC01E7E72DDC3BEA006EF529 /* log4j2-1.12-.xml */; };
 		EC23B6332DE5DC5B00CBEA9C /* PCL.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EC23B6322DE5DC5B00CBEA9C /* PCL.ttf */; };
@@ -52,6 +53,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		BE5F912B2E4AF17A00D3AFD2 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		EC01E7E62DDC3BEA006EF529 /* log4j2.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = log4j2.xml; sourceTree = "<group>"; };
 		EC01E7E72DDC3BEA006EF529 /* log4j2-1.12-.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "log4j2-1.12-.xml"; sourceTree = "<group>"; };
 		EC23B6322DE5DC5B00CBEA9C /* PCL.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = PCL.ttf; sourceTree = "<group>"; };
@@ -258,6 +260,7 @@
 		EC9EAEC02DD85E48006CEDCC = {
 			isa = PBXGroup;
 			children = (
+				BE5F912B2E4AF17A00D3AFD2 /* Secrets.xcconfig */,
 				EC01E7E52DDC3BD2006EF529 /* Resources */,
 				EC9EAECB2DD85E48006CEDCC /* PCL.Mac */,
 				ECA5D8DD2DD99A4C006C58F7 /* PCL.Mac.Tests */,
@@ -431,6 +434,7 @@
 				EC01E7E82DDC3BEA006EF529 /* log4j2.xml in Resources */,
 				EC23B6332DE5DC5B00CBEA9C /* PCL.ttf in Resources */,
 				EC4E6C802E438E6600F0871D /* daemon in Resources */,
+				BE5F912C2E4AF17C00D3AFD2 /* Secrets.xcconfig in Resources */,
 				EC01E7E92DDC3BEA006EF529 /* log4j2-1.12-.xml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

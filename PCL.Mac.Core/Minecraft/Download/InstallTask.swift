@@ -272,6 +272,7 @@ public enum InstallStage: Int {
     case end = 8
     case customFile = 1000
     case mods = 2000
+    case resourcePacks = 2001
     case javaDownload = 3000
     case javaInstall = 3001
     
@@ -287,6 +288,7 @@ public enum InstallStage: Int {
         case .natives: "下载本地库文件"
         case .customFile: "下载自定义文件"
         case .mods: "下载模组"
+        case .resourcePacks: "下载资源包"
         case .end: "结束"
         case .javaDownload: "下载 Java"
         case .javaInstall: "安装 Java"

@@ -17,6 +17,8 @@ struct DownloadView: View {
                 MinecraftDownloadView()
             case .modSearch:
                 ModSearchView()
+            case .resourcePackSearch:
+                ResourcePackSearchView()
             default:
                 Spacer()
                     .onAppear {
@@ -49,7 +51,7 @@ struct DownloadView: View {
                         .padding(.top, 32)
                         .padding(.bottom, 4)
                     MyList(
-                        cases: .constant([.modSearch]),
+                        cases: .constant([.modSearch, .resourcePackSearch]),
                         animationIndex: 2
                     ) { type, isSelected in
                         createListItemView(type)
@@ -83,6 +85,17 @@ struct DownloadView: View {
                         .scaledToFit()
                         .frame(width: 20, height: 20)
                     Text("Mod")
+                        .font(.custom("PCL English", size: 14))
+                }
+            )
+        case .resourcePackSearch:
+            return AnyView(
+                HStack {
+                    Image("ModDownloadIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                    Text("资源包")
                         .font(.custom("PCL English", size: 14))
                 }
             )

@@ -56,6 +56,13 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
         }
     }
     
+    public static func clearCache(for runningDirectory: URL) {
+        cache.removeValue(forKey: runningDirectory)
+        log("已清理实例缓存: \(runningDirectory.lastPathComponent)")
+    }
+    
+
+    
     private init(minecraftDirectory: MinecraftDirectory, runningDirectory: URL, config: MinecraftConfig? = nil) {
         self.runningDirectory = runningDirectory
         self.minecraftDirectory = minecraftDirectory
