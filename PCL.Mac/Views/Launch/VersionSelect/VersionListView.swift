@@ -12,11 +12,10 @@ struct VersionListView: View {
     let minecraftDirectory: MinecraftDirectory
     
     struct VersionView: View, Identifiable {
-        let name: String
-        let description: String
-        let instance: MinecraftInstance
-        
-        @State private var isDeleteHovered: Bool = false
+        @State private var isHovered: Bool = false
+        private let name: String
+        private let description: String
+        private let instance: MinecraftInstance
         
         let id: UUID = UUID()
         
@@ -45,20 +44,21 @@ struct VersionListView: View {
                             .padding(.bottom, 5)
                     }
                     Spacer()
-                    Image(systemName: "trash")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 16)
-                        .foregroundStyle(isDeleteHovered ? Color.red : Color("TextColor"))
+                    if isHovered {
+                        HStack {
+                            Image(systemName: "xmark")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 10)
+                                .bold()
+                                .foregroundStyle(AppSettings.shared.theme.getTextStyle())
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    deleteInstance()
+                                }
+                        }
                         .padding(.trailing, 12)
-                        .contentShape(Rectangle())
-                        .onHover { hovering in
-                            isDeleteHovered = hovering
-                        }
-                        .onTapGesture {
-                            deleteVersion()
-                        }
-                        .animation(.easeInOut(duration: 0.2), value: isDeleteHovered)
+                    }
                 }
             }
             .onTapGesture {
@@ -66,15 +66,19 @@ struct VersionListView: View {
                 DataManager.shared.router.setRoot(.launch)
             }
             .padding(.top, -8)
+            .onHover { isHovered in
+                self.isHovered = isHovered
+            }
+            .animation(.easeInOut(duration: 0.2), value: isHovered)
         }
         
-        private func deleteVersion() {
+        private func deleteInstance() {
             Task {
                 let result = await PopupManager.shared.showAsync(
                     PopupModel(
                         .normal,
                         "删除版本",
-                        "确定要删除版本 \"\(instance.config.name)\" 吗？\n\n此操作将永久删除该版本的所有文件，包括模组、资源包等。",
+                        "确定要删除版本 \"\(instance.config.name)\" 吗？\n\n此操作将永久删除该版本的所有文件，包括模组、资源包等。\n真的很久！",
                         [
                             PopupButtonModel(label: "取消", style: .normal),
                             PopupButtonModel(label: "删除", style: .danger)
@@ -99,12 +103,13 @@ struct VersionListView: View {
                         }
                         
                         // 重新加载实例列表
-                        AppSettings.shared.currentMinecraftDirectory?.loadInnerInstances { instances in
+                        instance.minecraftDirectory.loadInnerInstances { instances in
                             // 如果删除的是默认实例且还有其他实例，自动选择第一个作为新的默认实例
                             if AppSettings.shared.defaultInstance == nil && !instances.isEmpty {
                                 AppSettings.shared.defaultInstance = instances.first?.config.name
-                                log("自动设置新的默认实例: \(instances.first?.config.name ?? "未知")")
                             }
+                            
+                            DataManager.shared.router.path = [.versionSelect, .versionList(directory: instance.minecraftDirectory)]
                         }
                         
                         hint("版本 \"\(versionName)\" 已删除", .finish)
