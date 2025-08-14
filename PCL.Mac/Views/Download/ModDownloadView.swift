@@ -12,16 +12,16 @@ fileprivate struct ModVersionListView: View {
     @ObservedObject private var dataManager: DataManager = .shared
     @ObservedObject private var state: ModSearchViewState = StateManager.shared.modSearch
     @State private var requestID = UUID()
-    @State private var versionMap: ModVersionMap = [:]
+    @State private var versionMap: ProjectVersionMap = [:]
     
-    let summary: ModSummary
+    let summary: ProjectSummary
     let versions: [String]
     
     var body: some View {
         VStack {
             ForEach(sortedReleaseVersions, id: \.self) { version in
                 ForEach(summary.loaders, id: \.self) { loader in
-                    if let versions: [ModVersion] = versionMap[ModPlatformKey(loader: loader, minecraftVersion: version)] {
+                    if let versions: [ProjectVersion] = versionMap[ProjectPlatformKey(loader: loader, minecraftVersion: version)] {
                         MyCard(title: "\(loader.getName()) \(version.displayName)") {
                             LazyVStack(alignment: .leading, spacing: 0) {
                                 if let version = versions.first,
@@ -32,7 +32,7 @@ fileprivate struct ModVersionListView: View {
                                     ForEach(version.dependencies, id: \.self) { dependency in
                                         ModListItem(summary: dependency.summary)
                                             .onTapGesture {
-                                                dataManager.router.append(.modDownload(summary: dependency.summary))
+                                                dataManager.router.append(.projectDownload(summary: dependency.summary))
                                             }
                                     }
                                     Text("版本列表")
@@ -54,7 +54,7 @@ fileprivate struct ModVersionListView: View {
             }
         }
         .task(id: requestID) {
-            if let map = try? await ModSearcher.shared.getVersionMap(id: summary.modId) {
+            if let map = try? await ModrinthProjectSearcher.shared.getVersionMap(id: summary.modId) {
                 DispatchQueue.main.async {
                     self.versionMap = map
                 }
@@ -70,7 +70,7 @@ fileprivate struct ModVersionListView: View {
 }
 
 fileprivate struct ModVersionListItem: View {
-    let version: ModVersion
+    let version: ProjectVersion
     
     var body: some View {
         MyListItem {
@@ -111,7 +111,7 @@ fileprivate struct ModVersionListItem: View {
 struct ModDownloadView: View {
     @ObservedObject private var dataManager: DataManager = .shared
     @ObservedObject private var state: ModSearchViewState = StateManager.shared.modSearch
-    @State private var summary: ModSummary?
+    @State private var summary: ProjectSummary?
     let id: String
     
     init(id: String) {
@@ -156,7 +156,7 @@ struct ModDownloadView: View {
         }
         .task(id: id) {
             summary = nil
-            summary = try? await ModSearcher.shared.get(id)
+            summary = try? await ModrinthProjectSearcher.shared.get(id)
         }
     }
 }

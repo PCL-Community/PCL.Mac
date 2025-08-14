@@ -149,12 +149,13 @@ struct InstanceModsView: View {
     
     private func loadSummary(mod: Mod) {
         Task {
-            if let summary = try? await ModSearcher.shared.get(mod.id) { // 若 slug 与 Mod ID 一致，使用通过 Mod ID 获取到的 Project
+            if let summary = try? await ModrinthProjectSearcher.shared.get(mod.id) { // 若 slug 与 Mod ID 一致，使用通过 Mod ID 获取到的 Project
                 await MainActor.run {
                     mod.summary = summary
                 }
             } else { // 否则搜索最匹配的 Mod
-                if let summary = try? await ModSearcher.shared.search(
+                if let summary = try? await ModrinthProjectSearcher.shared.search(
+                    type: "mod",
                     query: mod.name,
                     version: instance.version,
                     loader: instance.clientBrand,
@@ -226,7 +227,7 @@ struct InstanceModsView: View {
                                 .foregroundStyle(AppSettings.shared.theme.getTextStyle())
                                 .contentShape(Rectangle())
                                 .onTapGesture {
-                                    dataManager.router.append(.modDownload(summary: summary))
+                                    dataManager.router.append(.projectDownload(summary: summary))
                                 }
                             
                             Image(isDisabled ? "CheckIcon" : "StopIcon")

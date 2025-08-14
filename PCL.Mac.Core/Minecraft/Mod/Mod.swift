@@ -25,7 +25,7 @@ public class Mod: Identifiable, ObservableObject {
     public let version: String
     
     /// 模组对应的 Modrinth Project，可能为 nil，在加载 Mod 列表时设置
-    @Published public var summary: ModSummary?
+    @Published public var summary: ProjectSummary?
     
     init(id: String, name: String, description: String, brand: ClientBrand, version: String) {
         self.id = id

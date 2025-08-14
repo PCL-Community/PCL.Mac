@@ -91,7 +91,7 @@ struct DownloadView: View {
         case .resourcePackSearch:
             return AnyView(
                 HStack {
-                    Image("ModDownloadIcon")
+                    Image("PictureIcon")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 20, height: 20)

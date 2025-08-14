@@ -10,9 +10,9 @@ import Testing
 
 struct TestModSearch {
     @Test func testSearch() async throws {
-        let result = try await ModSearcher.shared.search(query: "sodium")
+        let result = try await ProjectSearcher.shared.search(type: "modpack", query: "")
         for summary in result {
-            print("\(summary.name): \(summary.description)")
+            print("\(summary.loaders)")
         }
     }
     

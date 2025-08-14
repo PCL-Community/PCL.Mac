@@ -29,9 +29,9 @@ struct ModListItem: View {
     @ObservedObject var state: ModSearchViewState = StateManager.shared.modSearch
     @State private var isHovered: Bool = false
     private let lastUpdateLabel: String
-    private let summary: ModSummary
+    private let summary: ProjectSummary
     
-    init(summary: ModSummary) {
+    init(summary: ProjectSummary) {
         self.summary = summary
         let formatter = RelativeDateTimeFormatter()
         formatter.locale = Locale(identifier: "zh_CN")
@@ -115,7 +115,7 @@ struct ModListItem: View {
                                     hint("请先选择一个实例！", .critical)
                                     return
                                 }
-                                if let versionMap = try? await ModSearcher.shared.getVersionMap(id: summary.modId),
+                                if let versionMap = try? await ModrinthProjectSearcher.shared.getVersionMap(id: summary.modId),
                                    let versions = versionMap[.init(loader: instance.clientBrand, minecraftVersion: instance.version)],
                                    let version = versions.first {
                                     state.addToQueue(version)
@@ -228,15 +228,15 @@ struct ModListItem: View {
 @MainActor
 class ModSearchViewState: ObservableObject {
     @Published var query: String = ""
-    @Published var summaries: [ModSummary]?
+    @Published var summaries: [ProjectSummary]?
     @Published var error: Error?
     @Published var iconCache: [String: Image] = [:]
-    @Published var pendingDownloadMods: [ModVersion] = []
+    @Published var pendingDownloadMods: [ProjectVersion] = []
     @Published var modQueueOverlayId: UUID?
     
-    public func addToQueue(_ version: ModVersion) {
+    public func addToQueue(_ version: ProjectVersion) {
         Task {
-            var dependencies = Set<ModVersion>(pendingDownloadMods)
+            var dependencies = Set<ProjectVersion>(pendingDownloadMods)
             if !dependencies.insert(version).inserted {
                 hint("\(version.name) 已存在！", .critical)
                 return
@@ -249,7 +249,7 @@ class ModSearchViewState: ObservableObject {
             }
             for dependency in version.dependencies {
                 if dependency.versionId == nil {
-                    if let versionMap = try? await ModSearcher.shared.getVersionMap(id: dependency.summary.modId),
+                    if let versionMap = try? await ModrinthProjectSearcher.shared.getVersionMap(id: dependency.summary.modId),
                        let versions = versionMap[.init(loader: instance.clientBrand, minecraftVersion: instance.version)] {
                         pendingDownloadMods.append(versions.first!)
                     } else {
@@ -257,7 +257,7 @@ class ModSearchViewState: ObservableObject {
                         continue
                     }
                 } else {
-                    if let version = try? await ModSearcher.shared.getVersion(dependency.versionId!) {
+                    if let version = try? await ModrinthProjectSearcher.shared.getVersion(dependency.versionId!) {
                         pendingDownloadMods.append(version)
                     } else {
                         err("依赖 \(dependency.summary.modId) 版本 \(dependency.versionId!) 不存在")
@@ -288,7 +288,7 @@ struct ModSearchView: View {
                         ForEach(summaries) { summary in
                             ModListItem(summary: summary)
                                 .onTapGesture {
-                                    DataManager.shared.router.append(.modDownload(summary: summary))
+                                    DataManager.shared.router.append(.projectDownload(summary: summary))
                                 }
                         }
                     }
@@ -307,7 +307,7 @@ struct ModSearchView: View {
     private func searchMod() {
         Task {
             do {
-                let result = try await ModSearcher.shared.search(query: self.state.query)
+                let result = try await ModrinthProjectSearcher.shared.search(type: "mod", query: self.state.query)
                 DispatchQueue.main.async {
                     self.state.summaries = result
                 }

@@ -21,7 +21,7 @@ public enum AppRoute: Hashable {
     case newAccount
     case installing(tasks: InstallTasks)
     case versionSelect
-    case modDownload(summary: ModSummary)
+    case projectDownload(summary: ProjectSummary)
     case announcementHistory
     case versionSettings(instance: MinecraftInstance)
     
@@ -59,7 +59,7 @@ public enum AppRoute: Hashable {
     var name: String {
         switch self {
         case .installing(let task): "installing?task=\(task.id)"
-        case .modDownload(let summary): "modDownload?summary=\(summary.modId)"
+        case .projectDownload(let summary): "projectDownload?summary=\(summary.modId)"
         case .versionList(let directory): "versionList?rootURL=\(directory.rootURL.path)"
         case .versionSettings(let instance): "versionSettings?instance=\(instance.config.name)"
         default:
@@ -71,7 +71,7 @@ public enum AppRoute: Hashable {
         switch self {
         case .installing(_): "下载管理"
         case .versionSelect, .versionList: "版本选择"
-        case .modDownload(let summary): "资源下载 - \(summary.name)"
+        case .projectDownload(let summary): "资源下载 - \(summary.name)"
         case .accountManagement, .accountList, .newAccount: "账号管理"
         case .announcementHistory: "历史公告"
         case .versionSettings, .instanceOverview, .instanceSettings, .instanceMods: "版本设置 - \(AppSettings.shared.defaultInstance ?? "")"
@@ -116,7 +116,7 @@ public class AppRouter: ObservableObject {
             InstallingView(tasks: tasks)
         case .versionSelect, .versionList(_):
             VersionSelectView()
-        case .modDownload(let summary):
+        case .projectDownload(let summary):
             ModDownloadView(id: summary.modId)
         case .announcementHistory:
             AnnouncementHistoryView()
