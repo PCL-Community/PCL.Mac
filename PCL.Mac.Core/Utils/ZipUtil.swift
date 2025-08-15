@@ -17,7 +17,7 @@ public class ZipUtil {
             })
             return data
         }
-        throw MyLocalizedError(reason: "项 \(name) 不存在！")
+        throw MyLocalizedError(reason: "项 \(name) 不存在")
     }
     
     public static func getEntry(archive: Archive, name: String) -> Data? {

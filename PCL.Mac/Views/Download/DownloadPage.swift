@@ -63,7 +63,7 @@ struct DownloadPage: View {
                 }
                 .noAnimation()
                 .padding()
-                FabricLoaderCard(tasks: $tasks, version: version)
+                FabricLoaderCard(tasks: $tasks, name: $name, version: version)
                     .padding()
                     .padding(.top, 20)
                 Spacer()
@@ -128,11 +128,13 @@ fileprivate struct FabricLoaderCard: View {
     @State private var isUnfolded: Bool = false
     @State private var isSelected: Bool = false
     @Binding private var tasks: InstallTasks
+    @Binding private var name: String
     
     let version: MinecraftVersion
     
-    init(tasks: Binding<InstallTasks>, version: MinecraftVersion) {
+    init(tasks: Binding<InstallTasks>, name: Binding<String>, version: MinecraftVersion) {
         self._tasks = tasks
+        self._name = name.wrappedValue == version.displayName ? name : .constant(name.wrappedValue)
         self.version = version
     }
     
@@ -147,8 +149,9 @@ fileprivate struct FabricLoaderCard: View {
                                     .animation(.easeInOut(duration: 0.2), value: selected?.id)
                                     .onTapGesture {
                                         selected = version
-                                        tasks.addTask(key: "fabric", task: FabricInstallTask(loaderVersion: selected!.loaderVersion))
+                                        tasks.addTask(key: "fabric", task: FabricInstallTask(loaderVersion: version.loaderVersion))
                                         isUnfolded = false
+                                        name.append("-Fabric \(version.loaderVersion)")
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                                             isSelected = true
                                         }
@@ -177,6 +180,7 @@ fileprivate struct FabricLoaderCard: View {
                                         isSelected = false
                                         selected = nil
                                         tasks.tasks.removeValue(forKey: "fabric")
+                                        name = version.displayName
                                     }
                             }
                         }

@@ -21,14 +21,27 @@ struct PCL_MacTests {
         }
     }
     
-    
-    @Test func testLibraries() {
-        guard let instance = MinecraftInstance.create(.default, URL(fileURLWithUserPath: "~/minecraft/versions/23w13a_or_b")) else {
-            fatalError()
+    func replaceWithValue(_ string: String) -> String {
+        let values = ["foo": "bar", "test": "success"]
+        if !string.contains("{") || !string.contains("}") { return string }
+        
+        for (key, value) in values {
+            if string.contains("{\(key)}") {
+                return string.replacingOccurrences(of: "{\(key)}", with: value)
+            }
         }
         
-        for library in instance.manifest.getNeededLibraries() {
-            print(library.artifact!.path)
-        }
+        return string
+    }
+    
+    @Test func testLibraries() {
+        print(replaceWithValue("{foo}"))
+//        guard let instance = MinecraftInstance.create(.default, URL(fileURLWithUserPath: "~/minecraft/versions/23w13a_or_b")) else {
+//            fatalError()
+//        }
+//        
+//        for library in instance.manifest.getNeededLibraries() {
+//            print(library.artifact!.path)
+//        }
     }
 }

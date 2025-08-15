@@ -19,19 +19,7 @@ public class ClientManifest {
     public let minecraftArguments: String?
     public let javaVersion: Int?
     public let clientDownload: DownloadInfo?
-    
-    private init(id: String, mainClass: String, type: String, assetIndex: AssetIndex?, assets: String, libraries: [Library], arguments: Arguments?, minecraftArguments: String?, javaVersion: Int?, clientDownload: DownloadInfo?) {
-        self.id = id
-        self.mainClass = mainClass
-        self.type = type
-        self.assetIndex = assetIndex
-        self.assets = assets
-        self.libraries = libraries
-        self.arguments = arguments
-        self.minecraftArguments = minecraftArguments
-        self.javaVersion = javaVersion
-        self.clientDownload = clientDownload
-    }
+    public let clientMappingsDownload: DownloadInfo?
 
     private init?(json: JSON) {
         self.id = json["id"].stringValue
@@ -44,6 +32,7 @@ public class ClientManifest {
         self.minecraftArguments = json["minecraftArguments"].string
         self.javaVersion = json["javaVersion"]["majorVersion"].int
         self.clientDownload = json["downloads"]["client"].exists() ? .init(json: json["downloads"]["client"]) : nil
+        self.clientMappingsDownload = json["downloads"]["client_mappings"].exists() ? .init(json: json["downloads"]["client_mappings"]) : nil
     }
 
     public class AssetIndex {

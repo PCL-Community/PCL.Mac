@@ -10,17 +10,9 @@ import Testing
 
 struct TestModSearch {
     @Test func testSearch() async throws {
-        let result = try await ProjectSearcher.shared.search(type: "modpack", query: "")
+        let result = try await ModrinthProjectSearcher.shared.search(type: .mod, query: "")
         for summary in result {
             print("\(summary.loaders)")
-        }
-    }
-    
-    @Test func testGetVersions() async throws {
-        let sodium = try await ModSearcher.shared.get("iris")
-        for version in sodium.versions! {
-            let version = try await ModSearcher.shared.getVersion(version)
-            print(version.name)
         }
     }
 }
