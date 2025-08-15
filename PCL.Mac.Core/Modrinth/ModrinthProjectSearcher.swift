@@ -8,6 +8,18 @@
 import Foundation
 import SwiftyJSON
 
+public enum ProjectType {
+    case mod, resourcepack, shader
+    
+    public func getName() -> String {
+        switch self {
+        case .mod: "Mod"
+        case .resourcepack: "资源包"
+        case .shader: "光影包"
+        }
+    }
+}
+
 public class ModrinthProjectSearcher {
     public static let shared: ModrinthProjectSearcher = .init()
     
@@ -99,9 +111,9 @@ public class ModrinthProjectSearcher {
         return versionMap
     }
     
-    public func search(type: String, query: String, version: MinecraftVersion? = nil, loader: ClientBrand? = nil, limit: Int = 40) async throws -> [ProjectSummary] {
+    public func search(type: ProjectType, query: String, version: MinecraftVersion? = nil, loader: ClientBrand? = nil, limit: Int = 40) async throws -> [ProjectSummary] {
         var facets = [
-            ["project_type:mod"],
+            ["project_type:\(type)"],
         ]
         
         if let version = version {

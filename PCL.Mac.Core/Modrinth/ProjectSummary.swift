@@ -20,6 +20,19 @@ public struct ProjectPlatformKey: Hashable, Comparable {
 
 public typealias ProjectVersionMap = [ProjectPlatformKey: [ProjectVersion]]
 
+public extension ProjectVersionMap {
+    var gameVersions: [MinecraftVersion] {
+        self.keys.map { $0.minecraftVersion }
+            .filter { $0.type == .release }
+            .sorted(by: >)
+    }
+    
+    var loaders: [ClientBrand] {
+        Array(Set(self.keys.map { $0.loader }))
+            .sorted(by: { $0.index < $1.index})
+    }
+}
+
 public class ProjectDependency: Hashable, Identifiable, Equatable {
     public enum DependencyType: String {
         case required, optional, unsupported, unknown

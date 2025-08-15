@@ -82,7 +82,7 @@ struct InstanceModsView: View {
                         .frame(width: 120, height: 35)
                         MyButton(text: "下载新资源") {
                             dataManager.router.setRoot(.download)
-                            dataManager.router.append(.modSearch)
+                            dataManager.router.append(.projectSearch(type: .mod))
                         }
                         .frame(width: 120, height: 35)
                         Spacer()
@@ -155,7 +155,7 @@ struct InstanceModsView: View {
                 }
             } else { // 否则搜索最匹配的 Mod
                 if let summary = try? await ModrinthProjectSearcher.shared.search(
-                    type: "mod",
+                    type: .mod,
                     query: mod.name,
                     version: instance.version,
                     loader: instance.clientBrand,
@@ -174,7 +174,7 @@ struct InstanceModsView: View {
     struct ModView: View {
         @ObservedObject private var dataManager: DataManager = .shared
         @ObservedObject private var mod: Mod
-        @ObservedObject private var state: ModSearchViewState = StateManager.shared.modSearch
+        @ObservedObject private var state: ProjectSearchViewState = StateManager.shared.projectSearch
         @State private var isHovered: Bool = false
         @State private var isSwitching = false
         @State private var url: URL
@@ -204,7 +204,7 @@ struct InstanceModsView: View {
                                 .foregroundStyle(Color(hex: 0x8C8C8C))
                         }
                         HStack {
-                            ForEach((mod.summary?.tags ?? []).compactMap { ModListItem.tagMap[$0] }, id: \.self) { tag in
+                            ForEach((mod.summary?.tags ?? []).compactMap { ProjectListItem.tagMap[$0] }, id: \.self) { tag in
                                 MyTag(label: tag, backgroundColor: Color("TagColor"), fontSize: 12)
                             }
                             

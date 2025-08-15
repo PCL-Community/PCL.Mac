@@ -27,8 +27,7 @@ public enum AppRoute: Hashable {
     
     // MyList 导航
     case minecraftDownload
-    case modSearch
-    case resourcePackSearch
+    case projectSearch(type: ProjectType)
     case versionList(directory: MinecraftDirectory)
     case instanceOverview
     case instanceSettings
@@ -47,7 +46,7 @@ public enum AppRoute: Hashable {
     var isRoot: Bool {
         switch self {
         case .launch, .download, .multiplayer, .settings, .others,
-                .minecraftDownload, .modSearch, .resourcePackSearch,
+                .minecraftDownload, .projectSearch(_),
                 .about, .toolbox, .debug,
                 .personalization, .javaSettings, .otherSettings:
             return true
@@ -62,6 +61,7 @@ public enum AppRoute: Hashable {
         case .projectDownload(let summary): "projectDownload?summary=\(summary.modId)"
         case .versionList(let directory): "versionList?rootURL=\(directory.rootURL.path)"
         case .versionSettings(let instance): "versionSettings?instance=\(instance.config.name)"
+        case .projectSearch(let type): "projectSearch?type=\(type)"
         default:
             String(describing: self)
         }
@@ -104,7 +104,7 @@ public class AppRouter: ObservableObject {
             LaunchView()
         case .accountManagement, .accountList, .newAccount:
             AccountManagementView()
-        case .download, .minecraftDownload, .modSearch, .resourcePackSearch:
+        case .download, .minecraftDownload, .projectSearch(_):
             DownloadView()
         case .multiplayer:
             MultiplayerView()
@@ -117,7 +117,7 @@ public class AppRouter: ObservableObject {
         case .versionSelect, .versionList(_):
             VersionSelectView()
         case .projectDownload(let summary):
-            ModDownloadView(id: summary.modId)
+            ProjectDownloadView(id: summary.modId)
         case .announcementHistory:
             AnnouncementHistoryView()
         case .versionSettings, .instanceOverview, .instanceSettings, .instanceMods:

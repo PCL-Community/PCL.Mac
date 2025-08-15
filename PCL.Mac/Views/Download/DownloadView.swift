@@ -15,10 +15,9 @@ struct DownloadView: View {
             switch dataManager.router.getLast() {
             case .minecraftDownload:
                 MinecraftDownloadView()
-            case .modSearch:
-                ModSearchView()
-            case .resourcePackSearch:
-                ResourcePackSearchView()
+            case .projectSearch(let type):
+                ProjectSearchView(type: type)
+                    .id(type)
             default:
                 Spacer()
                     .onAppear {
@@ -51,7 +50,7 @@ struct DownloadView: View {
                         .padding(.top, 32)
                         .padding(.bottom, 4)
                     MyList(
-                        cases: .constant([.modSearch, .resourcePackSearch]),
+                        cases: .constant([.projectSearch(type: .mod), .projectSearch(type: .resourcepack)]),
                         animationIndex: 2
                     ) { type, isSelected in
                         createListItemView(type)
@@ -65,43 +64,35 @@ struct DownloadView: View {
     }
     
     private func createListItemView(_ lastComponent: AppRoute) -> some View {
+        let imageName: String, text: String
         switch lastComponent {
         case .minecraftDownload:
-            return AnyView(
-                HStack {
-                    Image("GameDownloadIcon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 20, height: 20)
-                    Text("游戏下载")
-                        .font(.custom("PCL English", size: 14))
-                }
-            )
-        case .modSearch:
-            return AnyView(
-                HStack {
-                    Image("ModDownloadIcon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 20, height: 20)
-                    Text("Mod")
-                        .font(.custom("PCL English", size: 14))
-                }
-            )
-        case .resourcePackSearch:
-            return AnyView(
-                HStack {
-                    Image("PictureIcon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 20, height: 20)
-                    Text("资源包")
-                        .font(.custom("PCL English", size: 14))
-                }
-            )
+            imageName = "GameDownloadIcon"
+            text = "游戏下载"
+        case .projectSearch(let type):
+            switch type {
+            case .mod:
+                imageName = "ModDownloadIcon"
+            case .resourcepack:
+                imageName = "PictureIcon"
+            case .shader:
+                imageName = "ModDownloadIcon"
+            }
+            text = type.getName()
         default:
             return AnyView(EmptyView())
         }
+        
+        return AnyView(
+            HStack {
+                Image(imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                Text(text)
+                    .font(.custom("PCL English", size: 14))
+            }
+        )
     }
 }
 
