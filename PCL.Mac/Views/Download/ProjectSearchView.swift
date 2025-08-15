@@ -376,8 +376,8 @@ struct ProjectQueueOverlay: View {
                                 hint("请先在版本列表中选择一个实例！", .critical)
                                 return
                             }
-                            let mods = state.pendingDownloadProjects
-                            let task = ModInstallTask(instance: instance, mods: mods)
+                            let versions = state.pendingDownloadProjects
+                            let task = ModInstallTask(instance: instance, versions: versions)
                             task.onComplete {
                                 hint("下载完成！", .finish)
                                 state.pendingDownloadProjects.removeAll()

@@ -54,6 +54,7 @@ public class ProjectDependency: Hashable, Identifiable, Equatable {
 }
 
 public class ProjectVersion: Hashable, Identifiable, Equatable {
+    public let projectType: ProjectType
     public let projectId: String
     public let name: String
     public let versionNumber: String
@@ -65,7 +66,8 @@ public class ProjectVersion: Hashable, Identifiable, Equatable {
     public let dependencies: [ProjectDependency]
     public let downloadURL: URL
     
-    public init(projectId: String, name: String, versionNumber: String, type: String, downloads: Int, updateDate: Date, gameVersions: [MinecraftVersion], loaders: [ClientBrand], dependencies: [ProjectDependency], downloadURL: URL) {
+    public init(projectType: ProjectType, projectId: String, name: String, versionNumber: String, type: String, downloads: Int, updateDate: Date, gameVersions: [MinecraftVersion], loaders: [ClientBrand], dependencies: [ProjectDependency], downloadURL: URL) {
+        self.projectType = projectType
         self.projectId = projectId
         self.name = name
         self.versionNumber = versionNumber
@@ -84,6 +86,7 @@ public class ProjectVersion: Hashable, Identifiable, Equatable {
 }
 
 public class ProjectSummary: Hashable, Identifiable, Equatable {
+    public let type: ProjectType
     public let projectId: String
     public let modId: String
     public let name: String
@@ -97,7 +100,8 @@ public class ProjectSummary: Hashable, Identifiable, Equatable {
     public let infoURL: URL
     public let versions: [String]? // 只有通过搜索创建时这个变量的值才为 nil
     
-    init(projectId: String, modId: String, name: String, description: String, lastUpdate: Date, downloadCount: Int, gameVersions: [MinecraftVersion], categories: [String], iconURL: URL?, infoURL: URL, versions: [String]?) {
+    init(type: ProjectType, projectId: String, modId: String, name: String, description: String, lastUpdate: Date, downloadCount: Int, gameVersions: [MinecraftVersion], categories: [String], iconURL: URL?, infoURL: URL, versions: [String]?) {
+        self.type = type
         self.projectId = projectId
         self.modId = modId
         self.name = name
@@ -124,6 +128,7 @@ public class ProjectSummary: Hashable, Identifiable, Equatable {
     
     convenience init(json: JSON) {
         self.init(
+            type: ProjectType(rawValue: json["project_type"].stringValue) ?? .mod,
             projectId: json["project_id"].string ?? json["id"].stringValue,
             modId: json["slug"].stringValue,
             name: json["title"].stringValue,

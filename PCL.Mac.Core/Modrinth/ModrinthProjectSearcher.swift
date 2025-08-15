@@ -8,7 +8,7 @@
 import Foundation
 import SwiftyJSON
 
-public enum ProjectType {
+public enum ProjectType: String {
     case mod, resourcepack, shader
     
     public func getName() -> String {
@@ -64,8 +64,10 @@ public class ModrinthProjectSearcher {
     
     public func getVersion(_ version: String) async throws -> ProjectVersion {
         let json = try await Requests.get("https://api.modrinth.com/v2/version/\(version)").getJSONOrThrow()
+        let summary = try await get(json["project_id"].stringValue)
         
         return .init(
+            projectType: summary.type,
             projectId: json["project_id"].stringValue,
             name: json["name"].stringValue,
             versionNumber: json["version_number"].stringValue,
@@ -81,10 +83,12 @@ public class ModrinthProjectSearcher {
     
     public func getVersionMap(id: String) async throws -> ProjectVersionMap {
         let json = try await Requests.get("https://api.modrinth.com/v2/project/\(id)/version").getJSONOrThrow()
+        let summary = try await get(json.arrayValue[0]["project_id"].stringValue)
         var versionMap: ProjectVersionMap = [:]
         
         for version in json.arrayValue {
             let version = ProjectVersion(
+                projectType: summary.type,
                 projectId: version["project_id"].stringValue,
                 name: version["name"].stringValue,
                 versionNumber: version["version_number"].stringValue,
