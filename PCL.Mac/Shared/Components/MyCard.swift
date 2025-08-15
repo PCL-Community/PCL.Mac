@@ -74,13 +74,15 @@ struct MyCard<Content: View>: View {
     
     @State private var isUnfolded: Bool = false // 带动画
     @State private var showContent: Bool = false // 无动画
+    @Binding private var unfoldBinding: Bool // 绑定
     @State private var internalContentHeight: CGFloat = .zero
     @State private var contentHeight: CGFloat = .zero
     @State private var lastClick: Date = Date()
 
-    init(index: Int = 0, title: String, @ViewBuilder content: @escaping () -> Content) {
+    init(index: Int = 0, title: String, unfoldBinding: Binding<Bool> = .constant(true), @ViewBuilder content: @escaping () -> Content) {
         self.index = index
         self.title = title
+        self._unfoldBinding = unfoldBinding
         self.content = content()
     }
 
@@ -107,26 +109,7 @@ struct MyCard<Content: View>: View {
                         return
                     }
                     lastClick = Date()
-                    if !showContent {
-                        showContent = true
-                        withAnimation(.linear(duration: 0.2)) {
-                            isUnfolded = true
-                            onToggle?(true)
-                            contentHeight = internalContentHeight
-                        }
-                        updateState(true)
-                    } else {
-                        contentHeight = min(2000, contentHeight)
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.85, blendDuration: 0)) {
-                            isUnfolded = false
-                            contentHeight = 0
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            showContent = false
-                            onToggle?(false)
-                        }
-                        updateState(false)
-                    }
+                    toggle()
                 }
 
                 ZStack(alignment: .top) {
@@ -152,6 +135,34 @@ struct MyCard<Content: View>: View {
         }
         .onAppear {
             loadState()
+        }
+        .onChange(of: unfoldBinding) {
+            if unfoldBinding != isUnfolded {
+                toggle()
+            }
+        }
+    }
+    
+    private func toggle() {
+        if !showContent {
+            showContent = true
+            withAnimation(.linear(duration: 0.2)) {
+                isUnfolded = true
+                onToggle?(true)
+                contentHeight = internalContentHeight
+            }
+            updateState(true)
+        } else {
+            contentHeight = min(2000, contentHeight)
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.85, blendDuration: 0)) {
+                isUnfolded = false
+                contentHeight = 0
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                showContent = false
+                onToggle?(false)
+            }
+            updateState(false)
         }
     }
     
@@ -180,6 +191,7 @@ struct MyCard<Content: View>: View {
     }
     
     private func updateState(_ state: Bool) {
+        unfoldBinding = state
         if let id = id {
             StateManager.shared.cardStates[id] = state
         }

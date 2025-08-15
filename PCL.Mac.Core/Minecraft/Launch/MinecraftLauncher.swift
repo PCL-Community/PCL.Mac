@@ -93,7 +93,7 @@ public class MinecraftLauncher {
         let values: [String: String] = [
             "natives_directory": instance.runningDirectory.appending(path: "natives").path,
             "launcher_name": "PCL.Mac",
-            "launcher_version": "1.0.0",
+            "launcher_version": SharedConstants.shared.version,
             "classpath": buildClasspath(),
             "classpath_separator": ":",
             "library_directory": instance.minecraftDirectory.librariesURL.path,
@@ -134,7 +134,7 @@ public class MinecraftLauncher {
             "auth_uuid": options.uuid.uuidString.replacingOccurrences(of: "-", with: "").lowercased(),
             "auth_access_token": options.accessToken,
             "user_type": "msa",
-            "version_type": "PCL Mac",
+            "version_type": "PCL.Mac \(SharedConstants.shared.version)",
             "user_properties": "\"{}\""
         ]
         

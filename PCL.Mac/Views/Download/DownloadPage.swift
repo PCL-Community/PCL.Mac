@@ -13,6 +13,7 @@ struct DownloadPage: View {
     
     @State private var name: String
     @State private var tasks: InstallTasks = .empty()
+    @State private var errorMessage: String = ""
     
     init(_ version: MinecraftVersion, _ back: @escaping () -> Void) {
         self.version = version
@@ -39,8 +40,25 @@ struct DownloadPage: View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: 35)
-                        MyTextField(text: self.$name)
-                            .foregroundStyle(Color("TextColor"))
+                        VStack {
+                            MyTextField(text: $name)
+                                .foregroundStyle(Color("TextColor"))
+                                .onChange(of: name) {
+                                    if name == version.displayName && tasks.tasks.count > 1 {
+                                        errorMessage = "带 Mod 加载器的实例名不能与版本号一致！"
+                                    } else if name.isEmpty {
+                                        errorMessage = "实例名不能为空！"
+                                    } else {
+                                        errorMessage = ""
+                                    }
+                                }
+                            if !errorMessage.isEmpty {
+                                Text(errorMessage)
+                                    .foregroundStyle(Color(hex: 0xFF4C4C))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                        .animation(.easeInOut(duration: 0.2), value: errorMessage)
                     }
                 }
                 .noAnimation()
@@ -66,6 +84,11 @@ struct DownloadPage: View {
                                 .font(.custom("PCL English", size: 16))
                         }
                     } onClick: {
+                        guard errorMessage.isEmpty else {
+                            hint(errorMessage, .critical)
+                            return
+                        }
+                        
                         guard NetworkTest.shared.hasNetworkConnection() else {
                             PopupManager.shared.show(.init(.error, "无互联网连接", "请确保当前设备已联网！", [.ok]))
                             warn("试图下载新版本，但无网络连接")
@@ -102,6 +125,8 @@ fileprivate struct FabricLoaderCard: View {
     @State private var height: CGFloat = .zero
     @State private var showText: Bool = true
     @State private var selected: FabricManifest? = nil
+    @State private var isUnfolded: Bool = false
+    @State private var isSelected: Bool = false
     @Binding private var tasks: InstallTasks
     
     let version: MinecraftVersion
@@ -114,8 +139,8 @@ fileprivate struct FabricLoaderCard: View {
     var body: some View {
         ZStack {
             Group {
-                if let versions = versions, !versions.isEmpty {
-                    MyCard(index: 1, title: "Fabric") {
+                if let versions = versions, !versions.isEmpty, !isSelected {
+                    MyCard(index: 1, title: "Fabric", unfoldBinding: $isUnfolded) {
                         LazyVStack(spacing: 0) {
                             ForEach(versions) { version in
                                 ListItem(iconName: "FabricIcon", title: version.loaderVersion, description: version.stable ? "稳定版" : "测试版", isSelected: selected?.loaderVersion == version.loaderVersion)
@@ -123,6 +148,10 @@ fileprivate struct FabricLoaderCard: View {
                                     .onTapGesture {
                                         selected = version
                                         tasks.addTask(key: "fabric", task: FabricInstallTask(loaderVersion: selected!.loaderVersion))
+                                        isUnfolded = false
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                            isSelected = true
+                                        }
                                     }
                             }
                         }
@@ -136,6 +165,20 @@ fileprivate struct FabricLoaderCard: View {
                         HStack {
                             MaskedTextRectangle(text: "Fabric")
                             Spacer()
+                            if isSelected {
+                                Image(systemName: "xmark")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .bold()
+                                    .frame(width: 16)
+                                    .foregroundStyle(Color("TextColor"))
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        isSelected = false
+                                        selected = nil
+                                        tasks.tasks.removeValue(forKey: "fabric")
+                                    }
+                            }
                         }
                         .frame(height: 9)
                     }
@@ -171,13 +214,9 @@ fileprivate struct FabricLoaderCard: View {
     }
     
     private var text: String {
-        if versions == nil {
-            return "加载中……"
-        }
-        
-        if versions!.isEmpty {
-            return "无可用版本"
-        }
+        if versions == nil { return "加载中……" }
+        if versions!.isEmpty { return "无可用版本" }
+        if let selected { return selected.loaderVersion }
         
         return "可以添加"
     }
