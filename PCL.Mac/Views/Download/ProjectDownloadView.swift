@@ -22,7 +22,7 @@ fileprivate struct ProjectVersionListView: View {
             ForEach(versionMap.gameVersions, id: \.self) { version in
                 ForEach(versionMap.loaders, id: \.self) { loader in
                     if let versions: [ProjectVersion] = versionMap[ProjectPlatformKey(loader: loader, minecraftVersion: version)] {
-                        MyCard(title: "\(loader.getName()) \(version.displayName)") {
+                        MyCard(title: getCardTitle(loader, version)) {
                             LazyVStack(alignment: .leading, spacing: 0) {
                                 if let version = versions.first,
                                    !version.dependencies.isEmpty {
@@ -63,6 +63,11 @@ fileprivate struct ProjectVersionListView: View {
                 err("无法加载版本列表: \(error.localizedDescription)")
             }
         }
+    }
+    
+    private func getCardTitle(_ loader: ClientBrand, _ version: MinecraftVersion) -> String {
+        if loader == .vanilla { return version.displayName }
+        return loader.getName() + " " + version.displayName
     }
 }
 
