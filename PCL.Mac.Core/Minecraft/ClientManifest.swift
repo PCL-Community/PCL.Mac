@@ -274,54 +274,27 @@ public class ClientManifest {
         }
     }
     
-    public static func createFromFabricManifest(_ fabricManifest: FabricManifest?, _ instanceURL: URL) -> ClientManifest? {
-        guard let fabricManifest = fabricManifest else { return nil }
-        let manifest: ClientManifest = .init(
-            id: fabricManifest.loaderVersion,
-            mainClass: fabricManifest.mainClass,
-            type: "fabric",
-            assetIndex: .init(json: .null),
-            assets: "",
-            libraries: fabricManifest.libraries,
-            arguments: nil,
-            minecraftArguments: nil,
-            javaVersion: nil,
-            clientDownload: nil
-        )
-        
-        let parent: ClientManifest
-        let parentURL = instanceURL.appending(path: ".pcl_mac").appending(path: "\(fabricManifest.minecraftVersion).json")
-        
-        do {
-            let data = try FileHandle(forReadingFrom: parentURL).readToEnd()!
-            guard let manifest = try ClientManifest.parse(data, instanceURL: instanceURL) else { return nil }
-            parent = manifest
-        } catch {
-            err("无法解析 inheritsFrom: \(error.localizedDescription)")
-            return manifest
-        }
-        
-        return merge(parent: parent, manifest: manifest)
-    }
-
-    public static func parse(_ data: Data, instanceURL: URL?) throws -> ClientManifest? {
+    /// 尝试解析与自动合并客户端清单，不会对实例进行操作
+    /// - Parameter url: 清单路径
+    /// - Parameter minecraftDirectory: 若需自动合并，该参数的值为实例所在的 minecraft 目录，否则为空
+    public static func parse(url: URL, minecraftDirectory: MinecraftDirectory? = nil) throws -> ClientManifest? {
+        let data = try FileHandle(forReadingFrom: url).readToEnd() ?? Data()
         let json = try JSON(data: data)
         
     checkParent:
         if let inheritsFrom = json["inheritsFrom"].string,
-           let instanceURL = instanceURL {
-            let parentURL = instanceURL.appending(path: ".pcl_mac").appending(path: "\(inheritsFrom).json")
+           let minecraftDirectory = minecraftDirectory {
+            let parentURL = minecraftDirectory.versionsURL.appending(path: inheritsFrom).appending(path: "\(inheritsFrom).json")
             
             guard FileManager.default.fileExists(atPath: parentURL.path) else {
-                err("\(instanceURL.lastPathComponent) 的客户端清单中有 inheritsFrom 字段，但其对应的 JSON 不存在")
+                err("\(url.path) 中有 inheritsFrom 字段，但其对应的 JSON 不存在")
                 break checkParent
             }
             
             let parent: ClientManifest
             guard let manifest = ClientManifest(json: json) else { return nil }
             do {
-                let data = try FileHandle(forReadingFrom: parentURL).readToEnd()!
-                guard let manifest = try ClientManifest.parse(data, instanceURL: instanceURL) else { return nil }
+                guard let manifest = try ClientManifest.parse(url: parentURL, minecraftDirectory: minecraftDirectory) else { return nil }
                 parent = manifest
             } catch {
                 err("无法解析 inheritsFrom: \(error.localizedDescription)")

@@ -226,21 +226,14 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
     @discardableResult
     private func loadManifest() -> Bool {
         do {
-            let data = try FileHandle(forReadingFrom: runningDirectory.appending(path: runningDirectory.lastPathComponent + ".json")).readToEnd()!
+            let manifestPath = runningDirectory.appending(path: runningDirectory.lastPathComponent + ".json")
+            
+            let data = try FileHandle(forReadingFrom: manifestPath).readToEnd()!
             self.clientBrand = MinecraftInstance.getClientBrand(String(data: data, encoding: .utf8) ?? "")
-            let json = try JSON(data: data)
-            let manifest: ClientManifest?
-            switch self.clientBrand {
-            case .fabric:
-                if json["loader"].exists() {
-                    manifest = ClientManifest.createFromFabricManifest(.init(json), runningDirectory)
-                } else {
-                    manifest = try ClientManifest.parse(data, instanceURL: runningDirectory)
-                }
-            default:
-                manifest = try ClientManifest.parse(data, instanceURL: runningDirectory)
-            }
-            guard let manifest = manifest else { return false }
+            
+            guard let manifest = try ClientManifest.parse(
+                url: manifestPath, minecraftDirectory: minecraftDirectory
+            ) else { return false }
             self.manifest = manifest
         } catch {
             err("无法加载客户端清单: \(error.localizedDescription)")

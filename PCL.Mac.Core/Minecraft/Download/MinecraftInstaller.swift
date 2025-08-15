@@ -44,8 +44,7 @@ public class MinecraftInstaller {
                 destinations: [clientJsonURL],
                 completion: {
                 // 解析 JSON
-                if let data = try? Data(contentsOf: clientJsonURL),
-                   let manifest: ClientManifest = try? .parse(data, instanceURL: nil) {
+                if let manifest: ClientManifest = try? .parse(url: clientJsonURL, minecraftDirectory: nil) {
                     task.manifest = manifest
                 } else {
                     err("无法解析 JSON")

@@ -189,7 +189,13 @@ public class FabricInstallTask: InstallTask {
     
     public func start(_ task: MinecraftInstallTask) {
         Task {
-            await ModLoaderInstaller.installFabric(version: task.minecraftVersion, minecraftDirectory: task.minecraftDirectory, runningDirectory: task.versionURL, self.loaderVersion)
+            do {
+                let manifestURL = task.versionURL.appending(path: "\(task.name).json")
+                try await FabricInstaller.installFabric(version: task.minecraftVersion, minecraftDirectory: task.minecraftDirectory, runningDirectory: task.versionURL, self.loaderVersion)
+                task.manifest = try ClientManifest.parse(url: manifestURL, minecraftDirectory: task.minecraftDirectory)
+            } catch {
+                err("无法安装 Fabric: \(error.localizedDescription)")
+            }
             callback?()
         }
     }
