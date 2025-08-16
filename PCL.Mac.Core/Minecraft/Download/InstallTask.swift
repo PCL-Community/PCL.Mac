@@ -231,7 +231,7 @@ public class ForgeInstallTask: InstallTask {
             try await installer.install(minecraftVersion: task.minecraftVersion, forgeVersion: forgeVersion)
             log("Forge 安装完成")
         } catch {
-            hint("无法安装 Forge: \(error.localizedDescription)")
+            hint("无法安装 Forge: \(error.localizedDescription)", .critical)
             err("无法安装 Forge: \(error.localizedDescription)")
         }
         await MainActor.run {

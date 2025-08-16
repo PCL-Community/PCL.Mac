@@ -16,7 +16,7 @@ public class ClientManifest {
     public let assets: String
     public var libraries: [Library]
     public let arguments: Arguments?
-    public let minecraftArguments: String?
+    public var minecraftArguments: String?
     public let javaVersion: Int?
     public let clientDownload: DownloadInfo?
     public let clientMappingsDownload: DownloadInfo?
@@ -50,7 +50,7 @@ public class ClientManifest {
         }
     }
 
-    public class DownloadInfo {
+    public class DownloadInfo: Hashable {
         public var path: String
         public let sha1: String?
         public let size: Int?
@@ -68,6 +68,14 @@ public class ClientManifest {
             self.sha1 = sha1
             self.size = size
             self.url = url
+        }
+        
+        public static func == (lhs: DownloadInfo, rhs: DownloadInfo) -> Bool {
+            lhs.path == rhs.path
+        }
+        
+        public func hash(into hasher: inout Hasher) {
+            hasher.combine(path)
         }
     }
 
@@ -94,11 +102,14 @@ public class ClientManifest {
                 return nil
             }
             
-            if json["url"].exists() { // Fabric 依赖
+            if !json["downloads"].exists() {
                 self.rules = []
                 self.natives = [:]
                 let path = Util.toPath(mavenCoordinate: name)
-                self.artifact = DownloadInfo(path: path, url: URL(string: json["url"].stringValue)!.appending(path: path).absoluteString)
+                self.artifact = DownloadInfo(
+                    path: path,
+                    url: (URL(string: json["url"].stringValue) ?? URL(string: "https://bmclapi2.bangbang93.com/maven")!).appending(path: path).absoluteString
+                )
             } else {
                 if split[1] == "launchwrapper" {
                     self.rules = []
@@ -301,6 +312,7 @@ public class ClientManifest {
         parent.libraries = parent.libraries.filter { librarySet.insert(.init($0)).inserted }
         parent.arguments?.game.append(contentsOf: manifest.arguments?.game ?? [])
         parent.arguments?.jvm.append(contentsOf: manifest.arguments?.jvm ?? [])
+        parent.minecraftArguments = manifest.minecraftArguments
         parent.mainClass = manifest.mainClass
         
         return parent
@@ -356,12 +368,14 @@ public class ClientManifest {
             lhs.library.groupId == rhs.library.groupId
             && lhs.library.artifactId == rhs.library.artifactId
             && lhs.library.classifier == rhs.library.classifier
+            && lhs.library.artifact == rhs.library.artifact
         }
         
         func hash(into hasher: inout Hasher) {
             hasher.combine(library.groupId)
             hasher.combine(library.artifactId)
             hasher.combine(library.classifier)
+            hasher.combine(library.artifact)
         }
     }
 }

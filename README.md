@@ -10,7 +10,7 @@
 
 ## 简介
 
-SwiftUI 重构的 macOS 版 [PCL2](https://github.com/Hex-Dragon/PCL2)，追求更快、更好、更强。  
+SwiftUI 重构的 macOS 版 [Plain Craft Launcher](https://github.com/Hex-Dragon/PCL2)，追求更快、更好、更强。  
 让 macOS 也拥有自己的 Minecraft 启动器！
 
 ## 下载
@@ -38,6 +38,8 @@ SwiftUI 重构的 macOS 版 [PCL2](https://github.com/Hex-Dragon/PCL2)，追求�
 仅支持 **macOS 14.0 及以上**。
 
 ## 鸣谢
+
+本项目实现参考了 HMCL 等 Minecraft 启动器的实现流程。
 
 - FUNCTY
 - [AMagicPear](https://github.com/AMagicPear)

@@ -16,6 +16,7 @@ public class ForgeInstaller {
     private let temp: TemperatureDirectory
     private var installProfile: ForgeInstallProfile?
     private var values: [String: String] = [:]
+    private var isOld: Bool = false
     
     public init(_ minecraftDirectory: MinecraftDirectory, _ versionPath: URL, _ manifest: ClientManifest) {
         self.minecraftDirectory = minecraftDirectory
@@ -26,7 +27,7 @@ public class ForgeInstaller {
     
     private func parseValues() throws {
         guard let installProfile else {
-            throw MyLocalizedError(reason: "installProfile 为空")
+            return
         }
         
         // 创建默认键值对
@@ -134,7 +135,6 @@ public class ForgeInstaller {
     
     private func downloadInstaller(minecraftVersion: MinecraftVersion, version: String) async throws {
         let installerPath = temp.getURL(path: "installer.jar")
-        
         // 如果 CacheStorage 中不存在安装器，下载
         if !CacheStorage.default.copy(name: "net.minecraftforge:installer:\(minecraftVersion.displayName)-\(version)", to: installerPath) {
             let data = try await Requests.get(
@@ -149,13 +149,30 @@ public class ForgeInstaller {
                 CacheStorage.default.add(name: "net.minecraftforge:installer:\(minecraftVersion.displayName)-\(version)", path: url)
             }
         }
-        
+    }
+    
+    private func loadInstallProfile() throws {
+        let installerPath = temp.getURL(path: "installer.jar")
         let archive = try Archive(url: installerPath, accessMode: .read)
-        let data = try ZipUtil.getEntryOrThrow(archive: archive, name: "install_profile.json")
-        installProfile = ForgeInstallProfile(json: try JSON(data: data))
+        let json = try JSON(data: try ZipUtil.getEntryOrThrow(archive: archive, name: "install_profile.json"))
+        
+        if json["install"].exists() {
+            isOld = true
+            log("该安装器为旧版格式")
+            temp.createFile(path: "manifest.json", data: try json["versionInfo"].rawData())
+            
+            let forgePath = minecraftDirectory.librariesURL.appending(path: Util.toPath(mavenCoordinate: json["install"]["path"].stringValue))
+            
+            try? FileManager.default.createDirectory(at: forgePath.parent(), withIntermediateDirectories: true)
+            try ZipUtil.getEntryOrThrow(archive: archive, name: json["install"]["filePath"].stringValue).write(to: forgePath)
+        } else {
+            installProfile = ForgeInstallProfile(json: json)
+            temp.createFile(path: "manifest.json", data: try ZipUtil.getEntryOrThrow(archive: archive, name: "version.json"))
+        }
     }
     
     private func copyManifest(version: MinecraftVersion) throws {
+        try loadInstallProfile()
         let manifestURL = versionPath.appending(path: "\(versionPath.lastPathComponent).json")
         
         // 若 inheritsFrom 对应的版本 JSON 不存在，复制
@@ -164,20 +181,26 @@ public class ForgeInstaller {
             try? FileManager.default.createDirectory(at: baseManifestURL.parent(), withIntermediateDirectories: true)
             try FileManager.default.copyItem(at: manifestURL, to: baseManifestURL)
         }
-        try FileManager.default.removeItem(at: manifestURL)
         
-        let url = temp.getURL(path: "installer.jar")
-        let archive = try Archive(url: url, accessMode: .read)
-        let data = try ZipUtil.getEntryOrThrow(archive: archive, name: "version.json")
-        try data.write(to: manifestURL)
+        try FileManager.default.removeItem(at: manifestURL)
+        try FileManager.default.copyItem(at: temp.getURL(path: "manifest.json"), to: manifestURL)
     }
     
     private func downloadDependencies() async throws {
-        guard let installProfile else {
-            throw MyLocalizedError(reason: "installProfile 为空")
+        var libraries: [ClientManifest.Library] = []
+        if isOld {
+            if let manifest = try ClientManifest.parse(url: temp.getURL(path: "manifest.json")) {
+                libraries.append(contentsOf: manifest.libraries)
+            }
+        } else {
+            guard let installProfile else {
+                throw MyLocalizedError(reason: "installProfile 为空")
+            }
+            libraries.append(contentsOf: installProfile.libraries)
         }
         
-        let artifacts = installProfile.libraries.compactMap { $0.artifact }
+        let artifacts = libraries.compactMap { $0.artifact }
+        
         let urls = artifacts.map { URL(string: $0.url)! }
         let destinations = artifacts.map { minecraftDirectory.librariesURL.appending(path: $0.path) }
         
@@ -197,7 +220,10 @@ public class ForgeInstaller {
         try parseValues()
         try copyManifest(version: minecraftVersion)
         try await downloadDependencies()
-        try await executeProcessors()
+        
+        if !isOld {
+            try await executeProcessors()
+        }
         
         temp.free()
     }
