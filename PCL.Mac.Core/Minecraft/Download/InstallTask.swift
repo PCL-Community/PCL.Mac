@@ -96,7 +96,7 @@ public class InstallTasks: ObservableObject, Identifiable, Hashable, Equatable {
     }
     
     public func getTasks() -> [InstallTask] {
-        let order = ["minecraft", "fabric", "customFile"]
+        let order = ["minecraft", "fabric", "forge", "customFile"]
         return order.compactMap { tasks[$0] }
     }
     
@@ -181,45 +181,66 @@ public class MinecraftInstallTask: InstallTask {
 
 // MARK: - Fabric 安装任务定义
 public class FabricInstallTask: InstallTask {
-    public let loaderVersion: String
+    @Published private var state: InstallState
+    private let loaderVersion: String
     
     init(loaderVersion: String) {
+        self.state = .waiting
         self.loaderVersion = loaderVersion
     }
     
-    public func start(_ task: MinecraftInstallTask) {
-        Task {
-            do {
-                let manifestURL = task.versionURL.appending(path: "\(task.name).json")
-                try await FabricInstaller.installFabric(version: task.minecraftVersion, minecraftDirectory: task.minecraftDirectory, runningDirectory: task.versionURL, self.loaderVersion)
-                task.manifest = try ClientManifest.parse(url: manifestURL, minecraftDirectory: task.minecraftDirectory)
-            } catch {
-                err("无法安装 Fabric: \(error.localizedDescription)")
-            }
-            callback?()
+    public func install(_ task: MinecraftInstallTask) async {
+        await MainActor.run {
+            state = .inprogress
+        }
+        do {
+            let manifestURL = task.versionURL.appending(path: "\(task.name).json")
+            try await FabricInstaller.installFabric(version: task.minecraftVersion, minecraftDirectory: task.minecraftDirectory, runningDirectory: task.versionURL, self.loaderVersion)
+            task.manifest = try ClientManifest.parse(url: manifestURL, minecraftDirectory: task.minecraftDirectory)
+        } catch {
+            hint("无法安装 Fabric: \(error.localizedDescription)", .critical)
+            err("无法安装 Fabric: \(error.localizedDescription)")
+        }
+        await MainActor.run {
+            state = .finished
         }
     }
     
-    public override func getInstallStates() -> [InstallStage : InstallState] {
-        let allStages: [InstallStage] = [.installFabric]
-        var result: [InstallStage: InstallState] = [:]
-        var foundCurrent = false
-        for stage in allStages {
-            if foundCurrent {
-                result[stage] = .waiting
-            } else if self.stage == stage {
-                result[stage] = .inprogress
-                foundCurrent = true
-            } else {
-                result[stage] = .finished
-            }
-        }
-        return result
-    }
+    public override func getInstallStates() -> [InstallStage : InstallState] { [.installFabric : state] }
     
     public override func getTitle() -> String {
         "Fabric \(loaderVersion) 安装"
     }
+}
+
+public class ForgeInstallTask: InstallTask {
+    @Published private var state: InstallState
+    private let forgeVersion: String
+    
+    init(forgeVersion: String) {
+        self.state = .waiting
+        self.forgeVersion = forgeVersion
+    }
+    
+    public func install(_ task: MinecraftInstallTask) async {
+        await MainActor.run {
+            state = .inprogress
+        }
+        do {
+            let installer = ForgeInstaller(task.minecraftDirectory, task.versionURL, task.manifest!)
+            try await installer.install(minecraftVersion: task.minecraftVersion, forgeVersion: forgeVersion)
+            log("Forge 安装完成")
+        } catch {
+            hint("无法安装 Forge: \(error.localizedDescription)")
+            err("无法安装 Forge: \(error.localizedDescription)")
+        }
+        await MainActor.run {
+            state = .finished
+        }
+    }
+    
+    public override func getInstallStates() -> [InstallStage : InstallState] { [.installForge : state] }
+    public override func getTitle() -> String { "Forge \(forgeVersion) 安装" }
 }
 
 public class CustomFileDownloadTask: InstallTask {
@@ -271,16 +292,21 @@ public enum InstallStage: Int {
     case clientJson = 1
     case clientIndex = 2
     case clientJar = 3
-    case installFabric = 4
-    case clientResources = 5
-    case clientLibraries = 6
-    case natives = 7
-    case end = 8
-    case customFile = 1000
-    case mods = 2000
-    case resourcePacks = 2001
-    case javaDownload = 3000
-    case javaInstall = 3001
+    case clientResources = 4
+    case clientLibraries = 5
+    case natives = 6
+    case end = 7
+    
+    case installFabric = 1000
+    case installForge = 1001
+    
+    case customFile = 2000
+    
+    case mods = 3000
+    case resourcePacks = 3001
+    
+    case javaDownload = 4000
+    case javaInstall = 4001
     
     public func getDisplayName() -> String {
         switch self {
@@ -288,6 +314,7 @@ public enum InstallStage: Int {
         case .clientJson: "下载原版 json 文件"
         case .clientJar: "下载原版 jar 文件"
         case .installFabric: "安装 Fabric"
+        case .installForge: "安装 Forge"
         case .clientIndex: "下载资源索引文件"
         case .clientResources: "下载散列资源文件"
         case .clientLibraries: "下载依赖项文件"

@@ -310,10 +310,15 @@ public class MinecraftInstaller {
             await downloadClientManifest(task)
             await downloadAssetIndex(task)
             updateProgress(task)
-            if let fabricTask = DataManager.shared.inprogressInstallTasks?.tasks["fabric"] as? FabricInstallTask {
-                fabricTask.start(task)
-            }
             await downloadClientJar(task)
+            
+            // 安装 Mod Loader
+            if let fabricTask = DataManager.shared.inprogressInstallTasks?.tasks["fabric"] as? FabricInstallTask {
+                await fabricTask.install(task)
+            } else if let forgeTask = DataManager.shared.inprogressInstallTasks?.tasks["forge"] as? ForgeInstallTask {
+                await forgeTask.install(task)
+            }
+            
             await downloadHashResourcesFiles(task)
             await downloadLibraries(task)
             await downloadNatives(task)

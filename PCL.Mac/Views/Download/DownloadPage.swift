@@ -63,9 +63,14 @@ struct DownloadPage: View {
                 }
                 .noAnimation()
                 .padding()
-                FabricLoaderCard(tasks: $tasks, name: $name, version: version)
+                
+                LoaderCard(tasks: $tasks, name: $name, version: version, loader: .fabric)
                     .padding()
                     .padding(.top, 20)
+                
+                LoaderCard(tasks: $tasks, name: $name, version: version, loader: .forge)
+                    .padding()
+                
                 Spacer()
             }
             .scrollIndicators(.never)
@@ -120,38 +125,60 @@ struct DownloadPage: View {
     }
 }
 
-fileprivate struct FabricLoaderCard: View {
-    @State private var versions: [FabricManifest]? = nil
+private struct LoaderVersion: Identifiable, Equatable {
+    let id: UUID = .init()
+    let loader: ClientBrand
+    let version: String
+    let stable: Bool
+    
+    static func == (lhs: LoaderVersion, rhs: LoaderVersion) -> Bool {
+        lhs.version == rhs.version && lhs.loader == rhs.loader
+    }
+}
+
+fileprivate struct LoaderCard: View {
+    @State private var versions: [LoaderVersion]? = nil
     @State private var height: CGFloat = .zero
     @State private var showText: Bool = true
-    @State private var selected: FabricManifest? = nil
+    @State private var selected: LoaderVersion? = nil
     @State private var isUnfolded: Bool = false
     @State private var isSelected: Bool = false
     @Binding private var tasks: InstallTasks
     @Binding private var name: String
+    private let loader: ClientBrand
     
     let version: MinecraftVersion
     
-    init(tasks: Binding<InstallTasks>, name: Binding<String>, version: MinecraftVersion) {
+    init(tasks: Binding<InstallTasks>, name: Binding<String>, version: MinecraftVersion, loader: ClientBrand) {
         self._tasks = tasks
         self._name = name.wrappedValue == version.displayName ? name : .constant(name.wrappedValue)
         self.version = version
+        self.loader = loader
     }
     
     var body: some View {
         ZStack {
             Group {
                 if let versions = versions, !versions.isEmpty, !isSelected {
-                    MyCard(index: 1, title: "Fabric", unfoldBinding: $isUnfolded) {
+                    MyCard(index: 1, title: loader.getName(), unfoldBinding: $isUnfolded) {
                         LazyVStack(spacing: 0) {
                             ForEach(versions) { version in
-                                ListItem(iconName: "FabricIcon", title: version.loaderVersion, description: version.stable ? "稳定版" : "测试版", isSelected: selected?.loaderVersion == version.loaderVersion)
+                                ListItem(iconName: "\(loader.rawValue.capitalized)Icon", title: version.version, description: version.stable ? "稳定版" : "测试版", isSelected: selected == version)
                                     .animation(.easeInOut(duration: 0.2), value: selected?.id)
                                     .onTapGesture {
                                         selected = version
-                                        tasks.addTask(key: "fabric", task: FabricInstallTask(loaderVersion: version.loaderVersion))
+                                        let taskConstructor: ((String) -> InstallTask)? =
+                                        switch loader {
+                                        case .fabric: FabricInstallTask.init(loaderVersion:)
+                                        case .forge: ForgeInstallTask.init(forgeVersion:)
+                                        default: nil
+                                        }
+                                        
+                                        if let taskConstructor {
+                                            tasks.addTask(key: loader.rawValue, task: taskConstructor(version.version))
+                                        }
                                         isUnfolded = false
-                                        name.append("-Fabric \(version.loaderVersion)")
+                                        name.append("-\(loader.getName()) \(version.version)")
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                                             isSelected = true
                                         }
@@ -166,7 +193,7 @@ fileprivate struct FabricLoaderCard: View {
                 } else {
                     TitlelessMyCard(index: 1) {
                         HStack {
-                            MaskedTextRectangle(text: "Fabric")
+                            MaskedTextRectangle(text: loader.getName())
                             Spacer()
                             if isSelected {
                                 Image(systemName: "xmark")
@@ -179,7 +206,7 @@ fileprivate struct FabricLoaderCard: View {
                                     .onTapGesture {
                                         isSelected = false
                                         selected = nil
-                                        tasks.tasks.removeValue(forKey: "fabric")
+                                        tasks.tasks.removeValue(forKey: loader.rawValue)
                                         name = version.displayName
                                     }
                             }
@@ -194,11 +221,11 @@ fileprivate struct FabricLoaderCard: View {
                 HStack {
                     Group {
                         if let selected = selected {
-                            Image("FabricIcon")
+                            Image("\(loader.rawValue.capitalized)Icon")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 16)
-                            Text(selected.loaderVersion)
+                            Text(selected.version)
                         } else {
                             Text(text)
                         }
@@ -212,29 +239,31 @@ fileprivate struct FabricLoaderCard: View {
                 .allowsHitTesting(false)
             }
         }
-        .onAppear {
-            loadVersions()
+        .task {
+            await loadVersions()
         }
     }
     
     private var text: String {
         if versions == nil { return "加载中……" }
         if versions!.isEmpty { return "无可用版本" }
-        if let selected { return selected.loaderVersion }
+        if let selected { return selected.version }
         
         return "可以添加"
     }
     
-    private func loadVersions() {
-        Task {
-            if let data = await Requests.get(
-                "https://meta.fabricmc.net/v2/versions/loader/\(version.displayName)"
-            ).data,
-               let manifests = try? FabricManifest.parse(data) {
-                DispatchQueue.main.async {
-                    versions = manifests
-                }
+    private func loadVersions() async {
+        switch loader {
+        case .fabric:
+            if let json = await Requests.get("https://meta.fabricmc.net/v2/versions/loader/\(version.displayName)").json {
+                versions = json.arrayValue.map { LoaderVersion(loader: .fabric, version: $0["loader"]["version"].stringValue, stable: $0["loader"]["stable"].boolValue) }
             }
+        case .forge:
+            if let json = await Requests.get("https://bmclapi2.bangbang93.com/forge/minecraft/\(version.displayName)").json {
+                versions = json.arrayValue.map { LoaderVersion(loader: .forge, version: $0["version"].stringValue, stable: true) }
+            }
+        default:
+            versions = []
         }
     }
     

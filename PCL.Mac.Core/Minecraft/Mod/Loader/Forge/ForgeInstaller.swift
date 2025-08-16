@@ -38,12 +38,14 @@ public class ForgeInstaller {
         values["LIBRARY_DIR"] = minecraftDirectory.librariesURL.path
         
         for (key, value) in installProfile.data {
-            // 若被 [] 包裹，解析中间部分的 Maven 坐标并拼接到 libraries 后
+            // 若被 [ ] 包裹，解析中间部分的 Maven 坐标并拼接到 libraries 后
             if let match = value.wholeMatch(of: /\[(.*?)\]/) {
                 values[key] = minecraftDirectory.librariesURL.appending(path: Util.toPath(mavenCoordinate: String(match.1))).path
             } else if let match = value.wholeMatch(of: /\'(.*?)\'/) {
+                // 若被 ' ' 包裹，去除 ' '
                 values[key] = String(match.1)
             } else if value.starts(with: "/") {
+                // 若以 / 开头 (/data/client.lzma)，从 jar 根目录复制到临时目录
                 let archive = try Archive(url: temp.getURL(path: "installer.jar"), accessMode: .read)
                 let data = try ZipUtil.getEntryOrThrow(archive: archive, name: String(value.dropFirst(1)))
                 if let path = temp.createFile(path: value, data: data) {
@@ -56,6 +58,7 @@ public class ForgeInstaller {
     }
     
     private func replaceWithValue(_ string: String) -> String {
+        // 如果字符串中不存在 { }，直接返回来节省资源
         if !string.contains("{") || !string.contains("}") { return string }
         
         for (key, value) in values {
@@ -78,6 +81,7 @@ public class ForgeInstaller {
         process.currentDirectoryURL = temp.root
         process.executableURL = URL(fileURLWithPath: "/usr/bin/java")
         process.arguments = [
+            // processor 初始化逻辑中往 classpath 里添加了它本身的 jar，这里直接 map
             "-cp", processor.classpath.map { minecraftDirectory.librariesURL.appending(path: $0).path }.joined(separator: ":"),
             mainClass
         ]
@@ -87,15 +91,18 @@ public class ForgeInstaller {
     }
     
     private func patchMojangMappingsDownloadTask(_ processor: ForgeInstallProfile.Processor) async throws -> Bool {
+        // 若参数中不存在 --output，或 --output 后没有参数，返回
         guard let index = processor.args.firstIndex(of: "--output"),
               index + 1 < processor.args.count else {
             return false
         }
         
+        // 若实例的 client_mappings 下载项不存在，跳过
         guard let clientMappingsDownload = manifest.clientMappingsDownload else {
             return false
         }
         
+        // 下载 mappings
         let url = clientMappingsDownload.url
         let destination = URL(fileURLWithPath: replaceWithValue(processor.args[index + 1]))
         
@@ -118,13 +125,17 @@ public class ForgeInstaller {
                     continue
                 }
             }
-            log("正在执行安装器 \(processor.args[1])")
+            if let index = processor.args.firstIndex(of: "--task") {
+                log("正在执行安装器 \(processor.args[index + 1])")
+            }
             try executeProcessor(processor)
         }
     }
     
     private func downloadInstaller(minecraftVersion: MinecraftVersion, version: String) async throws {
         let installerPath = temp.getURL(path: "installer.jar")
+        
+        // 如果 CacheStorage 中不存在安装器，下载
         if !CacheStorage.default.copy(name: "net.minecraftforge:installer:\(minecraftVersion.displayName)-\(version)", to: installerPath) {
             let data = try await Requests.get(
                 "https://bmclapi2.bangbang93.com/forge/download"
