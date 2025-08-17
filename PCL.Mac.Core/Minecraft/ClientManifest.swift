@@ -307,6 +307,10 @@ public class ClientManifest {
     }
     
     private static func merge(parent: ClientManifest, manifest: ClientManifest) -> ClientManifest {
+        // 修正 libraries
+        ArtifactVersionMapper.map(parent, arch: .x64)
+        ArtifactVersionMapper.map(manifest, arch: .x64)
+        
         parent.libraries.insert(contentsOf: manifest.libraries, at: 0)
         var librarySet: Set<HashableLibrary> = .init()
         parent.libraries = parent.libraries.filter { librarySet.insert(.init($0)).inserted }
@@ -368,14 +372,12 @@ public class ClientManifest {
             lhs.library.groupId == rhs.library.groupId
             && lhs.library.artifactId == rhs.library.artifactId
             && lhs.library.classifier == rhs.library.classifier
-            && lhs.library.artifact == rhs.library.artifact
         }
         
         func hash(into hasher: inout Hasher) {
             hasher.combine(library.groupId)
             hasher.combine(library.artifactId)
             hasher.combine(library.classifier)
-            hasher.combine(library.artifact)
         }
     }
 }

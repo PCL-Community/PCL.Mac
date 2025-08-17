@@ -9,13 +9,11 @@ import Foundation
 import SwiftyJSON
 
 public struct ForgeInstallProfile {
-    public let path: String
     public let data: [String: String]
     public let processors: [Processor]
     public let libraries: [ClientManifest.Library]
     
     public init(json: JSON) {
-        self.path = Util.toPath(mavenCoordinate: json["path"].stringValue)
         self.data = json["data"].dictionaryValue.mapValues { $0["client"].stringValue }
         self.processors = json["processors"].arrayValue.map(Processor.init(json:))
         self.libraries = json["libraries"].arrayValue.compactMap(ClientManifest.Library.init(json:))

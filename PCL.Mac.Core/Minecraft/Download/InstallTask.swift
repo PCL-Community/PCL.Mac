@@ -96,7 +96,7 @@ public class InstallTasks: ObservableObject, Identifiable, Hashable, Equatable {
     }
     
     public func getTasks() -> [InstallTask] {
-        let order = ["minecraft", "fabric", "forge", "customFile"]
+        let order = ["minecraft", "fabric", "forge", "neoforge", "customFile"]
         return order.compactMap { tasks[$0] }
     }
     
@@ -243,6 +243,36 @@ public class ForgeInstallTask: InstallTask {
     public override func getTitle() -> String { "Forge \(forgeVersion) 安装" }
 }
 
+public class NeoforgeInstallTask: InstallTask {
+    @Published private var state: InstallState
+    private let neoforgeVersion: String
+    
+    init(neoforgeVersion: String) {
+        self.state = .waiting
+        self.neoforgeVersion = neoforgeVersion
+    }
+    
+    public func install(_ task: MinecraftInstallTask) async {
+        await MainActor.run {
+            state = .inprogress
+        }
+        do {
+            let installer = NeoforgeInstaller(task.minecraftDirectory, task.versionURL, task.manifest!)
+            try await installer.install(minecraftVersion: task.minecraftVersion, forgeVersion: neoforgeVersion)
+            log("NeoForge 安装完成")
+        } catch {
+            hint("无法安装 NeoForge: \(error.localizedDescription)", .critical)
+            err("无法安装 NeoForge: \(error.localizedDescription)")
+        }
+        await MainActor.run {
+            state = .finished
+        }
+    }
+    
+    public override func getInstallStates() -> [InstallStage : InstallState] { [.installForge : state] }
+    public override func getTitle() -> String { "NeoForge \(neoforgeVersion) 安装" }
+}
+
 public class CustomFileDownloadTask: InstallTask {
     private let url: URL
     private let destination: URL
@@ -299,6 +329,7 @@ public enum InstallStage: Int {
     
     case installFabric = 1000
     case installForge = 1001
+    case installNeoforge = 1002
     
     case customFile = 2000
     
@@ -315,6 +346,7 @@ public enum InstallStage: Int {
         case .clientJar: "下载原版 jar 文件"
         case .installFabric: "安装 Fabric"
         case .installForge: "安装 Forge"
+        case .installNeoforge: "安装 NeoForge"
         case .clientIndex: "下载资源索引文件"
         case .clientResources: "下载散列资源文件"
         case .clientLibraries: "下载依赖项文件"

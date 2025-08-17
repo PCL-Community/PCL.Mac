@@ -25,6 +25,19 @@ public class ForgeInstaller {
         self.temp = .init(name: "ForgeInstall")
     }
     
+    private func parseValue(_ value: String) -> String {
+        let value = "\(value)"
+        // 若被 [ ] 包裹，解析中间部分的 Maven 坐标并拼接到 libraries 后
+        if let match = value.wholeMatch(of: /\[(.*?)\]/) {
+            return minecraftDirectory.librariesURL.appending(path: Util.toPath(mavenCoordinate: String(match.1))).path
+        } else if let match = value.wholeMatch(of: /\'(.*?)\'/) {
+            // 若被 ' ' 包裹，去除 ' '
+            return String(match.1)
+        }
+        
+        return value
+    }
+    
     private func parseValues() throws {
         guard let installProfile else {
             return
@@ -39,26 +52,21 @@ public class ForgeInstaller {
         values["LIBRARY_DIR"] = minecraftDirectory.librariesURL.path
         
         for (key, value) in installProfile.data {
-            // 若被 [ ] 包裹，解析中间部分的 Maven 坐标并拼接到 libraries 后
-            if let match = value.wholeMatch(of: /\[(.*?)\]/) {
-                values[key] = minecraftDirectory.librariesURL.appending(path: Util.toPath(mavenCoordinate: String(match.1))).path
-            } else if let match = value.wholeMatch(of: /\'(.*?)\'/) {
-                // 若被 ' ' 包裹，去除 ' '
-                values[key] = String(match.1)
-            } else if value.starts(with: "/") {
-                // 若以 / 开头 (/data/client.lzma)，从 jar 根目录复制到临时目录
+            if value.starts(with: "/") {
                 let archive = try Archive(url: temp.getURL(path: "installer.jar"), accessMode: .read)
                 let data = try ZipUtil.getEntryOrThrow(archive: archive, name: String(value.dropFirst(1)))
-                if let path = temp.createFile(path: value, data: data) {
-                    values[key] = path.path
+                if let url = temp.createFile(path: value, data: data) {
+                    values[key] = url.path
                 }
             } else {
-                warn("未知的格式: \(value)")
+                let parsed = parseValue(value)
+                values[key] = parsed
             }
         }
     }
     
     private func replaceWithValue(_ string: String) -> String {
+        let string = parseValue(string)
         // 如果字符串中不存在 { }，直接返回来节省资源
         if !string.contains("{") || !string.contains("}") { return string }
         
@@ -136,17 +144,11 @@ public class ForgeInstaller {
     private func downloadInstaller(minecraftVersion: MinecraftVersion, version: String) async throws {
         let installerPath = temp.getURL(path: "installer.jar")
         // 如果 CacheStorage 中不存在安装器，下载
-        if !CacheStorage.default.copy(name: "net.minecraftforge:installer:\(minecraftVersion.displayName)-\(version)", to: installerPath) {
-            let data = try await Requests.get(
-                "https://bmclapi2.bangbang93.com/forge/download"
-                + "?mcversion=\(minecraftVersion.displayName)"
-                + "&version=\(version)"
-                + "&category=installer"
-                + "&format=jar"
-            ).getDataOrThrow()
-            
+        let name = "\(getGroupId()):installer:\(minecraftVersion.displayName)-\(version)"
+        if !CacheStorage.default.copy(name: name, to: installerPath) {
+            let data = try await Requests.get(getInstallerDownloadURL(minecraftVersion, version)).getDataOrThrow()
             if let url = temp.createFile(path: "installer.jar", data: data) {
-                CacheStorage.default.add(name: "net.minecraftforge:installer:\(minecraftVersion.displayName)-\(version)", path: url)
+                CacheStorage.default.add(name: name, path: url)
             }
         }
     }
@@ -217,8 +219,8 @@ public class ForgeInstaller {
     
     public func install(minecraftVersion: MinecraftVersion, forgeVersion: String) async throws {
         try await downloadInstaller(minecraftVersion: minecraftVersion, version: forgeVersion)
-        try parseValues()
         try copyManifest(version: minecraftVersion)
+        try parseValues()
         try await downloadDependencies()
         
         if !isOld {
@@ -227,4 +229,16 @@ public class ForgeInstaller {
         
         temp.free()
     }
+    
+    
+    func getInstallerDownloadURL(_ minecraftVersion: MinecraftVersion, _ version: String) -> URL {
+        return URL(string: "https://bmclapi2.bangbang93.com/forge/download"
+            + "?mcversion=\(minecraftVersion.displayName)"
+            + "&version=\(version)"
+            + "&category=installer"
+            + "&format=jar"
+        )!
+    }
+    
+    func getGroupId() -> String { "net.minecraftforge" }
 }
