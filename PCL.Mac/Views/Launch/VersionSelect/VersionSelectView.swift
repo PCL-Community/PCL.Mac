@@ -51,7 +51,7 @@ struct VersionSelectView: View, SubRouteContainer {
                         .padding(.leading, 12)
                         .padding(.top, 20)
                         .padding(.bottom, 4)
-                    LeftTabItem(imageName: "PlusIcon", text: "添加已有文件夹")
+                    LeftTabItem(image: Image(systemName: "plus.circle"), text: "添加已有文件夹")
                         .onTapGesture {
                             let panel = NSOpenPanel()
                             panel.allowsMultipleSelection = false
@@ -111,13 +111,13 @@ struct VersionSelectView: View, SubRouteContainer {
 }
 
 fileprivate struct LeftTabItem: View {
-    let imageName: String
+    let image: Image
     let text: String
     
     var body: some View {
         MyListItem {
             HStack {
-                Image(imageName)
+                image
                     .resizable()
                     .scaledToFit()
                     .frame(width: 24)

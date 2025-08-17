@@ -11,7 +11,10 @@ import SwiftyJSON
 
 public struct ProjectPlatformKey: Hashable, Comparable {
     public static func < (lhs: ProjectPlatformKey, rhs: ProjectPlatformKey) -> Bool {
-        lhs.minecraftVersion < rhs.minecraftVersion
+        if lhs.minecraftVersion != rhs.minecraftVersion {
+            return lhs.minecraftVersion < rhs.minecraftVersion
+        }
+        return lhs.loader.index > rhs.loader.index
     }
     
     let loader: ClientBrand
@@ -21,15 +24,8 @@ public struct ProjectPlatformKey: Hashable, Comparable {
 public typealias ProjectVersionMap = [ProjectPlatformKey: [ProjectVersion]]
 
 public extension ProjectVersionMap {
-    var gameVersions: [MinecraftVersion] {
-        self.keys.map { $0.minecraftVersion }
-            .filter { $0.type == .release }
-            .sorted(by: >)
-    }
-    
-    var loaders: [ClientBrand] {
-        Array(Set(self.keys.map { $0.loader }))
-            .sorted(by: { $0.index < $1.index})
+    var platformKeys: [ProjectPlatformKey] {
+        self.keys.sorted(by: >)
     }
 }
 

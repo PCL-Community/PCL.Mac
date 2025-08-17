@@ -98,7 +98,7 @@ struct ProjectListItem: View {
                 }
                 Spacer()
                 if isHovered {
-                    Image("PlusIcon")
+                    Image(systemName: "plus.circle")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 16)
