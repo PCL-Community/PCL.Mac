@@ -293,6 +293,7 @@ fileprivate struct LoaderCard: View {
     }
     
     private func loadVersions() async {
+        var versions: [LoaderVersion] = []
         switch loader {
         case .fabric:
             if let json = await Requests.get("https://meta.fabricmc.net/v2/versions/loader/\(version.displayName)").json {
@@ -307,8 +308,23 @@ fileprivate struct LoaderCard: View {
                 versions = json.arrayValue.map { LoaderVersion(loader: .neoforge, version: $0["version"].stringValue, stable: true) }
             }
         default:
-            versions = []
+            break
         }
+        
+        for i in 0..<versions.count {
+            if versions[i].version.starts(with: "1.20.1") {
+                versions[i] = LoaderVersion(
+                    loader: versions[i].loader,
+                    version: String(versions[i].version.dropFirst(7)),
+                    stable: versions[i].stable
+                )
+            }
+        }
+        
+        versions.sort { version1, version2 in
+            return version1.version.compare(version2.version, options: .numeric) == .orderedDescending
+        }
+        self.versions = versions
     }
     
     private struct ListItem: View {
