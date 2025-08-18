@@ -317,6 +317,8 @@ public class MinecraftInstaller {
                 await fabricTask.install(task)
             } else if let forgeTask = DataManager.shared.inprogressInstallTasks?.tasks["forge"] as? ForgeInstallTask {
                 await forgeTask.install(task)
+            } else if let neoforgeTask = DataManager.shared.inprogressInstallTasks?.tasks["neoforge"] as? NeoforgeInstallTask {
+                await neoforgeTask.install(task)
             }
             
             await downloadHashResourcesFiles(task)

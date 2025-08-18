@@ -269,7 +269,7 @@ public class NeoforgeInstallTask: InstallTask {
         }
     }
     
-    public override func getInstallStates() -> [InstallStage : InstallState] { [.installForge : state] }
+    public override func getInstallStates() -> [InstallStage : InstallState] { [.installNeoforge : state] }
     public override func getTitle() -> String { "NeoForge \(neoforgeVersion) 安装" }
 }
 

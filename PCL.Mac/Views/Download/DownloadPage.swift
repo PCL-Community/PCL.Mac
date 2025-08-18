@@ -14,6 +14,7 @@ struct DownloadPage: View {
     @State private var name: String
     @State private var tasks: InstallTasks = .empty()
     @State private var errorMessage: String = ""
+    @State private var loader: LoaderVersion? = nil
     
     init(_ version: MinecraftVersion, _ back: @escaping () -> Void) {
         self.version = version
@@ -36,7 +37,7 @@ struct DownloadPage: View {
                             .onTapGesture {
                                 back()
                             }
-                        Image(version.getIconName())
+                        Image(loader != nil ? "\(loader!.loader.rawValue.capitalized)Icon" : version.getIconName())
                             .resizable()
                             .scaledToFit()
                             .frame(width: 35)
@@ -44,13 +45,7 @@ struct DownloadPage: View {
                             MyTextField(text: $name)
                                 .foregroundStyle(Color("TextColor"))
                                 .onChange(of: name) {
-                                    if name == version.displayName && tasks.tasks.count > 1 {
-                                        errorMessage = "带 Mod 加载器的实例名不能与版本号一致！"
-                                    } else if name.isEmpty {
-                                        errorMessage = "实例名不能为空！"
-                                    } else {
-                                        errorMessage = ""
-                                    }
+                                    checkName()
                                 }
                             if !errorMessage.isEmpty {
                                 Text(errorMessage)
@@ -64,12 +59,30 @@ struct DownloadPage: View {
                 .noAnimation()
                 .padding()
                 
-                LoaderCard(tasks: $tasks, name: $name, version: version, loader: .fabric)
-                    .padding()
-                    .padding(.top, 20)
-                
-                LoaderCard(tasks: $tasks, name: $name, version: version, loader: .forge)
-                    .padding()
+                VStack {
+                    LoaderCard(loader: .fabric, selectedLoader: $loader, name: $name, version: version)
+                        .padding()
+                        .padding(.top, 20)
+                    
+                    LoaderCard(loader: .forge, selectedLoader: $loader, name: $name, version: version)
+                        .padding()
+                    
+                    LoaderCard(loader: .neoforge, selectedLoader: $loader, name: $name, version: version)
+                        .padding()
+                }
+                .onChange(of: loader) { old, new in
+                    // 移除 Mod 加载器
+                    if let old, new == nil {
+                        if name == version.displayName + "-" + old.loader.getName() {
+                            name = version.displayName
+                        }
+                        checkName()
+                    }
+                    // 添加 Mod 加载器
+                    else if let new, old == nil {
+                        if name == version.displayName { name.append("-\(new.loader.getName())") }
+                    }
+                }
                 
                 Spacer()
             }
@@ -102,6 +115,19 @@ struct DownloadPage: View {
                         
                         if DataManager.shared.inprogressInstallTasks != nil { return }
                         
+                        if let loader {
+                            let taskConstructor: ((String) -> InstallTask)? =
+                            switch loader.loader {
+                            case .fabric: FabricInstallTask.init(loaderVersion:)
+                            case .forge: ForgeInstallTask.init(forgeVersion:)
+                            case .neoforge: NeoforgeInstallTask.init(neoforgeVersion:)
+                            default: nil
+                            }
+                            if let taskConstructor {
+                                tasks.addTask(key: loader.loader.rawValue, task: taskConstructor(loader.version))
+                            }
+                        }
+                        
                         if let task = tasks.tasks["minecraft"] as? MinecraftInstallTask {
                             task.name = self.name
                             task.onComplete {
@@ -123,6 +149,16 @@ struct DownloadPage: View {
             }
         }
     }
+    
+    private func checkName() {
+        if name == version.displayName && loader != nil {
+            errorMessage = "带 Mod 加载器的实例名不能与版本号一致！"
+        } else if name.isEmpty {
+            errorMessage = "实例名不能为空！"
+        } else {
+            errorMessage = ""
+        }
+    }
 }
 
 private struct LoaderVersion: Identifiable, Equatable {
@@ -137,99 +173,72 @@ private struct LoaderVersion: Identifiable, Equatable {
 }
 
 fileprivate struct LoaderCard: View {
+    @State private var showFoldController: Bool = false
+    @State private var showCancelButton: Bool = false
     @State private var versions: [LoaderVersion]? = nil
-    @State private var height: CGFloat = .zero
-    @State private var showText: Bool = true
-    @State private var selected: LoaderVersion? = nil
     @State private var isUnfolded: Bool = false
-    @State private var isSelected: Bool = false
-    @Binding private var tasks: InstallTasks
+    @State private var text: String = "加载中……"
+    @Binding private var selectedLoader: LoaderVersion?
     @Binding private var name: String
+    
     private let loader: ClientBrand
+    private let version: MinecraftVersion
     
-    let version: MinecraftVersion
-    
-    init(tasks: Binding<InstallTasks>, name: Binding<String>, version: MinecraftVersion, loader: ClientBrand) {
-        self._tasks = tasks
-        self._name = name.wrappedValue == version.displayName ? name : .constant(name.wrappedValue)
-        self.version = version
+    init(loader: ClientBrand, selectedLoader: Binding<LoaderVersion?>, name: Binding<String>, version: MinecraftVersion) {
         self.loader = loader
+        self.version = version
+        self._selectedLoader = selectedLoader
+        self._name = name.wrappedValue == version.displayName ? name : .constant(name.wrappedValue)
     }
     
     var body: some View {
         ZStack {
-            Group {
-                if let versions = versions, !versions.isEmpty, !isSelected {
-                    MyCard(index: 1, title: loader.getName(), unfoldBinding: $isUnfolded) {
-                        LazyVStack(spacing: 0) {
-                            ForEach(versions) { version in
-                                ListItem(iconName: "\(loader.rawValue.capitalized)Icon", title: version.version, description: version.stable ? "稳定版" : "测试版", isSelected: selected == version)
-                                    .animation(.easeInOut(duration: 0.2), value: selected?.id)
-                                    .onTapGesture {
-                                        selected = version
-                                        let taskConstructor: ((String) -> InstallTask)? =
-                                        switch loader {
-                                        case .fabric: FabricInstallTask.init(loaderVersion:)
-                                        case .forge: ForgeInstallTask.init(forgeVersion:)
-                                        default: nil
-                                        }
-                                        
-                                        if let taskConstructor {
-                                            tasks.addTask(key: loader.rawValue, task: taskConstructor(version.version))
-                                        }
-                                        isUnfolded = false
-                                        name.append("-\(loader.getName()) \(version.version)")
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                                            isSelected = true
-                                        }
+            if showFoldController, let versions = versions {
+                MyCard(title: loader.getName(), unfoldBinding: $isUnfolded) {
+                    LazyVStack(spacing: 0) {
+                        ForEach(versions) { version in
+                            ListItem(iconName: "\(loader.rawValue.capitalized)Icon", title: version.version, description: version.stable ? "稳定版" : "测试版", isSelected: selectedLoader == version)
+                                .animation(.easeInOut(duration: 0.2), value: selectedLoader?.id)
+                                .onTapGesture {
+                                    selectedLoader = version
+                                    isUnfolded = false
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                        showFoldController = false
+                                        showCancelButton = true
                                     }
-                            }
+                                }
                         }
                     }
-                    .noAnimation()
-                    .onToggle { isUnfolded in
-                        showText = !isUnfolded
-                    }
-                } else {
-                    TitlelessMyCard(index: 1) {
-                        HStack {
-                            MaskedTextRectangle(text: loader.getName())
-                            Spacer()
-                            if isSelected {
-                                Image(systemName: "xmark")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .bold()
-                                    .frame(width: 16)
-                                    .foregroundStyle(Color("TextColor"))
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        isSelected = false
-                                        selected = nil
-                                        tasks.tasks.removeValue(forKey: loader.rawValue)
-                                        name = version.displayName
-                                    }
-                            }
-                        }
-                        .frame(height: 9)
-                    }
-                    .noAnimation()
                 }
-            }
-            
-            if showText {
-                HStack {
-                    Group {
-                        if let selected = selected {
-                            Image("\(loader.rawValue.capitalized)Icon")
+                .noAnimation()
+            } else {
+                TitlelessMyCard {
+                    HStack {
+                        MaskedTextRectangle(text: loader.getName())
+                        Spacer()
+                        if showCancelButton {
+                            Image(systemName: "xmark")
                                 .resizable()
                                 .scaledToFit()
+                                .bold()
                                 .frame(width: 16)
-                            Text(selected.version)
-                        } else {
-                            Text(text)
+                                .foregroundStyle(Color("TextColor"))
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    showCancelButton = false
+                                    showFoldController = true
+                                    selectedLoader = nil
+                                }
                         }
                     }
+                    .frame(height: 9)
+                }
+                .noAnimation()
+            }
+            
+            if !isUnfolded {
+                HStack {
+                    overlayContent
                     .font(.custom("PCL English", size: 14))
                     .foregroundStyle(Color(hex: 0x8C8C8C))
                     .offset(x: 150, y: 14)
@@ -242,14 +251,45 @@ fileprivate struct LoaderCard: View {
         .task {
             await loadVersions()
         }
+        .onChange(of: versions) {
+            guard let versions else {
+                text = "加载中……"
+                return
+            }
+            
+            if versions.isEmpty {
+                text = "无可用版本"
+            } else {
+                text = "可以添加"
+                DispatchQueue.main.async {
+                    showFoldController = true
+                }
+            }
+        }
+        .onChange(of: selectedLoader) {
+            if let selectedLoader, selectedLoader.loader != loader {
+                text = "与 \(selectedLoader.loader.getName()) 不兼容"
+                showFoldController = false
+                isUnfolded = false
+            } else if selectedLoader == nil {
+                text = "可以添加"
+                showFoldController = true
+            }
+        }
     }
     
-    private var text: String {
-        if versions == nil { return "加载中……" }
-        if versions!.isEmpty { return "无可用版本" }
-        if let selected { return selected.version }
-        
-        return "可以添加"
+    private var overlayContent: some View {
+        HStack {
+            if let selected = selectedLoader, selected.loader == loader {
+                Image("\(loader.rawValue.capitalized)Icon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16)
+                Text(selected.version)
+            } else {
+                Text(text)
+            }
+        }
     }
     
     private func loadVersions() async {
@@ -261,6 +301,10 @@ fileprivate struct LoaderCard: View {
         case .forge:
             if let json = await Requests.get("https://bmclapi2.bangbang93.com/forge/minecraft/\(version.displayName)").json {
                 versions = json.arrayValue.map { LoaderVersion(loader: .forge, version: $0["version"].stringValue, stable: true) }
+            }
+        case .neoforge:
+            if let json = await Requests.get("https://bmclapi2.bangbang93.com/neoforge/list/\(version.displayName)").json {
+                versions = json.arrayValue.map { LoaderVersion(loader: .neoforge, version: $0["version"].stringValue, stable: true) }
             }
         default:
             versions = []
