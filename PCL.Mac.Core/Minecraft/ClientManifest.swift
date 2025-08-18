@@ -281,6 +281,11 @@ public class ClientManifest {
         let data = try FileHandle(forReadingFrom: url).readToEnd() ?? Data()
         let json = try JSON(data: data)
         
+        if json["loader"].exists() { // 旧版 PCL.Mac Fabric 安装逻辑
+            warn("无法解析旧版 PCL.Mac 安装的 Fabric 版本: \(url.lastPathComponent)")
+            return nil
+        }
+        
     checkParent:
         if let inheritsFrom = json["inheritsFrom"].string,
            let minecraftDirectory = minecraftDirectory {
@@ -288,7 +293,7 @@ public class ClientManifest {
             
             guard FileManager.default.fileExists(atPath: parentURL.path) else {
                 err("\(url.path) 中有 inheritsFrom 字段，但其对应的 JSON 不存在")
-                break checkParent
+                return nil
             }
             
             let parent: ClientManifest

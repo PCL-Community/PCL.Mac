@@ -166,6 +166,18 @@ private struct LoaderVersion: Identifiable, Equatable {
     let loader: ClientBrand
     let version: String
     let stable: Bool
+    var displayName: String
+    
+    init(loader: ClientBrand, version: String, stable: Bool) {
+        self.init(loader: loader, version: version, stable: stable, displayName: version)
+    }
+    
+    init(loader: ClientBrand, version: String, stable: Bool, displayName: String) {
+        self.loader = loader
+        self.version = version
+        self.stable = stable
+        self.displayName = displayName
+    }
     
     static func == (lhs: LoaderVersion, rhs: LoaderVersion) -> Bool {
         lhs.version == rhs.version && lhs.loader == rhs.loader
@@ -197,7 +209,7 @@ fileprivate struct LoaderCard: View {
                 MyCard(title: loader.getName(), unfoldBinding: $isUnfolded) {
                     LazyVStack(spacing: 0) {
                         ForEach(versions) { version in
-                            ListItem(iconName: "\(loader.rawValue.capitalized)Icon", title: version.version, description: version.stable ? "稳定版" : "测试版", isSelected: selectedLoader == version)
+                            ListItem(iconName: "\(loader.rawValue.capitalized)Icon", title: version.displayName, description: version.stable ? "稳定版" : "测试版", isSelected: selectedLoader == version)
                                 .animation(.easeInOut(duration: 0.2), value: selectedLoader?.id)
                                 .onTapGesture {
                                     selectedLoader = version
@@ -285,7 +297,7 @@ fileprivate struct LoaderCard: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 16)
-                Text(selected.version)
+                Text(selected.displayName)
             } else {
                 Text(text)
             }
@@ -315,14 +327,15 @@ fileprivate struct LoaderCard: View {
             if versions[i].version.starts(with: "1.20.1") {
                 versions[i] = LoaderVersion(
                     loader: versions[i].loader,
-                    version: String(versions[i].version.dropFirst(7)),
-                    stable: versions[i].stable
+                    version: versions[i].version,
+                    stable: versions[i].stable,
+                    displayName: String(versions[i].version.dropFirst(7))
                 )
             }
         }
         
         versions.sort { version1, version2 in
-            return version1.version.compare(version2.version, options: .numeric) == .orderedDescending
+            return version1.displayName.compare(version2.displayName, options: .numeric) == .orderedDescending
         }
         self.versions = versions
     }
