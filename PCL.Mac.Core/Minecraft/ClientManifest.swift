@@ -50,7 +50,7 @@ public class ClientManifest {
         }
     }
 
-    public class DownloadInfo: Hashable {
+    public class DownloadInfo {
         public var path: String
         public let sha1: String?
         public let size: Int?
@@ -68,14 +68,6 @@ public class ClientManifest {
             self.sha1 = sha1
             self.size = size
             self.url = url
-        }
-        
-        public static func == (lhs: DownloadInfo, rhs: DownloadInfo) -> Bool {
-            lhs.path == rhs.path
-        }
-        
-        public func hash(into hasher: inout Hasher) {
-            hasher.combine(path)
         }
     }
 
