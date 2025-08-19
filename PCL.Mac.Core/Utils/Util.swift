@@ -13,7 +13,7 @@ public class Util {
     public static func getMainClass(_ jarURL: URL) -> String? {
         do {
             let archive = try Archive(url: jarURL, accessMode: .read)
-            let data = try ZipUtil.getEntryOrThrow(archive: archive, name: "META-INF/MANIFEST.MF")
+            let data = try ArchiveUtil.getEntryOrThrow(archive: archive, name: "META-INF/MANIFEST.MF")
             let manifest = String(data: data, encoding: .utf8)!
 
             if let match = manifest.firstMatch(of: /(?m)^Main-Class:\s*([^\r\n]+)/) {

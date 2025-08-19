@@ -7,6 +7,8 @@
 
 import Foundation
 import SwiftyJSON
+import TOMLKit
+import ZIPFoundation
 
 public class Mod: Identifiable, ObservableObject {
     /// 模组 ID
@@ -35,13 +37,42 @@ public class Mod: Identifiable, ObservableObject {
         self.version = version
     }
     
-    public static func fromFabricJSON(_ json: JSON) -> Mod {
+    public static func loadMod(url: URL) -> Mod? {
+        do {
+            let archive = try Archive(url: url, accessMode: .read)
+            if ArchiveUtil.hasEntry(archive: archive, name: "fabric.mod.json") {
+                return fromJSON(json: try JSON(data: ArchiveUtil.getEntryOrThrow(archive: archive, name: "fabric.mod.json")))
+            } else if ArchiveUtil.hasEntry(archive: archive, name: "META-INF/mods.toml") {
+                return try fromTOML(string: String(data: ArchiveUtil.getEntryOrThrow(archive: archive, name: "META-INF/mods.toml"), encoding: .utf8).unwrap(), brand: .forge)
+            } else if ArchiveUtil.hasEntry(archive: archive, name: "META-INF/neoforge.mods.toml") {
+                return try fromTOML(string: String(data: ArchiveUtil.getEntryOrThrow(archive: archive, name: "META-INF/neoforge.mods.toml"), encoding: .utf8).unwrap(), brand: .neoforge)
+            }
+        } catch {
+            err("无法加载 Mod \(url.lastPathComponent): \(error.localizedDescription)")
+        }
+        return nil
+    }
+    
+    private static func fromJSON(json: JSON) -> Mod {
         return .init(
             id: json["id"].stringValue,
             name: json["name"].stringValue,
             description: json["description"].stringValue,
             brand: .fabric,
             version: json["version"].stringValue
+        )
+    }
+    
+    private static func fromTOML(string: String, brand: ClientBrand) throws -> Mod {
+        let table = try TOMLTable(string: string)
+        let modTable = try table["mods"].unwrap().array.unwrap()[0].table.unwrap()
+        
+        return .init(
+            id: modTable["modId"]?.string ?? "",
+            name: modTable["displayName"]?.string ?? "",
+            description: modTable["description"]?.string ?? "",
+            brand: brand,
+            version: modTable["version"]?.string ?? ""
         )
     }
 }

@@ -64,15 +64,10 @@ struct InstanceModsView: View {
             .frame(maxWidth: .infinity)
         } else {
             ScrollView {
-                MyTip(text: "目前只支持 Fabric Mod 识别！", color: .blue)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                
                 MySearchBox(query: $searchQuery, placeholder: "搜索资源 名称 / 描述") { query in
                     filter = { query.isEmpty || $0.name.contains(query) || $0.description.contains(query) }
                 }
                 .padding()
-                .padding(.top, -36)
                 
                 TitlelessMyCard(index: 1) {
                     HStack(spacing: 16) {
@@ -120,22 +115,13 @@ struct InstanceModsView: View {
                 if mods != nil || instance.clientBrand == .vanilla { return }
                 do {
                     var mods: [ModItem] = []
-                    let loader = instance.clientBrand
                     let files = try FileManager.default.contentsOfDirectory(at: instance.runningDirectory.appending(path: "mods"), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
                     let modFiles = files.filter { $0.pathExtension.lowercased() == "jar" || $0.pathExtension.lowercased() == "disabled" }
                     for modFile in modFiles {
-                        do {
-                            let archive = try Archive(url: modFile, accessMode: .read)
-                            var mod: Mod? = nil
-                            if loader == .fabric {
-                                mod = .fromFabricJSON(try JSON(data: ZipUtil.getEntryOrThrow(archive: archive, name: "fabric.mod.json")))
-                            }
-                            
-                            if let mod = mod {
-                                mods.append(.init(mod: mod, url: modFile))
-                                loadSummary(mod: mod)
-                            }
-                        } catch {}
+                        if let mod = Mod.loadMod(url: modFile) {
+                            mods.append(.init(mod: mod, url: modFile))
+                            loadSummary(mod: mod)
+                        }
                     }
                     await MainActor.run {
                         self.mods = mods

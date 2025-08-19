@@ -18,6 +18,9 @@
 		EC98618D2E3E09DC00C0E6F2 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = EC98618C2E3E09DC00C0E6F2 /* SwiftyJSON */; };
 		EC9A7DCA2DE150170018815F /* glfw-patcher.jar in Resources */ = {isa = PBXBuildFile; fileRef = EC9A7DC82DE1500F0018815F /* glfw-patcher.jar */; };
 		ECDBF0CC2E1124C500E81482 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = ECDBF0CB2E1124C500E81482 /* ZIPFoundation */; };
+		ECFF69BD2E542EE8000625FA /* TOMLKit in Frameworks */ = {isa = PBXBuildFile; productRef = ECFF69BC2E542EE8000625FA /* TOMLKit */; };
+		ECFF69BF2E542EFF000625FA /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = ECFF69BE2E542EFF000625FA /* ZIPFoundation */; };
+		ECFF69C12E542F06000625FA /* TOMLKit in Frameworks */ = {isa = PBXBuildFile; productRef = ECFF69C02E542F06000625FA /* TOMLKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -109,9 +112,9 @@
 				Temp/TemperatureDirectory.swift,
 				Theme/ThemeOwnershipChecker.swift,
 				UpdateCheck.swift,
+				Utils/ArchiveUtil.swift,
 				Utils/MyLocalizedError.swift,
 				Utils/Util.swift,
-				Utils/ZipUtil.swift,
 				YggdrasilClient.swift,
 			);
 			target = EC9EAEC82DD85E48006CEDCC /* PCL.Mac */;
@@ -162,9 +165,9 @@
 				Temp/TemperatureDirectory.swift,
 				Theme/ThemeOwnershipChecker.swift,
 				UpdateCheck.swift,
+				Utils/ArchiveUtil.swift,
 				Utils/MyLocalizedError.swift,
 				Utils/Util.swift,
-				Utils/ZipUtil.swift,
 				YggdrasilClient.swift,
 			);
 			publicHeaders = (
@@ -238,6 +241,7 @@
 				EC422DAB2E2082D900FE8309 /* PCL_Mac_Core.framework in Frameworks */,
 				EC9507372DFCF17700018EE0 /* SwiftyJSON in Frameworks */,
 				ECDBF0CC2E1124C500E81482 /* ZIPFoundation in Frameworks */,
+				ECFF69BD2E542EE8000625FA /* TOMLKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -245,7 +249,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ECFF69C12E542F06000625FA /* TOMLKit in Frameworks */,
 				EC98618D2E3E09DC00C0E6F2 /* SwiftyJSON in Frameworks */,
+				ECFF69BF2E542EFF000625FA /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -353,6 +359,7 @@
 			packageProductDependencies = (
 				EC9507362DFCF17700018EE0 /* SwiftyJSON */,
 				ECDBF0CB2E1124C500E81482 /* ZIPFoundation */,
+				ECFF69BC2E542EE8000625FA /* TOMLKit */,
 			);
 			productName = "PCL-Mac";
 			productReference = EC9EAEC92DD85E48006CEDCC /* PCL.Mac.app */;
@@ -377,6 +384,8 @@
 			name = PCL.Mac.Tests;
 			packageProductDependencies = (
 				EC98618C2E3E09DC00C0E6F2 /* SwiftyJSON */,
+				ECFF69BE2E542EFF000625FA /* ZIPFoundation */,
+				ECFF69C02E542F06000625FA /* TOMLKit */,
 			);
 			productName = "PCL-MacTests";
 			productReference = ECA5D8DC2DD99A4C006C58F7 /* PCL.Mac.Tests.xctest */;
@@ -418,6 +427,7 @@
 			packageReferences = (
 				EC9507352DFCF17700018EE0 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
 				ECDBF0CA2E1124C500E81482 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+				ECFF69BB2E542EE8000625FA /* XCRemoteSwiftPackageReference "TOMLKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EC9EAECA2DD85E48006CEDCC /* Products */;
@@ -853,6 +863,14 @@
 				minimumVersion = 0.9.19;
 			};
 		};
+		ECFF69BB2E542EE8000625FA /* XCRemoteSwiftPackageReference "TOMLKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/LebJe/TOMLKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.6.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -875,6 +893,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = ECDBF0CA2E1124C500E81482 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
+		};
+		ECFF69BC2E542EE8000625FA /* TOMLKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ECFF69BB2E542EE8000625FA /* XCRemoteSwiftPackageReference "TOMLKit" */;
+			productName = TOMLKit;
+		};
+		ECFF69BE2E542EFF000625FA /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ECDBF0CA2E1124C500E81482 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+		ECFF69C02E542F06000625FA /* TOMLKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ECFF69BB2E542EE8000625FA /* XCRemoteSwiftPackageReference "TOMLKit" */;
+			productName = TOMLKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

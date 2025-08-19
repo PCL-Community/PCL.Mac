@@ -54,7 +54,7 @@ public class ForgeInstaller {
         for (key, value) in installProfile.data {
             if value.starts(with: "/") {
                 let archive = try Archive(url: temp.getURL(path: "installer.jar"), accessMode: .read)
-                let data = try ZipUtil.getEntryOrThrow(archive: archive, name: String(value.dropFirst(1)))
+                let data = try ArchiveUtil.getEntryOrThrow(archive: archive, name: String(value.dropFirst(1)))
                 if let url = temp.createFile(path: value, data: data) {
                     values[key] = url.path
                 }
@@ -156,7 +156,7 @@ public class ForgeInstaller {
     private func loadInstallProfile() throws {
         let installerPath = temp.getURL(path: "installer.jar")
         let archive = try Archive(url: installerPath, accessMode: .read)
-        let json = try JSON(data: try ZipUtil.getEntryOrThrow(archive: archive, name: "install_profile.json"))
+        let json = try JSON(data: try ArchiveUtil.getEntryOrThrow(archive: archive, name: "install_profile.json"))
         
         if json["install"].exists() {
             isOld = true
@@ -166,10 +166,10 @@ public class ForgeInstaller {
             let forgePath = minecraftDirectory.librariesURL.appending(path: Util.toPath(mavenCoordinate: json["install"]["path"].stringValue))
             
             try? FileManager.default.createDirectory(at: forgePath.parent(), withIntermediateDirectories: true)
-            try ZipUtil.getEntryOrThrow(archive: archive, name: json["install"]["filePath"].stringValue).write(to: forgePath)
+            try ArchiveUtil.getEntryOrThrow(archive: archive, name: json["install"]["filePath"].stringValue).write(to: forgePath)
         } else {
             installProfile = ForgeInstallProfile(json: json)
-            temp.createFile(path: "manifest.json", data: try ZipUtil.getEntryOrThrow(archive: archive, name: "version.json"))
+            temp.createFile(path: "manifest.json", data: try ArchiveUtil.getEntryOrThrow(archive: archive, name: "version.json"))
         }
     }
     
