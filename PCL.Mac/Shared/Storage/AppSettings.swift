@@ -115,7 +115,7 @@ public class AppSettings: ObservableObject {
             
             if defaultInstance == nil {
                 directory.loadInnerInstances { instances in
-                    self.defaultInstance = instances.first?.config.name
+                    self.defaultInstance = instances.first?.name
                 }
             }
         }

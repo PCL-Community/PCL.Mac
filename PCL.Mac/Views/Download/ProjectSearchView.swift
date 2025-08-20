@@ -120,7 +120,7 @@ struct ProjectListItem: View {
                                    let version = versions.first {
                                     state.addToQueue(version)
                                 } else {
-                                    hint("未找到 \(instance.config.name) 可用的版本！", .critical)
+                                    hint("未找到 \(instance.name) 可用的版本！", .critical)
                                 }
                             }
                         }

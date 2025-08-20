@@ -20,7 +20,7 @@ struct VersionListView: View {
         let id: UUID = UUID()
         
         init(instance: MinecraftInstance) {
-            self.name = instance.config.name
+            self.name = instance.name
             self.description = instance.version.displayName
             self.instance = instance
         }
@@ -62,7 +62,7 @@ struct VersionListView: View {
                 }
             }
             .onTapGesture {
-                AppSettings.shared.defaultInstance = instance.config.name
+                AppSettings.shared.defaultInstance = instance.name
                 DataManager.shared.router.setRoot(.launch)
             }
             .padding(.top, -8)
@@ -78,7 +78,7 @@ struct VersionListView: View {
                     PopupModel(
                         .normal,
                         "删除版本",
-                        "确定要删除版本 \"\(instance.config.name)\" 吗？\n\n此操作将永久删除该版本的所有文件，包括模组、资源包等。\n真的很久！",
+                        "确定要删除版本 \"\(instance.name)\" 吗？\n\n此操作将永久删除该版本的所有文件，包括模组、资源包等。\n真的很久！",
                         [
                             PopupButtonModel(label: "取消", style: .normal),
                             PopupButtonModel(label: "删除", style: .danger)
@@ -88,7 +88,7 @@ struct VersionListView: View {
                 
                 if result == 1 { // 用户点击了删除按钮
                     do {
-                        let versionName = instance.config.name
+                        let versionName = instance.name
                         let runningDirectory = instance.runningDirectory
                         
                         // 删除版本文件夹
@@ -106,7 +106,7 @@ struct VersionListView: View {
                         instance.minecraftDirectory.loadInnerInstances { instances in
                             // 如果删除的是默认实例且还有其他实例，自动选择第一个作为新的默认实例
                             if AppSettings.shared.defaultInstance == nil && !instances.isEmpty {
-                                AppSettings.shared.defaultInstance = instances.first?.config.name
+                                AppSettings.shared.defaultInstance = instances.first?.name
                             }
                             
                             DataManager.shared.router.path = [.versionSelect, .versionList(directory: instance.minecraftDirectory)]

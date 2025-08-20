@@ -75,7 +75,7 @@ public class MinecraftLauncher {
             }
             
             process.waitUntilExit()
-            log("\(instance.config.name) 进程已退出, 退出代码 \(process.terminationStatus)")
+            log("\(instance.name) 进程已退出, 退出代码 \(process.terminationStatus)")
             if process.terminationStatus == 0 {
                 debug("检测到退出代码为 0，已删除日志")
                 try? FileManager.default.removeItem(at: self.logURL)
@@ -97,7 +97,7 @@ public class MinecraftLauncher {
             "classpath": buildClasspath(),
             "classpath_separator": ":",
             "library_directory": instance.minecraftDirectory.librariesURL.path,
-            "version_name": instance.config.name,
+            "version_name": instance.name,
             "authlib_injector_path": SharedConstants.shared.authlibInjectorURL.path
         ]
         
@@ -122,7 +122,7 @@ public class MinecraftLauncher {
                 urls.append(instance.minecraftDirectory.librariesURL.appending(path: artifact.path))
             }
         }
-        urls.append(instance.runningDirectory.appending(path: "\(instance.config.name).jar"))
+        urls.append(instance.runningDirectory.appending(path: "\(instance.name).jar"))
 
         return urls.map { $0.path }.joined(separator: ":")
     }

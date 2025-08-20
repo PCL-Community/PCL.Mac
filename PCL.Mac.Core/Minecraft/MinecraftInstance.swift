@@ -26,6 +26,7 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
     public var config: MinecraftConfig!
     public var clientBrand: ClientBrand!
     public var isUsingRosetta: Bool = false
+    public var name: String { runningDirectory.lastPathComponent }
     
     public let id: UUID = UUID()
     
@@ -80,7 +81,7 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
                 debug(configPath.path)
             }
         }
-        self.config = config ?? MinecraftConfig(name: runningDirectory.lastPathComponent)
+        self.config = config ?? MinecraftConfig(version: nil)
         
         if !loadManifest() { return false }
         if let version = config.minecraftVersion {
@@ -248,7 +249,7 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
             return
         }
         do {
-            let archive = try Archive(url: runningDirectory.appending(path: "\(config.name).jar"), accessMode: .read)
+            let archive = try Archive(url: runningDirectory.appending(path: "\(name).jar"), accessMode: .read)
             guard let entry = archive["version.json"] else {
                 throw MyLocalizedError(reason: "version.json 不存在")
             }
@@ -275,30 +276,27 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
 }
 
 public struct MinecraftConfig: Codable {
-    public let name: String
     public var additionalLibraries: Set<String> = []
     public var javaURL: URL!
     public var skipResourcesCheck: Bool = false
     public var maxMemory: Int32 = 4096
     public var qualityOfService: QualityOfService = .default
-    public var minecraftVersion: String?
+    public var minecraftVersion: String!
     
     public init(_ json: JSON) {
-        self.name = json["name"].stringValue
         self.additionalLibraries = .init(json["additionalLibraries"].array?.map { $0.stringValue } ?? [])
         self.javaURL = URL(fileURLWithPath: json["javaURL"].string ?? json["javaPath"].stringValue) // 旧版本字段
         self.skipResourcesCheck = json["skipResourcesCheck"].boolValue
         self.maxMemory = json["maxMemory"].int32 ?? 4096
         self.qualityOfService = .init(rawValue: json["qualityOfService"].intValue) ?? .default
-        self.minecraftVersion = json["minecraftVersion"].string
+        self.minecraftVersion = json["minecraftVersion"].stringValue
         if qualityOfService.rawValue == 0 {
             qualityOfService = .default
         }
     }
     
-    public init(name: String, javaURL: URL? = nil) {
-        self.name = name
-        self.javaURL = javaURL
+    public init(version: MinecraftVersion?) {
+        self.minecraftVersion = version?.displayName
     }
 }
 

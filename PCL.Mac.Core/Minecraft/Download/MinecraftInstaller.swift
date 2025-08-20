@@ -28,6 +28,7 @@
 */
 
 import Foundation
+import SwiftyJSON
 
 public class MinecraftInstaller {
     private init() {}
@@ -274,7 +275,7 @@ public class MinecraftInstaller {
         )
         
         // 初始化实例
-        let instance = MinecraftInstance.create(.init(rootURL: task.versionURL.parent().parent(), name: ""), task.versionURL, config: MinecraftConfig(name: task.name))
+        let instance = MinecraftInstance.create(.init(rootURL: task.versionURL.parent().parent(), name: ""), task.versionURL, config: MinecraftConfig(version: task.minecraftVersion))
         
         instance?.saveConfig()
         
@@ -292,6 +293,25 @@ public class MinecraftInstaller {
             } catch {
                 err("无法修改 lwjgl-glfw: \(error.localizedDescription)")
             }
+        }
+    }
+    
+    // MARK: 修改客户端清单中的 id
+    private static func modifyId(_ task: MinecraftInstallTask) {
+        do {
+            let manifestURL = task.versionURL.appending(path: "\(task.versionURL.lastPathComponent).json")
+            guard FileManager.default.fileExists(atPath: manifestURL.path),
+                  let data = try FileHandle(forReadingFrom: manifestURL).readToEnd(),
+                  var dict = try JSON(data: data).dictionaryObject else {
+                return
+            }
+            
+            dict["id"] = task.versionURL.lastPathComponent
+            
+            try JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted).write(to: manifestURL)
+            log("已修改客户端清单中的 id")
+        } catch {
+            err("无法修改 id: \(error.localizedDescription)")
         }
     }
     
@@ -321,6 +341,7 @@ public class MinecraftInstaller {
                 await neoforgeTask.install(task)
             }
             
+            modifyId(task)
             await downloadHashResourcesFiles(task)
             try await downloadLibraries(task)
             try await downloadNatives(task)
@@ -339,7 +360,7 @@ public class MinecraftInstaller {
         let task = MinecraftInstallTask(
             minecraftVersion: instance.version!,
             minecraftDirectory: instance.minecraftDirectory,
-            name: instance.config.name,
+            name: instance.name,
             architecture: arch
         ) { task in
             task.manifest = instance.manifest

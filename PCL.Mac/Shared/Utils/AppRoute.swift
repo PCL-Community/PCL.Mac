@@ -60,7 +60,7 @@ public enum AppRoute: Hashable {
         case .installing(let task): "installing?task=\(task.id)"
         case .projectDownload(let summary): "projectDownload?summary=\(summary.modId)"
         case .versionList(let directory): "versionList?rootURL=\(directory.rootURL.path)"
-        case .versionSettings(let instance): "versionSettings?instance=\(instance.config.name)"
+        case .versionSettings(let instance): "versionSettings?instance=\(instance.name)"
         case .projectSearch(let type): "projectSearch?type=\(type)"
         default:
             String(describing: self)

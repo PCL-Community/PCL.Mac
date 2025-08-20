@@ -102,7 +102,7 @@ struct InstanceOverviewView: View {
                         .scaledToFit()
                         .frame(width: 32)
                     VStack(alignment: .leading) {
-                        Text(instance.config.name)
+                        Text(instance.name)
                         Text(getVersionString())
                             .foregroundStyle(Color(hex: 0x8C8C8C))
                     }

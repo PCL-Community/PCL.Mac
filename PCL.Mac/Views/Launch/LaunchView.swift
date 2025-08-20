@@ -50,7 +50,7 @@ fileprivate struct LeftTab: View {
             accountView
             Spacer()
             if let instance = self.instance {
-                MyButton(text: "启动游戏", descriptionText: instance.config.name, foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
+                MyButton(text: "启动游戏", descriptionText: instance.name, foregroundStyle: AppSettings.shared.theme.getTextStyle()) {
                     let launchOptions: LaunchOptions = .init()
                     
                     Task {
