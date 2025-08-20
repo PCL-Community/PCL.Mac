@@ -139,10 +139,10 @@ public class MinecraftInstallTask: InstallTask {
     public var versionURL: URL { minecraftDirectory.versionsURL.appending(path: name) }
     public let minecraftVersion: MinecraftVersion
     public let minecraftDirectory: MinecraftDirectory
-    public let startTask: (MinecraftInstallTask) async -> Void
+    public let startTask: (MinecraftInstallTask) async throws -> Void
     public let architecture: Architecture
     
-    public init(minecraftVersion: MinecraftVersion, minecraftDirectory: MinecraftDirectory, name: String, architecture: Architecture = .system, startTask: @escaping (MinecraftInstallTask) async -> Void) {
+    public init(minecraftVersion: MinecraftVersion, minecraftDirectory: MinecraftDirectory, name: String, architecture: Architecture = .system, startTask: @escaping (MinecraftInstallTask) async throws -> Void) {
         self.minecraftVersion = minecraftVersion
         self.minecraftDirectory = minecraftDirectory
         self.name = name
@@ -152,7 +152,12 @@ public class MinecraftInstallTask: InstallTask {
     
     public override func start() {
         Task {
-            await startTask(self)
+            do {
+                try await startTask(self)
+            } catch {
+                await PopupManager.shared.show(.init(.error, "无法安装 Minecraft", "\(error.localizedDescription)\n若要反馈此问题，你可以进入设置 > 其它 > 打开日志，将选中的文件发给别人。", [.ok]))
+                err("无法安装 Minecraft: \(error.localizedDescription)")
+            }
             complete()
         }
     }
