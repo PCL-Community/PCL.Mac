@@ -139,7 +139,7 @@ public class MinecraftInstaller {
         var urls: [URL] = []
         var destinations: [URL] = []
         
-        for library in task.manifest!.getNeededLibraries() {
+        for library in try task.manifest.unwrap().getNeededLibraries() {
             if let artifact = library.artifact {
                 let dest = task.minecraftDirectory.librariesURL.appending(path: artifact.path)
                 if CacheStorage.default.copy(name: library.name, to: dest) {
@@ -176,7 +176,7 @@ public class MinecraftInstaller {
         var urls: [URL] = []
         var destinations: [URL] = []
         
-        for (library, artifact) in task.manifest!.getNeededNatives() {
+        for (library, artifact) in try task.manifest.unwrap().getNeededNatives() {
             let dest = task.minecraftDirectory.librariesURL.appending(path: artifact.path)
             if CacheStorage.default.copy(name: library.name, to: dest) {
                 continue
@@ -207,17 +207,22 @@ public class MinecraftInstaller {
     }
     
     // MARK: 解压本地库
-    private static func unzipNatives(_ task: MinecraftInstallTask) {
+    private static func unzipNatives(_ task: MinecraftInstallTask) throws {
         let nativesURL: URL = task.versionURL.appending(path: "natives")
         for (_, native) in task.manifest!.getNeededNatives() {
             let jarURL: URL = task.minecraftDirectory.librariesURL.appending(path: native.path)
             Util.unzip(archiveURL: jarURL, destination: nativesURL, replace: true)
-            processLibs(task, nativesURL)
+            do {
+                try processLibs(task, nativesURL)
+            } catch {
+                err("处理 natives 失败")
+                throw error
+            }
         }
     }
     
     // MARK: 处理解压结果
-    private static func processLibs(_ task: MinecraftInstallTask, _ nativesURL: URL) {
+    private static func processLibs(_ task: MinecraftInstallTask, _ nativesURL: URL) throws {
         let fileManager = FileManager.default
         guard let enumerator = fileManager.enumerator(
             at: nativesURL, includingPropertiesForKeys: [.isDirectoryKey],
@@ -239,28 +244,20 @@ public class MinecraftInstaller {
             }
             
             // 拷贝到 natives 根目录
-            do {
-                let destinationURL = nativesURL.appendingPathComponent(fileURL.lastPathComponent)
-                if destinationURL == fileURL { continue }
-                if fileManager.fileExists(atPath: destinationURL.path) {
-                    try fileManager.removeItem(at: destinationURL)
-                }
-                try fileManager.moveItem(at: fileURL, to: destinationURL)
-            } catch {
-                err("无法拷贝本地库: \(error.localizedDescription) (\(fileURL.path()) -> \(nativesURL.path()))")
+            let destinationURL = nativesURL.appendingPathComponent(fileURL.lastPathComponent)
+            if destinationURL == fileURL { continue }
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                try fileManager.removeItem(at: destinationURL)
             }
+            try fileManager.moveItem(at: fileURL, to: destinationURL)
         }
         
         // 清理非 dylib 文件
-        do {
-            let contents = try fileManager.contentsOfDirectory(at: nativesURL, includingPropertiesForKeys: nil)
-            for fileURL in contents {
-                if !fileURL.pathExtension.lowercased().hasSuffix("dylib") && !fileURL.pathExtension.lowercased().hasSuffix("jnilib") {
-                    try fileManager.removeItem(at: fileURL)
-                }
+        let contents = try fileManager.contentsOfDirectory(at: nativesURL, includingPropertiesForKeys: nil)
+        for fileURL in contents {
+            if !fileURL.pathExtension.lowercased().hasSuffix("dylib") && !fileURL.pathExtension.lowercased().hasSuffix("jnilib") {
+                try fileManager.removeItem(at: fileURL)
             }
-        } catch {
-            err("清理时发生错误: \(error.localizedDescription)")
         }
     }
     
@@ -345,7 +342,7 @@ public class MinecraftInstaller {
             await downloadHashResourcesFiles(task)
             try await downloadLibraries(task)
             try await downloadNatives(task)
-            unzipNatives(task)
+            try unzipNatives(task)
             finalWork(task)
             callback?()
         }
@@ -369,7 +366,7 @@ public class MinecraftInstaller {
             await downloadHashResourcesFiles(task)
             try await downloadLibraries(task)
             try await downloadNatives(task)
-            unzipNatives(task)
+            try unzipNatives(task)
             finalWork(task)
             task.complete()
             callback?()

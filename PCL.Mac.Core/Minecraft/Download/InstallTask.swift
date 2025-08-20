@@ -203,7 +203,7 @@ public class FabricInstallTask: InstallTask {
             try await FabricInstaller.installFabric(version: task.minecraftVersion, minecraftDirectory: task.minecraftDirectory, runningDirectory: task.versionURL, self.loaderVersion)
             task.manifest = try ClientManifest.parse(url: manifestURL, minecraftDirectory: task.minecraftDirectory)
         } catch {
-            hint("无法安装 Fabric: \(error.localizedDescription)", .critical)
+            await PopupManager.shared.show(.init(.error, "无法安装 Fabric", "\(error.localizedDescription)\n若要反馈此问题，你可以进入设置 > 其它 > 打开日志，将选中的文件发给别人。", [.ok]))
             err("无法安装 Fabric: \(error.localizedDescription)")
         }
         await MainActor.run {
@@ -236,7 +236,7 @@ public class ForgeInstallTask: InstallTask {
             try await installer.install(minecraftVersion: task.minecraftVersion, forgeVersion: forgeVersion)
             log("Forge 安装完成")
         } catch {
-            hint("无法安装 Forge: \(error.localizedDescription)", .critical)
+            await PopupManager.shared.show(.init(.error, "无法安装 Forge", "\(error.localizedDescription)\n若要反馈此问题，你可以进入设置 > 其它 > 打开日志，将选中的文件发给别人。", [.ok]))
             err("无法安装 Forge: \(error.localizedDescription)")
         }
         await MainActor.run {
@@ -266,7 +266,7 @@ public class NeoforgeInstallTask: InstallTask {
             try await installer.install(minecraftVersion: task.minecraftVersion, forgeVersion: neoforgeVersion)
             log("NeoForge 安装完成")
         } catch {
-            hint("无法安装 NeoForge: \(error.localizedDescription)", .critical)
+            await PopupManager.shared.show(.init(.error, "无法安装 NeoForge", "\(error.localizedDescription)\n若要反馈此问题，你可以进入设置 > 其它 > 打开日志，将选中的文件发给别人。", [.ok]))
             err("无法安装 NeoForge: \(error.localizedDescription)")
         }
         await MainActor.run {
