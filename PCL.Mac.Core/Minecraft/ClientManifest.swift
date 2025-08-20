@@ -27,7 +27,7 @@ public class ClientManifest {
         self.type = json["type"].stringValue
         self.assets = json["assets"].stringValue
         self.assetIndex = json["assetIndex"].exists() ? AssetIndex(json: json["assetIndex"]) : nil
-        self.libraries = json["libraries"].arrayValue.compactMap(Library.init(json:))
+        self.libraries = json["libraries"].arrayValue.compactMap(Library.init(json:)).filter { $0.rules.isEmpty ? true : $0.rules.allSatisfy { $0.match() } }
         self.arguments = json["arguments"].exists() ? Arguments(json: json["arguments"]) : nil
         self.minecraftArguments = json["minecraftArguments"].string
         self.javaVersion = json["javaVersion"]["majorVersion"].int
@@ -327,11 +327,7 @@ public class ClientManifest {
         getAllowedLibraries().filter { !$0.isNativeLibrary }
     }
     
-    public func getAllowedLibraries() -> [Library] {
-        libraries.filter { lib in
-            (lib.rules.isEmpty ? true : lib.rules.allSatisfy { $0.match() })
-        }
-    }
+    public func getAllowedLibraries() -> [Library] { libraries }
     
     public func getNeededNatives() -> [Library: DownloadInfo] {
         var result: [Library: DownloadInfo] = [:]
