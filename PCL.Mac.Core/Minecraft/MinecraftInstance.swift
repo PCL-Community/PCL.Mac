@@ -177,7 +177,7 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
         launchOptions.javaPath = config.javaURL
         
         loadManifest()
-        if Architecture.getArchOfFile(launchOptions.javaPath) == .arm64 && Architecture.system == .arm64 {
+        if Architecture.getArchOfFile(launchOptions.javaPath).isCompatiableWithSystem() {
             ArtifactVersionMapper.map(manifest)
             isUsingRosetta = false
         } else {
