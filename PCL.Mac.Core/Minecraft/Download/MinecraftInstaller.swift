@@ -36,7 +36,7 @@ public class MinecraftInstaller {
     // MARK: 下载客户端清单
     private static func downloadClientManifest(_ task: MinecraftInstallTask) async throws {
         task.updateStage(.clientJson)
-        let url = try DownloadSourceManager.current.getClientManifestURL(task.minecraftVersion).unwrap("无法获取 \(task.minecraftVersion.displayName) 的 JSON 下载 URL。")
+        let url = try DownloadSourceManager.shared.getClientManifestURL(task.minecraftVersion).unwrap("无法获取 \(task.minecraftVersion.displayName) 的 JSON 下载 URL。")
         let destination = task.versionURL.appending(path: "\(task.name).json")
         
         await withCheckedContinuation { continuation in
@@ -60,7 +60,7 @@ public class MinecraftInstaller {
     // MARK: 下载客户端本体
     private static func downloadClientJar(_ task: MinecraftInstallTask, skipIfExists: Bool = false) async throws {
         task.updateStage(.clientJar)
-        let url = try DownloadSourceManager.current.getClientJARURL(task.minecraftVersion, task.manifest!).unwrap("无法获取 \(task.minecraftVersion.displayName) 的客户端下载 URL。")
+        let url = try DownloadSourceManager.shared.getClientJARURL(task.minecraftVersion, task.manifest!).unwrap("无法获取 \(task.minecraftVersion.displayName) 的客户端下载 URL。")
         
         await withCheckedContinuation { continuation in
             let downloader = ProgressiveDownloader(
@@ -84,7 +84,7 @@ public class MinecraftInstaller {
         
         task.updateStage(.clientIndex)
         
-        let url: URL = try DownloadSourceManager.current.getAssetIndexURL(task.minecraftVersion, manifest).unwrap("无法获取 \(task.minecraftVersion.displayName) 的 assetIndex 下载 URL。")
+        let url: URL = try DownloadSourceManager.shared.getAssetIndexURL(task.minecraftVersion, manifest).unwrap("无法获取 \(task.minecraftVersion.displayName) 的 assetIndex 下载 URL。")
         
         let destination: URL = task.minecraftDirectory.assetsURL.appending(component: "indexes").appending(component: "\(manifest.assetIndex!.id).json")
         await withCheckedContinuation { continuation in
@@ -145,7 +145,7 @@ public class MinecraftInstaller {
                 if CacheStorage.default.copy(name: library.name, to: dest) {
                     continue
                 }
-                urls.append(try DownloadSourceManager.current.getLibraryURL(library).unwrap("无法获取 \(library.name) 的下载 URL。"))
+                urls.append(try DownloadSourceManager.shared.getLibraryURL(library).unwrap("无法获取 \(library.name) 的下载 URL。"))
                 destinations.append(dest)
             }
         }
@@ -181,7 +181,7 @@ public class MinecraftInstaller {
             if CacheStorage.default.copy(name: library.name, to: dest) {
                 continue
             }
-            urls.append(try DownloadSourceManager.current.getLibraryURL(library).unwrap("无法获取 \(library.name) 的下载 URL。"))
+            urls.append(try DownloadSourceManager.shared.getLibraryURL(library).unwrap("无法获取 \(library.name) 的下载 URL。"))
             destinations.append(dest)
         }
         

@@ -7,9 +7,62 @@
 
 import Foundation
 
-public class DownloadSourceManager {
-    public static let official: OfficialDownloadSource = .init()
-    public static let bmclapi: BMCLAPIDownloadSource = .init()
+public class DownloadSourceManager: DownloadSource {
+    public static let shared: DownloadSourceManager = .init()
     
-    public static var current: any DownloadSource = bmclapi
+    private let official: OfficialDownloadSource = .init()
+    private let bmclapi: BMCLAPIDownloadSource = .init()
+    
+    private var lastTestDate: Date = .init(timeIntervalSince1970: 0)
+    private var current: DownloadSource
+    
+    private func getDownloadSource() -> DownloadSource {
+        if AppSettings.shared.fileDownloadSource == .both && Date().timeIntervalSince(lastTestDate) > 5 * 60 {
+            lastTestDate = Date()
+            Task {
+                await testSpeed("https://libraries.minecraft.net/net/java/dev/jna/jna/5.15.0/jna-5.15.0.jar", &current)
+            }
+            
+            return current
+        } else {
+            return AppSettings.shared.fileDownloadSource == .mirror ? bmclapi : current
+        }
+    }
+    
+    public func getClientManifestURL(_ version: MinecraftVersion) -> URL? {
+        getDownloadSource().getClientManifestURL(version)
+    }
+    
+    public func getAssetIndexURL(_ version: MinecraftVersion, _ manifest: ClientManifest) -> URL? {
+        getDownloadSource().getAssetIndexURL(version, manifest)
+    }
+    
+    public func getClientJARURL(_ version: MinecraftVersion, _ manifest: ClientManifest) -> URL? {
+        getDownloadSource().getClientJARURL(version, manifest)
+    }
+    
+    public func getLibraryURL(_ library: ClientManifest.Library) -> URL? {
+        getDownloadSource().getLibraryURL(library)
+    }
+    
+    
+    public func testSpeed(_ url: URLConvertible, _ source: inout DownloadSource) async {
+        source = official
+        let before = Date()
+        guard let data = try? await Requests.get(url).getDataOrThrow() else {
+            return
+        }
+        
+        let timeUsed: Double = Date().timeIntervalSince(before)
+        let speed = Double(data.count) / timeUsed / 1024 / 1024
+        debug(String(format: "%s 下载耗时 %.2fs (%.2f MB/s)", url.url.absoluteString, timeUsed, speed))
+        if speed < 1 { // 1 MB
+            source = bmclapi
+            debug("已切换至镜像源")
+        }
+    }
+    
+    private init() {
+        self.current = official
+    }
 }
