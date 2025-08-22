@@ -202,8 +202,7 @@ public class ForgeInstaller {
         }
         
         let artifacts = libraries.compactMap { $0.artifact }
-        
-        let urls = artifacts.map { URL(string: $0.url)! }
+        let urls = libraries.compactMap(DownloadSourceManager.shared.getLibraryURL(_:))
         let destinations = artifacts.map { minecraftDirectory.librariesURL.appending(path: $0.path) }
         
         await withCheckedContinuation { continuation in

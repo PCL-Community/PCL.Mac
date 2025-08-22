@@ -9,6 +9,7 @@ import Foundation
 
 public protocol DownloadSource {
     // Minecraft
+    func getVersionManifestURL() -> URL
     func getClientManifestURL(_ version: MinecraftVersion) -> URL?
     func getAssetIndexURL(_ version: MinecraftVersion, _ manifest: ClientManifest) -> URL?
     func getClientJARURL(_ version: MinecraftVersion, _ manifest: ClientManifest) -> URL?
@@ -16,6 +17,10 @@ public protocol DownloadSource {
 }
 
 public class OfficialDownloadSource: DownloadSource {
+    public func getVersionManifestURL() -> URL {
+        "https://piston-meta.mojang.com/mc/game/version_manifest.json".url
+    }
+    
     public func getClientManifestURL(_ version: MinecraftVersion) -> URL? {
         return try? URL(string: DataManager.shared.versionManifest!.versions.find { $0.id == version.displayName }.unwrap().url)
     }
@@ -34,6 +39,10 @@ public class OfficialDownloadSource: DownloadSource {
 }
 
 public class BMCLAPIDownloadSource: DownloadSource {
+    public func getVersionManifestURL() -> URL {
+        "https://piston-meta.mojang.com/mc/game/version_manifest.json".url
+    }
+    
     public func getClientManifestURL(_ version: MinecraftVersion) -> URL? {
         return URL(string: "https://bmclapi2.bangbang93.com/version/\(version.displayName)/json")!
     }

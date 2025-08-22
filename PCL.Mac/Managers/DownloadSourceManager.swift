@@ -14,19 +14,25 @@ public class DownloadSourceManager: DownloadSource {
     private let bmclapi: BMCLAPIDownloadSource = .init()
     
     private var lastTestDate: Date = .init(timeIntervalSince1970: 0)
-    private var current: DownloadSource
+    private var fileDownloadSource: DownloadSource
+    private var versionManifestSource: DownloadSource
     
     private func getDownloadSource() -> DownloadSource {
-        if AppSettings.shared.fileDownloadSource == .both && Date().timeIntervalSince(lastTestDate) > 5 * 60 {
-            lastTestDate = Date()
-            Task {
-                await testSpeed("https://libraries.minecraft.net/net/java/dev/jna/jna/5.15.0/jna-5.15.0.jar", &current)
+        if AppSettings.shared.fileDownloadSource == .both {
+            if Date().timeIntervalSince(lastTestDate) > 5 * 60 {
+                lastTestDate = Date()
+                Task {
+                    await testSpeed("https://libraries.minecraft.net/net/java/dev/jna/jna/5.15.0/jna-5.15.0.jar", &fileDownloadSource)
+                }
             }
-            
-            return current
+            return fileDownloadSource
         } else {
-            return AppSettings.shared.fileDownloadSource == .mirror ? bmclapi : current
+            return AppSettings.shared.fileDownloadSource == .mirror ? bmclapi : fileDownloadSource
         }
+    }
+    
+    public func getVersionManifestURL() -> URL {
+        versionManifestSource.getVersionManifestURL()
     }
     
     public func getClientManifestURL(_ version: MinecraftVersion) -> URL? {
@@ -45,7 +51,6 @@ public class DownloadSourceManager: DownloadSource {
         getDownloadSource().getLibraryURL(library)
     }
     
-    
     public func testSpeed(_ url: URLConvertible, _ source: inout DownloadSource) async {
         source = official
         let before = Date()
@@ -63,6 +68,7 @@ public class DownloadSourceManager: DownloadSource {
     }
     
     private init() {
-        self.current = official
+        self.fileDownloadSource = official
+        self.versionManifestSource = AppSettings.shared.versionManifestSource == .mirror ? bmclapi : official
     }
 }
