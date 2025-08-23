@@ -19,9 +19,10 @@ public class DownloadSourceManager: DownloadSource {
     
     private func getDownloadSource() -> DownloadSource {
         if AppSettings.shared.fileDownloadSource == .both {
-            if Date().timeIntervalSince(lastTestDate) > 5 * 60 {
+            if Date().timeIntervalSince(lastTestDate) > 1 * 60 {
                 lastTestDate = Date()
                 Task {
+                    log("正在进行官方源测速")
                     await testSpeed("https://libraries.minecraft.net/net/java/dev/jna/jna/5.15.0/jna-5.15.0.jar", &fileDownloadSource)
                 }
             }
@@ -60,7 +61,7 @@ public class DownloadSourceManager: DownloadSource {
         
         let timeUsed: Double = Date().timeIntervalSince(before)
         let speed = Double(data.count) / timeUsed / 1024 / 1024
-        debug(String(format: "%s 下载耗时 %.2fs (%.2f MB/s)", url.url.absoluteString, timeUsed, speed))
+        debug(String(format: "\(url.url.lastPathComponent) 下载耗时 %.2fs (%.2f MB/s)", timeUsed, speed))
         if speed < 1 { // 1 MB
             source = bmclapi
             debug("已切换至镜像源")
