@@ -17,7 +17,7 @@ public class DownloadSourceManager: DownloadSource {
     private var fileDownloadSource: DownloadSource
     private var versionManifestSource: DownloadSource
     
-    private func getDownloadSource() -> DownloadSource {
+    public func getDownloadSource() -> DownloadSource {
         if AppSettings.shared.fileDownloadSource == .both {
             if Date().timeIntervalSince(lastTestDate) > 1 * 60 {
                 lastTestDate = Date()

@@ -1,5 +1,5 @@
 //
-//  ModDownloader.swift
+//  ResourceDownloader.swift
 //  PCL.Mac
 //
 //  Created by YiZhiMCQiu on 2025/6/19.
@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftyJSON
 
-public class ModInstallTask: InstallTask {
+public class ResourceInstallTask: InstallTask {
     @Published public var state: InstallState = .waiting
     
     public let instance: MinecraftInstance
@@ -28,16 +28,15 @@ public class ModInstallTask: InstallTask {
                 self.state = .inprogress
             }
             
-            await withCheckedContinuation { continuation in
-                let downloader = ProgressiveDownloader(
-                    task: self,
-                    urls: versions.map { $0.downloadURL },
-                    destinations: versions.map { getDestinationDirectory($0).appending(path: $0.downloadURL.lastPathComponent) },
-                    skipIfExists: true,
-                    completion: continuation.resume
-                )
-                downloader.start()
+            let downloader = MultiFileDownloader(
+                urls: versions.map { $0.downloadURL },
+                destinations: versions.map { getDestinationDirectory($0).appending(path: $0.downloadURL.lastPathComponent) }
+            ) { progress, finished in
+                self.remainingFiles = self.totalFiles - finished
+                self.currentStagePercentage = progress
             }
+            
+            try await downloader.start()
             complete()
         }
     }
@@ -51,7 +50,7 @@ public class ModInstallTask: InstallTask {
         }
     }
     
-    public override func getInstallStates() -> [InstallStage : InstallState] { [.mods : state] }
-    public override func getTitle() -> String { "模组下载" }
+    public override func getInstallStates() -> [InstallStage : InstallState] { [.resources : state] }
+    public override func getTitle() -> String { "资源下载" }
 }
 

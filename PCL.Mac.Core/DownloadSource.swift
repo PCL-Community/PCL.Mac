@@ -56,7 +56,7 @@ public class BMCLAPIDownloadSource: DownloadSource {
               let url = URL(string: urlString) else {
             return nil
         }
-        return URL(string: "https://bmclapi2.bangbang93.com/")!.appending(path: url.path)
+        return URL(string: "https://bmclapi2.bangbang93.com")!.appending(path: url.path)
     }
     
     public func getClientJARURL(_ version: MinecraftVersion, _ manifest: ClientManifest) -> URL? {

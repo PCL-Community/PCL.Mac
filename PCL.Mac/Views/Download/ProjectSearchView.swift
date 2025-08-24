@@ -377,7 +377,7 @@ struct ProjectQueueOverlay: View {
                                 return
                             }
                             let versions = state.pendingDownloadProjects
-                            let task = ModInstallTask(instance: instance, versions: versions)
+                            let task = ResourceInstallTask(instance: instance, versions: versions)
                             task.onComplete {
                                 hint("下载完成！", .finish)
                                 state.pendingDownloadProjects.removeAll()

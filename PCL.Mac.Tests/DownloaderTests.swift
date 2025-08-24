@@ -11,7 +11,7 @@ import Testing
 
 struct DownloaderTests {
     @Test func testSingleFileDownload() async throws {
-        try await SingleFileDownloader.download(url: "https://libraries.minecraft.net/oshi-project/oshi-core/1.1/oshi-core-1.1.jar".url, destination: URL(fileURLWithUserPath: "~/test.file")) { progress in
+        try await SingleFileDownloader.download(url: "https://bmclapi2.bangbang93.com/version/1.21/client".url, destination: URL(fileURLWithUserPath: "~/test.file"), replaceMethod: .replace) { progress in
             print(progress)
         }
     }

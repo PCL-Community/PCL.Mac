@@ -10,6 +10,7 @@ import Foundation
 
 public class SingleFileDownloader {
     public static func download(
+        task: InstallTask? = nil,
         url: URL,
         destination: URL,
         replaceMethod: ReplaceMethod = .skip,
@@ -17,6 +18,8 @@ public class SingleFileDownloader {
     ) async throws {
         // 若文件已存在，且指定了在存在时跳过，直接返回
         if FileManager.default.fileExists(atPath: destination.path) && replaceMethod == .skip {
+            task?.completeOneFile()
+            progress?(1)
             return
         }
         
@@ -70,8 +73,12 @@ public class SingleFileDownloader {
             // 调用 progress 回调
             if expectedLength > 0 {
                 let now = CFAbsoluteTimeGetCurrent()
-                if now - lastProgressReportTime >= 0.5 {
-                    progress?(Double(received) / Double(expectedLength))
+                if now - lastProgressReportTime >= 0.1 {
+                    let downloadProgress = Double(received) / Double(expectedLength)
+                    await MainActor.run {
+                        task?.currentStagePercentage = downloadProgress
+                        progress?(downloadProgress)
+                    }
                     lastProgressReportTime = now
                 }
             }
@@ -97,6 +104,7 @@ public class SingleFileDownloader {
         
         try FileManager.default.moveItem(at: tempURL, to: destination)
         
+        task?.completeOneFile()
         progress?(1.0)
     }
 }

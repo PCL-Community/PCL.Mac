@@ -146,10 +146,9 @@ public class ForgeInstaller {
         // 如果 CacheStorage 中不存在安装器，下载
         let name = "\(getGroupId()):installer:\(minecraftVersion.displayName)-\(version)"
         if !CacheStorage.default.copy(name: name, to: installerPath) {
-            let data = try await Requests.get(getInstallerDownloadURL(minecraftVersion, version)).getDataOrThrow()
-            if let url = temp.createFile(path: "installer.jar", data: data) {
-                CacheStorage.default.add(name: name, path: url)
-            }
+            let dest = temp.getURL(path: "installer.jar")
+            try await SingleFileDownloader.download(url: getInstallerDownloadURL(minecraftVersion, version), destination: dest)
+            CacheStorage.default.add(name: name, path: dest)
         }
     }
     
@@ -202,18 +201,12 @@ public class ForgeInstaller {
         }
         
         let artifacts = libraries.compactMap { $0.artifact }
-        let urls = libraries.compactMap(DownloadSourceManager.shared.getLibraryURL(_:))
-        let destinations = artifacts.map { minecraftDirectory.librariesURL.appending(path: $0.path) }
         
-        await withCheckedContinuation { continuation in
-            let downloader = ProgressiveDownloader(
-                urls: urls,
-                destinations: destinations,
-                skipIfExists: true,
-                completion: continuation.resume
-            )
-            downloader.start()
-        }
+        let downloader = MultiFileDownloader(
+            urls: libraries.compactMap(DownloadSourceManager.shared.getLibraryURL(_:)),
+            destinations: artifacts.map { minecraftDirectory.librariesURL.appending(path: $0.path) },
+        )
+        try await downloader.start()
     }
     
     public func install(minecraftVersion: MinecraftVersion, forgeVersion: String) async throws {

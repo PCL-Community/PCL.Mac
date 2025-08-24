@@ -8,8 +8,8 @@
 import Foundation
 
 public struct DownloadItem {
-    fileprivate let url: URL
-    fileprivate let destination: URL
+    public let url: URL
+    public let destination: URL
     
     fileprivate var fallbackURL: URL? {
         fallbackURLProvider?()
@@ -29,6 +29,7 @@ public struct DownloadItem {
 }
 
 public class MultiFileDownloader {
+    private let task: InstallTask?
     private let items: [DownloadItem]
     private let concurrentLimit: Int
     private let replaceMethod: ReplaceMethod
@@ -37,12 +38,31 @@ public class MultiFileDownloader {
     private var totalProgress: Double = 0
     private var finishedCount: Int = 0
     
-    public init(
-        items: [DownloadItem],
-        concurrentLimit: Int,
+    public convenience init(
+        task: InstallTask? = nil,
+        urls: [URL],
+        destinations: [URL],
+        concurrentLimit: Int = 16,
         replaceMethod: ReplaceMethod = .skip,
         progress: ((Double, Int) -> Void)? = nil
     ) {
+        self.init(
+            task: task,
+            items: (0..<urls.count).map { .init(urls[$0], destinations[$0]) },
+            concurrentLimit: concurrentLimit,
+            replaceMethod: replaceMethod,
+            progress: progress
+        )
+    }
+    
+    public init(
+        task: InstallTask? = nil,
+        items: [DownloadItem],
+        concurrentLimit: Int = 16,
+        replaceMethod: ReplaceMethod = .skip,
+        progress: ((Double, Int) -> Void)? = nil
+    ) {
+        self.task = task
         self.items = items
         self.concurrentLimit = concurrentLimit
         self.replaceMethod = replaceMethod
@@ -60,12 +80,16 @@ public class MultiFileDownloader {
         }
         
         var tickerTask: Task<Void, Error>? = nil
-        if let progress = progress {
+        if progress != nil || task != nil {
             tickerTask = Task {
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(0.02))
+                    try? await Task.sleep(for: .seconds(0.1))
                     if Task.isCancelled { break }
-                    progress(self.totalProgress / Double(self.total), self.finishedCount)
+                    await MainActor.run {
+                        progress?(self.totalProgress / Double(self.total), self.finishedCount)
+                        task?.currentStagePercentage = self.totalProgress / Double(self.total)
+                        DataManager.shared.inprogressInstallTasks?.objectWillChange.send()
+                    }
                 }
             }
         }
@@ -121,6 +145,9 @@ public class MultiFileDownloader {
         }
         
         finishedCount += 1
+        await MainActor.run {
+            task?.completeOneFile()
+        }
     }
 }
 
