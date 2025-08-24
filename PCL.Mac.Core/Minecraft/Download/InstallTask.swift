@@ -102,6 +102,7 @@ public class InstallTasks: ObservableObject, Identifiable, Hashable, Equatable {
     
     public func addTask(key: String, task: InstallTask) {
         tasks[key] = task
+        subscribeToTask(task)
     }
     
     init(_ tasks: [String : InstallTask]) {
