@@ -12,15 +12,30 @@ public class SingleFileDownloader {
     public static func download(
         url: URL,
         destination: URL,
-        progress: ((Double) -> Void)? = nil
+        progress: ((Double) -> Void)? = nil,
+        replaceMethod: ReplaceMethod = .skip
     ) async throws {
+        // 若文件已存在，且指定了在存在时跳过，直接返回
+        if FileManager.default.fileExists(atPath: destination.path) && replaceMethod == .skip {
+            return
+        }
+        
+        // 创建请求并设置 User-Agent
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.setValue("PCL.Mac/\(SharedConstants.shared.version)", forHTTPHeaderField: "User-Agent")
         
+        // 发送请求
         let (byteStream, response) = try await URLSession.shared.bytes(for: request)
         
-        try? FileManager.default.createDirectory(at: destination.parent(), withIntermediateDirectories: true)
+        // 判断响应码是否正确
+        if let http = response as? HTTPURLResponse,
+           !(200..<300).contains(http.statusCode) {
+            err("无法下载 \(destination.lastPathComponent): \(url.host()!) 返回了 \(http.statusCode)")
+            throw MyLocalizedError(reason: "远程服务器返回了 \(http.statusCode)。")
+        }
         
+        // 创建临时文件
         let tempURL = SharedConstants.shared.temperatureURL.appendingPathComponent(UUID().uuidString)
         FileManager.default.createFile(atPath: tempURL.path, contents: nil)
         
@@ -40,16 +55,19 @@ public class SingleFileDownloader {
             progress?(-1)
         }
         
+        // 从流读取每个字节
         for try await byte in byteStream {
             buffer.append(byte)
             received &+= 1
             
+            // 若缓冲区已满，写入到文件并清空
             if buffer.count >= 64 * 1024 {
                 try Task.checkCancellation()
                 handle.write(Data(buffer))
                 buffer.removeAll(keepingCapacity: true)
             }
             
+            // 调用 progress 回调
             if expectedLength > 0 {
                 let now = CFAbsoluteTimeGetCurrent()
                 if now - lastProgressReportTime >= 0.5 {
@@ -59,9 +77,22 @@ public class SingleFileDownloader {
             }
         }
         
+        // 如果缓冲区还有数据，全部写入到文件
         if !buffer.isEmpty {
             handle.write(Data(buffer))
             buffer.removeAll(keepingCapacity: false)
+        }
+        
+        // 移动临时文件到目标位置
+        if FileManager.default.fileExists(atPath: destination.path) {
+            if replaceMethod == .replace {
+                try FileManager.default.removeItem(at: destination)
+            } else if replaceMethod == .throw {
+                throw MyLocalizedError(reason: "\(destination.lastPathComponent) 已存在。")
+            }
+            
+        } else {
+            try? FileManager.default.createDirectory(at: destination.parent(), withIntermediateDirectories: true)
         }
         
         try FileManager.default.moveItem(at: tempURL, to: destination)

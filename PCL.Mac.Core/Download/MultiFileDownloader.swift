@@ -28,12 +28,16 @@ public struct DownloadItem {
     }
 }
 
-public class NewProgressiveDownloader {
-    public static func download(items: [DownloadItem], concurrentLimit: Int) async throws {
+public class MultiFileDownloader {
+    public static func download(
+        items: [DownloadItem],
+        concurrentLimit: Int,
+        replaceMethod: ReplaceMethod = .skip
+    ) async throws {
         guard !items.isEmpty else { return }
         if concurrentLimit == 1 {
             for item in items {
-                try await attemptDownload(item)
+                try await attemptDownload(item, replaceMethod)
             }
             return
         }
@@ -46,7 +50,7 @@ public class NewProgressiveDownloader {
             while nextIndex < initial {
                 let item = items[nextIndex]
                 group.addTask {
-                    try await attemptDownload(item)
+                    try await attemptDownload(item, replaceMethod)
                 }
                 nextIndex += 1
             }
@@ -55,7 +59,7 @@ public class NewProgressiveDownloader {
                 if nextIndex < total {
                     let item = items[nextIndex]
                     group.addTask {
-                        try await attemptDownload(item)
+                        try await attemptDownload(item, replaceMethod)
                     }
                     nextIndex += 1
                 }
@@ -63,15 +67,21 @@ public class NewProgressiveDownloader {
         }
     }
     
-    private static func attemptDownload(_ item: DownloadItem) async throws {
+    private static func attemptDownload(_ item: DownloadItem, _ replaceMethod: ReplaceMethod) async throws {
+        if FileManager.default.fileExists(atPath: item.destination.path) && replaceMethod == .throw {
+            throw MyLocalizedError(reason: "\(item.destination.lastPathComponent) 已存在。")
+        }
         do {
-            try await SingleFileDownloader.download(url: item.url, destination: item.destination)
+            try await SingleFileDownloader.download(url: item.url, destination: item.destination, replaceMethod: replaceMethod)
         } catch {
             guard let fallback = item.fallbackURL else {
                 throw error
             }
-            try? FileManager.default.removeItem(at: item.destination)
-            try await SingleFileDownloader.download(url: fallback, destination: item.destination)
+            try await SingleFileDownloader.download(url: fallback, destination: item.destination, replaceMethod: .replace)
         }
     }
+}
+
+public enum ReplaceMethod {
+    case skip, replace, `throw`
 }
