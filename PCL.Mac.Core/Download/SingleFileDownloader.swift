@@ -12,8 +12,8 @@ public class SingleFileDownloader {
     public static func download(
         url: URL,
         destination: URL,
-        progress: ((Double) -> Void)? = nil,
-        replaceMethod: ReplaceMethod = .skip
+        replaceMethod: ReplaceMethod = .skip,
+        progress: ((Double) -> Void)? = nil
     ) async throws {
         // 若文件已存在，且指定了在存在时跳过，直接返回
         if FileManager.default.fileExists(atPath: destination.path) && replaceMethod == .skip {

@@ -17,21 +17,18 @@ struct DownloaderTests {
     }
     
     @Test func testMultiFileDownload() async throws {
-        let files = [
-            "97/977e87e9f30b5b4b35d7a8fc7355a1d891f7c2c8",
-            "b6/b62ca8ec10d07e6bf5ac8dae0c8c1d2e6a1e3356",
-            "5f/5ff04807c356f1beed0b86ccf659b44b9983e3fa",
-            "80/8030dd9dc315c0381d52c4782ea36c6baf6e8135",
-            "9e/9e62c9342ae2066c8222150c22911f1857affa55",
-            "3d/3db046e681a9888135e84e20a3e009575be65c62",
-            "e7/e7a439e6fe0d1ec8712e002a00b3f655d2ef9660",
-            "94/94e5b3f27e93bd060066e3e8aa45aac7eeababf6",
-            "error/test"
-        ]
+        let versions = ["1.21", "1.19", "1.14.2"]
         
-        try await MultiFileDownloader.download(
-            items: files.map { DownloadItem("https://resources.download.minecraft.net/\($0)".url, URL(fileURLWithPath: "/tmp/\($0)")) },
-            concurrentLimit: 16
-        )
+        let downloader = MultiFileDownloader(
+            items: versions.map {
+                DownloadItem("https://bmclapi2.bangbang93.com/version/\($0)/client".url, URL(fileURLWithPath: "/tmp/\($0).jar"))
+            },
+            concurrentLimit: 4,
+            replaceMethod: .replace
+        ) { progress, finished in
+            print(String(format: "%.2f%% %d", progress, finished))
+        }
+        
+        try await downloader.start()
     }
 }
