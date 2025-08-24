@@ -45,7 +45,7 @@ public class InstallTask: ObservableObject, Identifiable, Hashable, Equatable {
     }
     
     public func complete() {
-        log("下载任务完成")
+        log("下载任务结束")
         self.updateStage(.end)
         DispatchQueue.main.async {
             DataManager.shared.inprogressInstallTasks = nil
@@ -141,6 +141,7 @@ public class MinecraftInstallTask: InstallTask {
     public let minecraftDirectory: MinecraftDirectory
     public let startTask: (MinecraftInstallTask) async throws -> Void
     public let architecture: Architecture
+    @Published private var currentState: InstallState = .inprogress
     
     public init(minecraftVersion: MinecraftVersion, minecraftDirectory: MinecraftDirectory, name: String, architecture: Architecture = .system, startTask: @escaping (MinecraftInstallTask) async throws -> Void) {
         self.minecraftVersion = minecraftVersion
@@ -154,11 +155,14 @@ public class MinecraftInstallTask: InstallTask {
         Task {
             do {
                 try await startTask(self)
+                complete()
             } catch {
                 await PopupManager.shared.show(.init(.error, "无法安装 Minecraft", "\(error.localizedDescription)\n若要反馈此问题，你可以进入设置 > 其它 > 打开日志，将选中的文件发给别人。", [.ok]))
                 err("无法安装 Minecraft: \(error.localizedDescription)")
+                await MainActor.run {
+                    currentState = .failed
+                }
             }
-            complete()
         }
     }
     
@@ -170,7 +174,7 @@ public class MinecraftInstallTask: InstallTask {
             if foundCurrent {
                 result[stage] = .waiting
             } else if self.stage == stage {
-                result[stage] = .inprogress
+                result[stage] = currentState
                 foundCurrent = true
             } else {
                 result[stage] = .finished

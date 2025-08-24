@@ -17,6 +17,8 @@ public protocol DownloadSource {
 }
 
 public class OfficialDownloadSource: DownloadSource {
+    public static let shared: OfficialDownloadSource = .init()
+    
     public func getVersionManifestURL() -> URL {
         "https://piston-meta.mojang.com/mc/game/version_manifest.json".url
     }
@@ -39,6 +41,8 @@ public class OfficialDownloadSource: DownloadSource {
 }
 
 public class BMCLAPIDownloadSource: DownloadSource {
+    public static let shared: BMCLAPIDownloadSource = .init()
+    
     public func getVersionManifestURL() -> URL {
         "https://piston-meta.mojang.com/mc/game/version_manifest.json".url
     }

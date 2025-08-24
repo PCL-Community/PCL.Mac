@@ -39,20 +39,27 @@ public class MinecraftInstaller {
         let url = try DownloadSourceManager.shared.getClientManifestURL(task.minecraftVersion).unwrap("无法获取 \(task.minecraftVersion.displayName) 的 JSON 下载 URL。")
         let destination = task.versionURL.appending(path: "\(task.name).json")
         
-        await withCheckedContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             let downloader = ProgressiveDownloader(
                 task: task,
                 urls: [url],
                 destinations: [destination],
                 completion: {
-                // 解析 JSON
-                if let manifest: ClientManifest = try? .parse(url: destination, minecraftDirectory: nil) {
-                    task.manifest = manifest
-                } else {
-                    err("无法解析 JSON")
+                    // 解析 JSON
+                    do {
+                        if let manifest: ClientManifest = try .parse(url: destination, minecraftDirectory: nil) {
+                            task.manifest = manifest
+                            continuation.resume()
+                        } else {
+                            let content = try String(data: FileHandle(forReadingFrom: destination).readToEnd().unwrap(), encoding: .utf8).unwrap()
+                            err("无法解析客户端清单: \(content)")
+                            continuation.resume(throwing: MyLocalizedError(reason: "无法解析客户端清单：\(content)"))
+                        }
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
                 }
-                continuation.resume()
-            })
+            )
             downloader.start()
         }
     }
