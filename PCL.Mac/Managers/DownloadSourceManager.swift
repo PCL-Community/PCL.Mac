@@ -52,10 +52,15 @@ public class DownloadSourceManager: DownloadSource {
         getDownloadSource().getLibraryURL(library)
     }
     
-    public func testSpeed(_ url: URLConvertible, _ source: inout DownloadSource) async {
+    private func testSpeed(_ url: URLConvertible, _ source: inout DownloadSource) async {
         source = official
         let before = Date()
-        guard let data = try? await Requests.get(url).getDataOrThrow() else {
+        
+        let data: Data
+        do {
+            try await SingleFileDownloader.download(url: url.url, destination: URL(fileURLWithPath: "/tmp/testspeed"), replaceMethod: .replace)
+            data = try FileHandle(forReadingFrom: URL(fileURLWithPath: "/tmp/testspeed")).readToEnd().unwrap()
+        } catch {
             return
         }
         

@@ -116,7 +116,7 @@ public class ForgeInstaller {
         let destination = URL(fileURLWithPath: replaceWithValue(processor.args[index + 1]))
         
         try? FileManager.default.createDirectory(at: destination.parent(), withIntermediateDirectories: true)
-        try await Requests.get(url).getDataOrThrow().write(to: destination)
+        try await SingleFileDownloader.download(url: url.url, destination: destination, replaceMethod: .replace)
         debug("已修改 DOWNLOAD_MOJMAPS 任务")
         
         return true
