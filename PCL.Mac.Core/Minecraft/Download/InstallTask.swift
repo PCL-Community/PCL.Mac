@@ -309,7 +309,9 @@ public class CustomFileDownloadTask: InstallTask {
             do {
                 try await Aria2Manager.shared.download(url: url, destination: destination) { percent, speed in
                     self.currentStagePercentage = percent
-                    DataManager.shared.downloadSpeed = Double(speed)
+                    Task {
+                        await SpeedMeter.shared.addBytes(speed)
+                    }
                 }
             } catch {
                 hint("\(destination.lastPathComponent) 下载失败: \(error.localizedDescription.replacingOccurrences(of: "\n", with: ""))", .critical)

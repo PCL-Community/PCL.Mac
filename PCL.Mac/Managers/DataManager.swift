@@ -20,8 +20,8 @@ class DataManager: ObservableObject {
     @Published var leftTabWidth: CGFloat = 310
     @Published var leftTabContent: AnyView = AnyView(EmptyView())
     @Published var leftTabId: UUID = .init()
-    @Published var downloadSpeed: Double = 0
     @Published var inprogressInstallTasks: InstallTasks?
+    
     var defaultInstance: MinecraftInstance? {
         if let directory = AppSettings.shared.currentMinecraftDirectory,
            let defaultInstance = AppSettings.shared.defaultInstance,

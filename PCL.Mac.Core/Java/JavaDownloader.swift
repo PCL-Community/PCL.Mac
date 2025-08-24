@@ -81,7 +81,6 @@ public class JavaInstallTask: InstallTask {
                 try await Aria2Manager.shared.download(url: package.downloadURL, destination: zipDestination) { progress, speed in
                     self.progress = progress / 2
                     self.currentStagePercentage = progress
-                    DataManager.shared.downloadSpeed = Double(speed)
                 }
                 completeOneFile()
                 updateStage(.javaInstall)

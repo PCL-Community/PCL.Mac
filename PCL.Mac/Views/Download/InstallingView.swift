@@ -11,6 +11,7 @@ struct InstallingView: View {
     private struct LeftTabView: View {
         @ObservedObject private var dataManager: DataManager = .shared
         @ObservedObject private(set) var tasks: InstallTasks
+        @ObservedObject private var speedMeter: SpeedMeter = .shared
         
         var body: some View {
             VStack {
@@ -21,7 +22,7 @@ struct InstallingView: View {
                 )
                 PanelView(
                     title: "下载速度",
-                    value: "\(formatSpeed(dataManager.downloadSpeed))"
+                    value: "\(formatSpeed(speedMeter.downloadSpeed))"
                 )
                 PanelView(
                     title: "剩余文件",
@@ -33,9 +34,9 @@ struct InstallingView: View {
             .padding(.top, 10)
         }
         
-        func formatSpeed(_ speed: Double) -> String {
+        func formatSpeed(_ speed: Int64) -> String {
             let units = ["B/s", "KB/s", "MB/s", "GB/s", "TB/s"]
-            var value = speed
+            var value: Double = Double(speed)
             var unitIndex = 0
 
             while value >= 1024 && unitIndex < units.count - 1 {

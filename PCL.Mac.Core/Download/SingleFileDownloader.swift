@@ -65,6 +65,7 @@ public class SingleFileDownloader {
             
             // 若缓冲区已满，写入到文件并清空
             if buffer.count >= 64 * 1024 {
+                await SpeedMeter.shared.addBytes(64 * 1024)
                 try Task.checkCancellation()
                 handle.write(Data(buffer))
                 buffer.removeAll(keepingCapacity: true)

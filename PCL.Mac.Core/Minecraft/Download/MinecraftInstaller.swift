@@ -97,7 +97,7 @@ public class MinecraftInstaller {
             destinations.append(object.appendTo(task.minecraftDirectory.assetsURL.appending(path: "objects")))
         }
         
-        try await MultiFileDownloader(task: task, urls: urls, destinations: destinations, concurrentLimit: 1024).start()
+        try await MultiFileDownloader(task: task, urls: urls, destinations: destinations, concurrentLimit: 256).start()
     }
     
     // MARK: 下载依赖项
