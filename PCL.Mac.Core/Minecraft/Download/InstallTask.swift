@@ -45,7 +45,7 @@ public class InstallTask: ObservableObject, Identifiable, Hashable, Equatable {
     }
     
     public func complete() {
-        log("下载任务完成")
+        log("下载任务结束")
         self.updateStage(.end)
         DispatchQueue.main.async {
             DataManager.shared.inprogressInstallTasks = nil
@@ -102,6 +102,7 @@ public class InstallTasks: ObservableObject, Identifiable, Hashable, Equatable {
     
     public func addTask(key: String, task: InstallTask) {
         tasks[key] = task
+        subscribeToTask(task)
     }
     
     init(_ tasks: [String : InstallTask]) {
@@ -139,10 +140,11 @@ public class MinecraftInstallTask: InstallTask {
     public var versionURL: URL { minecraftDirectory.versionsURL.appending(path: name) }
     public let minecraftVersion: MinecraftVersion
     public let minecraftDirectory: MinecraftDirectory
-    public let startTask: (MinecraftInstallTask) async -> Void
+    public let startTask: (MinecraftInstallTask) async throws -> Void
     public let architecture: Architecture
+    @Published private var currentState: InstallState = .inprogress
     
-    public init(minecraftVersion: MinecraftVersion, minecraftDirectory: MinecraftDirectory, name: String, architecture: Architecture = .system, startTask: @escaping (MinecraftInstallTask) async -> Void) {
+    public init(minecraftVersion: MinecraftVersion, minecraftDirectory: MinecraftDirectory, name: String, architecture: Architecture = .system, startTask: @escaping (MinecraftInstallTask) async throws -> Void) {
         self.minecraftVersion = minecraftVersion
         self.minecraftDirectory = minecraftDirectory
         self.name = name
@@ -152,8 +154,16 @@ public class MinecraftInstallTask: InstallTask {
     
     public override func start() {
         Task {
-            await startTask(self)
-            complete()
+            do {
+                try await startTask(self)
+                complete()
+            } catch {
+                await PopupManager.shared.show(.init(.error, "无法安装 Minecraft", "\(error.localizedDescription)\n若要反馈此问题，你可以进入设置 > 其它 > 打开日志，将选中的文件发给别人。", [.ok]))
+                err("无法安装 Minecraft: \(error.localizedDescription)")
+                await MainActor.run {
+                    currentState = .failed
+                }
+            }
         }
     }
     
@@ -165,7 +175,7 @@ public class MinecraftInstallTask: InstallTask {
             if foundCurrent {
                 result[stage] = .waiting
             } else if self.stage == stage {
-                result[stage] = .inprogress
+                result[stage] = currentState
                 foundCurrent = true
             } else {
                 result[stage] = .finished
@@ -198,7 +208,7 @@ public class FabricInstallTask: InstallTask {
             try await FabricInstaller.installFabric(version: task.minecraftVersion, minecraftDirectory: task.minecraftDirectory, runningDirectory: task.versionURL, self.loaderVersion)
             task.manifest = try ClientManifest.parse(url: manifestURL, minecraftDirectory: task.minecraftDirectory)
         } catch {
-            hint("无法安装 Fabric: \(error.localizedDescription)", .critical)
+            await PopupManager.shared.show(.init(.error, "无法安装 Fabric", "\(error.localizedDescription)\n若要反馈此问题，你可以进入设置 > 其它 > 打开日志，将选中的文件发给别人。", [.ok]))
             err("无法安装 Fabric: \(error.localizedDescription)")
         }
         await MainActor.run {
@@ -231,7 +241,7 @@ public class ForgeInstallTask: InstallTask {
             try await installer.install(minecraftVersion: task.minecraftVersion, forgeVersion: forgeVersion)
             log("Forge 安装完成")
         } catch {
-            hint("无法安装 Forge: \(error.localizedDescription)", .critical)
+            await PopupManager.shared.show(.init(.error, "无法安装 Forge", "\(error.localizedDescription)\n若要反馈此问题，你可以进入设置 > 其它 > 打开日志，将选中的文件发给别人。", [.ok]))
             err("无法安装 Forge: \(error.localizedDescription)")
         }
         await MainActor.run {
@@ -261,7 +271,7 @@ public class NeoforgeInstallTask: InstallTask {
             try await installer.install(minecraftVersion: task.minecraftVersion, forgeVersion: neoforgeVersion)
             log("NeoForge 安装完成")
         } catch {
-            hint("无法安装 NeoForge: \(error.localizedDescription)", .critical)
+            await PopupManager.shared.show(.init(.error, "无法安装 NeoForge", "\(error.localizedDescription)\n若要反馈此问题，你可以进入设置 > 其它 > 打开日志，将选中的文件发给别人。", [.ok]))
             err("无法安装 NeoForge: \(error.localizedDescription)")
         }
         await MainActor.run {
@@ -299,7 +309,9 @@ public class CustomFileDownloadTask: InstallTask {
             do {
                 try await Aria2Manager.shared.download(url: url, destination: destination) { percent, speed in
                     self.currentStagePercentage = percent
-                    DataManager.shared.downloadSpeed = Double(speed)
+                    Task {
+                        await SpeedMeter.shared.addBytes(speed)
+                    }
                 }
             } catch {
                 hint("\(destination.lastPathComponent) 下载失败: \(error.localizedDescription.replacingOccurrences(of: "\n", with: ""))", .critical)
@@ -333,8 +345,7 @@ public enum InstallStage: Int {
     
     case customFile = 2000
     
-    case mods = 3000
-    case resourcePacks = 3001
+    case resources = 3000
     
     case javaDownload = 4000
     case javaInstall = 4001
@@ -352,8 +363,7 @@ public enum InstallStage: Int {
         case .clientLibraries: "下载依赖项文件"
         case .natives: "下载本地库文件"
         case .customFile: "下载自定义文件"
-        case .mods: "下载模组"
-        case .resourcePacks: "下载资源包"
+        case .resources: "下载资源"
         case .end: "结束"
         case .javaDownload: "下载 Java"
         case .javaInstall: "安装 Java"

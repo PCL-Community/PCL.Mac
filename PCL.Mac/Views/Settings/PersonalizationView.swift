@@ -95,7 +95,7 @@ struct PersonalizationView: View {
     }
 }
 
-fileprivate struct OptionStack<Content: View>: View {
+struct OptionStack<Content: View>: View {
     private let label: String
     private let content: () -> Content
     
@@ -105,10 +105,14 @@ fileprivate struct OptionStack<Content: View>: View {
     }
     
     var body: some View {
-        ZStack(alignment: .leading) {
+        HStack(spacing: 0) {
             Text(label)
+                .font(.custom("PCL English", size: 14))
+                .foregroundStyle(Color("TextColor"))
+                .frame(width: 120, alignment: .leading)
+            
             content()
-                .offset(x: 120)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

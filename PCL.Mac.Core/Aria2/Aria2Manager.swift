@@ -77,8 +77,7 @@ public class Aria2Manager {
         guard !FileManager.default.fileExists(atPath: executableURL.path) else {
             throw MyLocalizedError(reason: "\(executableURL.path) 已存在")
         }
-        let data = try await Requests.get("https://gitee.com/yizhimcqiu/aria2-macos-universal/raw/master/aria2c-macos-universal").getDataOrThrow()
-        FileManager.default.createFile(atPath: executableURL.path, contents: data)
+        try await SingleFileDownloader.download(url: "https://gitee.com/yizhimcqiu/aria2-macos-universal/raw/master/aria2c-macos-universal".url, destination: executableURL, replaceMethod: .replace)
         chmod(executableURL.path, 0o755)
     }
     

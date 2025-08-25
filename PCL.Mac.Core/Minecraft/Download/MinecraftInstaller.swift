@@ -34,80 +34,58 @@ public class MinecraftInstaller {
     private init() {}
     
     // MARK: 下载客户端清单
-    private static func downloadClientManifest(_ task: MinecraftInstallTask) async {
+    private static func downloadClientManifest(_ task: MinecraftInstallTask) async throws {
         task.updateStage(.clientJson)
-        let minecraftVersion = task.minecraftVersion.displayName
-        let clientJsonURL = task.versionURL.appending(path: "\(task.name).json")
-        await withCheckedContinuation { continuation in
-            let downloader = ProgressiveDownloader(
-                task: task,
-                urls: [URL(string: DataManager.shared.versionManifest!.versions.find { $0.id == minecraftVersion }!.url)!],
-                destinations: [clientJsonURL],
-                completion: {
-                // 解析 JSON
-                if let manifest: ClientManifest = try? .parse(url: clientJsonURL, minecraftDirectory: nil) {
-                    task.manifest = manifest
-                } else {
-                    err("无法解析 JSON")
-                }
-                continuation.resume()
-            })
-            downloader.start()
+        let url = try DownloadSourceManager.shared.getClientManifestURL(task.minecraftVersion).unwrap("无法获取 \(task.minecraftVersion.displayName) 的 JSON 下载 URL。")
+        let destination = task.versionURL.appending(path: "\(task.name).json")
+        
+        try await SingleFileDownloader.download(task: task, url: url, destination: destination)
+        task.completeOneFile()
+        
+        if let manifest: ClientManifest = try .parse(url: destination, minecraftDirectory: nil) {
+            task.manifest = manifest
+        } else {
+            let content = try String(data: FileHandle(forReadingFrom: destination).readToEnd().unwrap(), encoding: .utf8).unwrap()
+            err("无法解析客户端清单: \(content)")
+            throw MyLocalizedError(reason: "无法解析客户端清单：\(content)")
         }
     }
     
     // MARK: 下载客户端本体
-    private static func downloadClientJar(_ task: MinecraftInstallTask, skipIfExists: Bool = false) async {
+    private static func downloadClientJar(_ task: MinecraftInstallTask) async throws {
         task.updateStage(.clientJar)
-        await withCheckedContinuation { continuation in
-            let downloader = ProgressiveDownloader(
-                task: task,
-                urls: [URL(string: task.manifest!.clientDownload!.url)!],
-                destinations: [task.versionURL.appending(path: "\(task.name).jar")],
-                skipIfExists: skipIfExists,
-                completion: continuation.resume
-            )
-            downloader.start()
-        }
+        let url = try DownloadSourceManager.shared.getClientJARURL(task.minecraftVersion, task.manifest!).unwrap("无法获取 \(task.minecraftVersion.displayName) 的客户端下载 URL。")
+        
+        try await SingleFileDownloader.download(
+            task: task,
+            url: url,
+            destination: task.versionURL.appending(path: "\(task.name).jar")
+        )
     }
     
     // MARK: 下载资源索引
-    private static func downloadAssetIndex(_ task: MinecraftInstallTask) async {
+    private static func downloadAssetIndex(_ task: MinecraftInstallTask) async throws {
         guard let manifest = task.manifest else {
             err("任务客户端清单为空值，停止下载资源索引")
             task.assetIndex = .init(objects: [])
             return
         }
         
-        guard let assetIndex = manifest.assetIndex else {
-            task.assetIndex = .init(objects: [])
-            return
-        }
-        
         task.updateStage(.clientIndex)
-        let assetIndexURL: URL = URL(string: assetIndex.url)!
-        let destURL: URL = task.minecraftDirectory.assetsURL.appending(component: "indexes").appending(component: "\(assetIndex.id).json")
-        await withCheckedContinuation { continuation in
-            let downloader = ProgressiveDownloader(
-                task: task,
-                urls: [assetIndexURL],
-                destinations: [destURL],
-                skipIfExists: true,
-                completion: {
-                do {
-                    let data = try Data(contentsOf: destURL)
-                    task.assetIndex = try .parse(data)
-                } catch {
-                    err("在解析 JSON 时发生错误: \(error.localizedDescription)")
-                }
-                continuation.resume()
-            })
-            downloader.start()
+        
+        let url: URL = try DownloadSourceManager.shared.getAssetIndexURL(task.minecraftVersion, manifest).unwrap("无法获取 \(task.minecraftVersion.displayName) 的 assetIndex 下载 URL。")
+        let destination: URL = task.minecraftDirectory.assetsURL.appending(component: "indexes").appending(component: "\(manifest.assetIndex!.id).json")
+        try await SingleFileDownloader.download(task: task, url: url, destination: destination)
+        do {
+            let data = try Data(contentsOf: destination)
+            task.assetIndex = try .parse(data)
+        } catch {
+            err("在解析 JSON 时发生错误: \(error.localizedDescription)")
         }
     }
     
     // MARK: 下载散列资源文件
-    private static func downloadHashResourcesFiles(_ task: MinecraftInstallTask) async {
+    private static func downloadHashResourcesFiles(_ task: MinecraftInstallTask) async throws {
         task.updateStage(.clientResources)
         let objects = task.assetIndex!.objects
         
@@ -119,105 +97,81 @@ public class MinecraftInstaller {
             destinations.append(object.appendTo(task.minecraftDirectory.assetsURL.appending(path: "objects")))
         }
         
-        await withCheckedContinuation { continuation in
-            let downloader = ProgressiveDownloader(
-                task: task,
-                urls: urls,
-                destinations: destinations,
-                concurrentLimit: 1024,
-                skipIfExists: true, completion: {
-                continuation.resume()
-            })
-            downloader.start()
-        }
+        try await MultiFileDownloader(task: task, urls: urls, destinations: destinations, concurrentLimit: 256).start()
     }
     
     // MARK: 下载依赖项
-    private static func downloadLibraries(_ task: MinecraftInstallTask) async {
+    private static func downloadLibraries(_ task: MinecraftInstallTask) async throws {
         task.updateStage(.clientLibraries)
         
-        var urls: [URL] = []
-        var destinations: [URL] = []
+        var libraryNames: [String] = []
+        var items: [DownloadItem] = []
         
-        for library in task.manifest!.getNeededLibraries() {
+        for library in try task.manifest.unwrap().getNeededLibraries() {
             if let artifact = library.artifact {
                 let dest = task.minecraftDirectory.librariesURL.appending(path: artifact.path)
                 if CacheStorage.default.copy(name: library.name, to: dest) {
                     continue
                 }
-                urls.append(URL(string: artifact.url)!)
-                destinations.append(dest)
+                
+                libraryNames.append(library.name)
+                items.append(.init(DownloadSourceManager.shared.getDownloadSource(), { $0.getLibraryURL(library)! }, destination: dest))
             }
         }
         
-        await withCheckedContinuation { continuation in
-            let downloader = ProgressiveDownloader(
-                task: task,
-                urls: urls,
-                destinations: destinations,
-                skipIfExists: true,
-                completion: {
-                continuation.resume()
-            })
-            downloader.start()
-        }
+        try await MultiFileDownloader(task: task, items: items).start()
         
         for library in task.manifest!.getNeededLibraries() {
-            if urls.contains(where: { $0.absoluteString == library.artifact!.url }) {
+            if libraryNames.contains(library.name) {
                 CacheStorage.default.add(name: library.name, path: task.minecraftDirectory.librariesURL.appending(path: library.artifact!.path))
             }
         }
     }
     
     // MARK: 下载本地库
-    private static func downloadNatives(_ task: MinecraftInstallTask) async {
+    private static func downloadNatives(_ task: MinecraftInstallTask) async throws {
         task.updateStage(.natives)
         
-        var urls: [URL] = []
-        var destinations: [URL] = []
+        var libraryNames: [String] = []
+        var items: [DownloadItem] = []
         
-        for (library, artifact) in task.manifest!.getNeededNatives() {
+        for (library, artifact) in try task.manifest.unwrap().getNeededNatives() {
             let dest = task.minecraftDirectory.librariesURL.appending(path: artifact.path)
             if CacheStorage.default.copy(name: library.name, to: dest) {
                 continue
             }
-            urls.append(URL(string: artifact.url)!)
-            destinations.append(dest)
+            
+            libraryNames.append(library.name)
+            items.append(.init(DownloadSourceManager.shared.getDownloadSource(), { $0.getLibraryURL(library)! }, destination: dest))
         }
         
         try? FileManager.default.createDirectory(at: task.versionURL.appending(path: "natives"), withIntermediateDirectories: true)
-        
-        await withCheckedContinuation { continuation in
-            let downloader = ProgressiveDownloader(
-                task: task,
-                urls: urls,
-                destinations: destinations,
-                skipIfExists: true,
-                completion: {
-                continuation.resume()
-            })
-            downloader.start()
-        }
+        try await MultiFileDownloader(task: task, items: items).start()
         
         for (library, artifact) in task.manifest!.getNeededNatives() {
-            if urls.contains(where: { $0.absoluteString == artifact.url }) {
+            if libraryNames.contains(library.name) {
                 CacheStorage.default.add(name: library.name, path: task.minecraftDirectory.librariesURL.appending(path: artifact.path))
             }
         }
     }
     
     // MARK: 解压本地库
-    private static func unzipNatives(_ task: MinecraftInstallTask) {
+    private static func unzipNatives(_ task: MinecraftInstallTask) throws {
         let nativesURL: URL = task.versionURL.appending(path: "natives")
         for (_, native) in task.manifest!.getNeededNatives() {
             let jarURL: URL = task.minecraftDirectory.librariesURL.appending(path: native.path)
             Util.unzip(archiveURL: jarURL, destination: nativesURL, replace: true)
-            processLibs(task, nativesURL)
+            do {
+                try processLibs(task, nativesURL)
+            } catch {
+                err("处理 natives 失败")
+                throw error
+            }
         }
     }
     
     // MARK: 处理解压结果
-    private static func processLibs(_ task: MinecraftInstallTask, _ nativesURL: URL) {
+    private static func processLibs(_ task: MinecraftInstallTask, _ nativesURL: URL) throws {
         let fileManager = FileManager.default
         guard let enumerator = fileManager.enumerator(
             at: nativesURL, includingPropertiesForKeys: [.isDirectoryKey],
@@ -239,28 +193,20 @@ public class MinecraftInstaller {
             }
             
             // 拷贝到 natives 根目录
-            do {
-                let destinationURL = nativesURL.appendingPathComponent(fileURL.lastPathComponent)
-                if destinationURL == fileURL { continue }
-                if fileManager.fileExists(atPath: destinationURL.path) {
-                    try fileManager.removeItem(at: destinationURL)
-                }
-                try fileManager.moveItem(at: fileURL, to: destinationURL)
-            } catch {
-                err("无法拷贝本地库: \(error.localizedDescription) (\(fileURL.path()) -> \(nativesURL.path()))")
+            let destinationURL = nativesURL.appendingPathComponent(fileURL.lastPathComponent)
+            if destinationURL == fileURL { continue }
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                try fileManager.removeItem(at: destinationURL)
             }
+            try fileManager.moveItem(at: fileURL, to: destinationURL)
         }
         
         // 清理非 dylib 文件
-        do {
-            let contents = try fileManager.contentsOfDirectory(at: nativesURL, includingPropertiesForKeys: nil)
-            for fileURL in contents {
-                if !fileURL.pathExtension.lowercased().hasSuffix("dylib") && !fileURL.pathExtension.lowercased().hasSuffix("jnilib") {
-                    try fileManager.removeItem(at: fileURL)
-                }
+        let contents = try fileManager.contentsOfDirectory(at: nativesURL, includingPropertiesForKeys: nil)
+        for fileURL in contents {
+            if !fileURL.pathExtension.lowercased().hasSuffix("dylib") && !fileURL.pathExtension.lowercased().hasSuffix("jnilib") {
+                try fileManager.removeItem(at: fileURL)
             }
-        } catch {
-            err("清理时发生错误: \(error.localizedDescription)")
         }
     }
     
@@ -327,10 +273,10 @@ public class MinecraftInstaller {
     // MARK: 创建任务
     public static func createTask(_ minecraftVersion: MinecraftVersion, _ name: String, _ minecraftDirectory: MinecraftDirectory, _ callback: (() -> Void)? = nil) -> InstallTask {
         let task = MinecraftInstallTask(minecraftVersion: minecraftVersion, minecraftDirectory: minecraftDirectory, name: name) { task in
-            await downloadClientManifest(task)
-            await downloadAssetIndex(task)
+            try await downloadClientManifest(task)
+            try await downloadAssetIndex(task)
             updateProgress(task)
-            await downloadClientJar(task)
+            try await downloadClientJar(task)
             
             // 安装 Mod Loader
             if let fabricTask = DataManager.shared.inprogressInstallTasks?.tasks["fabric"] as? FabricInstallTask {
@@ -342,10 +288,10 @@ public class MinecraftInstaller {
             }
             
             modifyId(task)
-            await downloadHashResourcesFiles(task)
-            await downloadLibraries(task)
-            await downloadNatives(task)
-            unzipNatives(task)
+            try await downloadHashResourcesFiles(task)
+            try await downloadLibraries(task)
+            try await downloadNatives(task)
+            try unzipNatives(task)
             finalWork(task)
             callback?()
         }
@@ -364,12 +310,12 @@ public class MinecraftInstaller {
             architecture: arch
         ) { task in
             task.manifest = instance.manifest
-            await downloadAssetIndex(task)
-            await downloadClientJar(task, skipIfExists: true)
-            await downloadHashResourcesFiles(task)
-            await downloadLibraries(task)
-            await downloadNatives(task)
-            unzipNatives(task)
+            try await downloadAssetIndex(task)
+            try await downloadClientJar(task)
+            try await downloadHashResourcesFiles(task)
+            try await downloadLibraries(task)
+            try await downloadNatives(task)
+            try unzipNatives(task)
             finalWork(task)
             task.complete()
             callback?()

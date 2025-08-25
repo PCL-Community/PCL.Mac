@@ -25,6 +25,6 @@ public class FabricInstaller {
             try FileManager.default.copyItem(at: manifestURL, to: baseManifestURL)
         }
         
-        try await Requests.get("https://meta.fabricmc.net/v2/versions/loader/\(version.displayName)/\(loaderVersion)/profile/json").getDataOrThrow().write(to: manifestURL)
+        try await SingleFileDownloader.download(url: "https://meta.fabricmc.net/v2/versions/loader/\(version.displayName)/\(loaderVersion)/profile/json".url, destination: manifestURL, replaceMethod: .replace)
     }
 }

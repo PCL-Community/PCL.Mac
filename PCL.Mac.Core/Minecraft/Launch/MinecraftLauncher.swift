@@ -155,7 +155,7 @@ public class MinecraftLauncher {
         guard let downloadURL = json["download_url"].url else {
             throw MyLocalizedError(reason: "无效的 authlib-injector 下载 URL")
         }
-        try await Aria2Manager.shared.download(url: downloadURL, destination: SharedConstants.shared.authlibInjectorURL)
+        try await SingleFileDownloader.download(url: downloadURL, destination: SharedConstants.shared.authlibInjectorURL)
         log("authlib-injector 下载完成")
     }
 }

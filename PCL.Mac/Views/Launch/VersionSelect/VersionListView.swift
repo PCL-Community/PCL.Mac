@@ -13,32 +13,28 @@ struct VersionListView: View {
     
     struct VersionView: View, Identifiable {
         @State private var isHovered: Bool = false
-        private let name: String
-        private let description: String
-        private let instance: MinecraftInstance
+        private let instanceInfo: InstanceInfo
         
         let id: UUID = UUID()
         
-        init(instance: MinecraftInstance) {
-            self.name = instance.name
-            self.description = instance.version.displayName
-            self.instance = instance
+        init(instanceInfo: InstanceInfo) {
+            self.instanceInfo = instanceInfo
         }
         
         var body: some View {
             MyListItem {
                 HStack {
-                    Image(self.instance.getIconName())
+                    Image(instanceInfo.icon)
                         .resizable()
                         .scaledToFit()
                         .frame(width: 35)
                         .padding(.leading, 5)
                     VStack(alignment: .leading) {
-                        Text(self.name)
+                        Text(instanceInfo.name)
                             .font(.custom("PCL English", size: 14))
                             .foregroundStyle(Color("TextColor"))
                             .padding(.top, 5)
-                        Text(self.description)
+                        Text(instanceInfo.version.displayName)
                             .font(.custom("PCL English", size: 14))
                             .foregroundStyle(Color(hex: 0x7F8790))
                             .padding(.bottom, 5)
@@ -62,7 +58,7 @@ struct VersionListView: View {
                 }
             }
             .onTapGesture {
-                AppSettings.shared.defaultInstance = instance.name
+                AppSettings.shared.defaultInstance = instanceInfo.name
                 DataManager.shared.router.setRoot(.launch)
             }
             .padding(.top, -8)
@@ -78,7 +74,7 @@ struct VersionListView: View {
                     PopupModel(
                         .normal,
                         "删除版本",
-                        "确定要删除版本 \"\(instance.name)\" 吗？\n\n此操作将永久删除该版本的所有文件，包括模组、资源包等。\n真的很久！",
+                        "确定要删除版本 \"\(instanceInfo.name)\" 吗？\n\n此操作将永久删除该版本的所有文件，包括模组、资源包等。\n真的很久！",
                         [
                             PopupButtonModel(label: "取消", style: .normal),
                             PopupButtonModel(label: "删除", style: .danger)
@@ -88,8 +84,8 @@ struct VersionListView: View {
                 
                 if result == 1 { // 用户点击了删除按钮
                     do {
-                        let versionName = instance.name
-                        let runningDirectory = instance.runningDirectory
+                        let versionName = instanceInfo.name
+                        let runningDirectory = instanceInfo.runningDirectory
                         
                         // 删除版本文件夹
                         try FileManager.default.removeItem(at: runningDirectory)
@@ -103,13 +99,13 @@ struct VersionListView: View {
                         }
                         
                         // 重新加载实例列表
-                        instance.minecraftDirectory.loadInnerInstances { instances in
+                        instanceInfo.minecraftDirectory.loadInnerInstances { instances in
                             // 如果删除的是默认实例且还有其他实例，自动选择第一个作为新的默认实例
                             if AppSettings.shared.defaultInstance == nil && !instances.isEmpty {
                                 AppSettings.shared.defaultInstance = instances.first?.name
                             }
                             
-                            DataManager.shared.router.path = [.versionSelect, .versionList(directory: instance.minecraftDirectory)]
+                            DataManager.shared.router.path = [.versionSelect, .versionList(directory: instanceInfo.minecraftDirectory)]
                         }
                         
                         hint("版本 \"\(versionName)\" 已删除", .finish)
@@ -133,30 +129,31 @@ struct VersionListView: View {
                 }
             } else {
                 ScrollView {
-                    let notVanillaVersions = minecraftDirectory.instances.filter { $0.clientBrand != .vanilla }
+                    let notVanillaVersions = minecraftDirectory.instances.filter { $0.brand != .vanilla }
                     if !notVanillaVersions.isEmpty {
                         MyCard(index: 0, title: "可安装 Mod") {
                             LazyVStack {
                                 ForEach(
                                     notVanillaVersions
-                                        .sorted(by: { $0.version! > $1.version! })
-                                        .sorted(by: { $0.clientBrand.index < $1.clientBrand.index })
-                                ) { instance in
-                                    VersionView(instance: instance)
+                                        .sorted(by: { $0.version > $1.version })
+                                        .sorted(by: { $0.brand.index < $1.brand.index })
+                                ) { instanceInfo in
+                                    VersionView(instanceInfo: instanceInfo)
                                 }
                             }
                             .padding(.top, 12)
                         }
                         .padding()
                     }
+                    
                     MyCard(index: 1, title: "常规版本") {
                         LazyVStack {
                             ForEach(
                                 minecraftDirectory.instances
-                                    .filter { $0.clientBrand == .vanilla }
-                                    .sorted(by: { $0.version! > $1.version! })
-                            ) { instance in
-                                VersionView(instance: instance)
+                                    .filter { $0.brand == .vanilla }
+                                    .sorted(by: { $0.version > $1.version })
+                            ) { info in
+                                VersionView(instanceInfo: info)
                             }
                         }
                         .padding(.top, 12)

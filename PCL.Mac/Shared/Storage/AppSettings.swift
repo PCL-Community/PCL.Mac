@@ -33,6 +33,10 @@ public enum WindowControlButtonStyle: Codable {
     }
 }
 
+public enum DownloadSourceOption: Codable {
+    case official, mirror, both
+}
+
 public class AppSettings: ObservableObject {
     public static let shared = AppSettings()
     
@@ -89,6 +93,12 @@ public class AppSettings: ObservableObject {
     
     /// 是否启用超薄材质
     @CodableAppStorage("useUltraThinMaterial") public var useUltraThinMaterial: Bool = false
+    
+    /// 文件下载源
+    @CodableAppStorage("fileDownloadSource") public var fileDownloadSource: DownloadSourceOption = .both
+    
+    /// 版本列表源
+    @CodableAppStorage("versionManifestSource") public var versionManifestSource: DownloadSourceOption = .both
     
     public func updateColorScheme() {
         if colorScheme != .system {

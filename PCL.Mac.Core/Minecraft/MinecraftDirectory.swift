@@ -13,7 +13,7 @@ public class MinecraftDirectory: Codable, Identifiable, Hashable {
     public var id: UUID
     public let rootURL: URL
     public var name: String
-    public var instances: [MinecraftInstance] = []
+    public var instances: [InstanceInfo] = []
     
     public func hash(into hasher: inout Hasher) {
         hasher.combine(rootURL)
@@ -47,18 +47,26 @@ public class MinecraftDirectory: Codable, Identifiable, Hashable {
         lhs.rootURL == rhs.rootURL
     }
     
-    public func loadInnerInstances(callback: (([MinecraftInstance]) -> Void)? = nil) {
+    public func loadInnerInstances(callback: (([InstanceInfo]) -> Void)? = nil) {
         instances.removeAll()
         Task {
             do {
                 let contents = try FileManager.default.contentsOfDirectory(at: versionsURL, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
-                let folderURLs = contents.filter { url in
+                let instanceDirectories = contents.filter { url in
                     (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
                 }
-                for folderURL in folderURLs {
-                    if let version = MinecraftInstance.create(self, folderURL) {
+                for instanceDirectory in instanceDirectories {
+                    if let instance = MinecraftInstance.create(self, instanceDirectory) {
+                        let info = InstanceInfo(
+                            minecraftDirectory: self,
+                            icon: instance.getIconName(),
+                            name: instance.name,
+                            version: instance.version,
+                            runningDirectory: instanceDirectory,
+                            brand: instance.clientBrand
+                        )
                         DispatchQueue.main.async {
-                            self.instances.append(version)
+                            self.instances.append(info)
                         }
                     }
                 }
@@ -71,4 +79,14 @@ public class MinecraftDirectory: Codable, Identifiable, Hashable {
             }
         }
     }
+}
+
+public struct InstanceInfo: Identifiable, Hashable {
+    public let id: UUID = .init()
+    public let minecraftDirectory: MinecraftDirectory
+    public let icon: String
+    public let name: String
+    public let version: MinecraftVersion
+    public let runningDirectory: URL
+    public let brand: ClientBrand
 }
