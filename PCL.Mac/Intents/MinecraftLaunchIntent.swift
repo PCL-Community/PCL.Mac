@@ -31,6 +31,13 @@ struct MinecraftLaunchIntent: AppIntent {
         let options = LaunchOptions()
         options.skipResourceCheck = true
         
+        if case .failure(let error) = LaunchPrecheck.checkAccount(instance, options) {
+            return .result(dialog: .init("账户检查失败: \(error.localizedDescription)"))
+        }
+        if case .failure(let error) = LaunchPrecheck.checkJava(instance, options) {
+            return .result(dialog: .init("Java 检查失败: \(error.localizedDescription)"))
+        }
+        
         Task {
             await instance.launch(options)
         }
