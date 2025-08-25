@@ -15,27 +15,30 @@ fileprivate struct ProfileCard: View {
     let buttonURL: String
     
     var body: some View {
-        HStack {
-            Image(imageName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 32)
-                .clipShape(Circle())
-            VStack(alignment: .leading) {
-                Text(name)
-                    .font(.custom("PCL English", size: 14))
-                    .foregroundStyle(Color("TextColor"))
-                Text(description)
-                    .font(.custom("PCL English", size: 14))
-                    .foregroundStyle(Color(hex: 0x8C8C8C))
+        MyListItem {
+            HStack {
+                Image(imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 32)
+                    .clipShape(Circle())
+                VStack(alignment: .leading) {
+                    Text(name)
+                        .font(.custom("PCL English", size: 14))
+                        .foregroundStyle(Color("TextColor"))
+                    Text(description)
+                        .font(.custom("PCL English", size: 14))
+                        .foregroundStyle(Color(hex: 0x8C8C8C))
+                }
+                Spacer()
+                MyButton(text: buttonName) {
+                    NSWorkspace.shared.open(URL(string: buttonURL)!)
+                }
+                .frame(width: 160, height: 40)
             }
-            Spacer()
-            MyButton(text: buttonName) {
-                NSWorkspace.shared.open(URL(string: buttonURL)!)
-            }
-            .frame(width: 160, height: 40)
+            .frame(maxWidth: .infinity)
+            .padding(4)
         }
-        .frame(maxWidth: .infinity)
     }
 }
 
@@ -44,7 +47,7 @@ struct AboutView: View {
     var body: some View {
         ScrollView {
             StaticMyCard(index: 0, title: "关于") {
-                VStack(spacing: 10) {
+                VStack(spacing: 0) {
                     ProfileCard(
                         imageName: "LtCatt",
                         name: "龙腾猫跃",
@@ -75,7 +78,7 @@ struct AboutView: View {
             .padding()
             
             StaticMyCard(index: 1, title: "特别鸣谢") {
-                VStack(spacing: 10) {
+                VStack(spacing: 0) {
                     ProfileCard(
                         imageName: "PCLCommunity",
                         name: "PCL Community",
@@ -102,6 +105,7 @@ struct AboutView: View {
                     DependencyView(name: "SwiftyJSON", license: "MIT", repo: "SwiftyJSON/SwiftyJSON")
                     DependencyView(name: "ZIPFoundation", license: "MIT", repo: "weichsel/ZIPFoundation")
                     DependencyView(name: "aria2", description: "作为外部分片下载器", license: "GNU GPL v2", repo: "aria2/aria2")
+                    DependencyView(name: "PCL.Mac.Daemon", description: "自动导出启动器崩溃报告的守护进程", license: "MIT", repo: "VentiStudios/PCL.Mac.Daemon")
                 }
             }
             .padding()
@@ -135,8 +139,15 @@ struct AboutView: View {
                             }
                             Spacer()
                         }
-                        Text("\(license) | https://github.com/\(repo)")
-                            .foregroundStyle(Color(hex: 0x8C8C8C))
+                        HStack(spacing: 0) {
+                            Text("\(license) | ")
+                            Text(verbatim: "https://github.com/\(repo)")
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    NSWorkspace.shared.open("https://github.com/\(repo)".url)
+                                }
+                        }
+                        .foregroundStyle(Color(hex: 0x8C8C8C))
                     }
                     Spacer()
                 }

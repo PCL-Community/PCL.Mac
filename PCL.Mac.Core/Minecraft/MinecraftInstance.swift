@@ -92,8 +92,8 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
         }
         
         // 寻找可用 Java
-        if self.config.javaURL == nil {
-            self.config.javaURL = MinecraftInstance.findSuitableJava(self.version!)?.executableURL
+        if self.config.javaURL == nil, let jvm = MinecraftInstance.findSuitableJava(self.version!) {
+            self.config.javaURL = jvm.executableURL
         }
         self.saveConfig()
         return true
@@ -277,15 +277,33 @@ public class MinecraftInstance: Identifiable, Equatable, Hashable {
 
 public struct MinecraftConfig: Codable {
     public var additionalLibraries: Set<String> = []
-    public var javaURL: URL!
+    public var javaURL: URL! {
+        get {
+            return javaURLString == "" ? nil : URL(fileURLWithPath: javaURLString)
+        }
+        set (value) {
+            javaURLString = value.path
+        }
+    }
     public var skipResourcesCheck: Bool = false
     public var maxMemory: Int32 = 4096
     public var qualityOfService: QualityOfService = .default
     public var minecraftVersion: String!
     
+    private var javaURLString: String
+    
+    enum CodingKeys: String, CodingKey {
+        case additionalLibraries
+        case javaURLString = "javaURL"
+        case skipResourcesCheck
+        case maxMemory
+        case qualityOfService
+        case minecraftVersion
+    }
+    
     public init(_ json: JSON) {
         self.additionalLibraries = .init(json["additionalLibraries"].array?.map { $0.stringValue } ?? [])
-        self.javaURL = URL(fileURLWithPath: json["javaURL"].string ?? json["javaPath"].stringValue) // 旧版本字段
+        self.javaURLString = json["javaURL"].stringValue // 旧版本字段
         self.skipResourcesCheck = json["skipResourcesCheck"].boolValue
         self.maxMemory = json["maxMemory"].int32 ?? 4096
         self.qualityOfService = .init(rawValue: json["qualityOfService"].intValue) ?? .default
@@ -297,6 +315,7 @@ public struct MinecraftConfig: Codable {
     
     public init(version: MinecraftVersion?) {
         self.minecraftVersion = version?.displayName
+        self.javaURLString = ""
     }
 }
 
