@@ -162,6 +162,8 @@ public class MinecraftInstallTask: InstallTask {
                 err("无法安装 Minecraft: \(error.localizedDescription)")
                 await MainActor.run {
                     currentState = .failed
+                    DataManager.shared.inprogressInstallTasks = nil
+                    try? FileManager.default.removeItem(at: versionURL)
                 }
             }
         }
