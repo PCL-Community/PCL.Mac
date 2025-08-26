@@ -119,6 +119,11 @@ public class MultiFileDownloader {
                 }
             }
         }
+        
+        await MainActor.run {
+            progress?(self.totalProgress / Double(self.total), self.finishedCount)
+            task?.currentStagePercentage = self.totalProgress / Double(self.total)
+        }
     }
     
     private func attemptDownload(_ item: DownloadItem) async throws {

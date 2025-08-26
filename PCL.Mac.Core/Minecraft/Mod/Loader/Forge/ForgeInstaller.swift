@@ -17,14 +17,18 @@ public class ForgeInstaller {
     private var installProfile: ForgeInstallProfile?
     private var values: [String: String] = [:]
     private var isOld: Bool = false
+    private var updateProgress: ((Double) -> Void)?
+    private var progress: Double = 0
     
-    public init(_ minecraftDirectory: MinecraftDirectory, _ versionPath: URL, _ manifest: ClientManifest) {
+    public init(_ minecraftDirectory: MinecraftDirectory, _ versionPath: URL, _ manifest: ClientManifest, updateProgress: ((Double) -> Void)? = nil) {
         self.minecraftDirectory = minecraftDirectory
         self.versionPath = versionPath
         self.manifest = manifest
+        self.updateProgress = updateProgress
         self.temp = .init(name: "ForgeInstall")
     }
     
+    // MARK: - 解析 data 中的值
     private func parseValue(_ value: String) -> String {
         let value = "\(value)"
         // 若被 [ ] 包裹，解析中间部分的 Maven 坐标并拼接到 libraries 后
@@ -38,7 +42,8 @@ public class ForgeInstaller {
         return value
     }
     
-    private func parseValues() throws {
+    // MARK: - 解析 data
+    @MainActor private func parseValues() throws {
         guard let installProfile else {
             return
         }
@@ -51,7 +56,10 @@ public class ForgeInstaller {
         values["ROOT"] = minecraftDirectory.rootURL.path
         values["LIBRARY_DIR"] = minecraftDirectory.librariesURL.path
         
+        let step: Double = 0.1 / Double(installProfile.data.count)
+        
         for (key, value) in installProfile.data {
+            log("正在解析 \(key) 的值")
             if value.starts(with: "/") {
                 let archive = try Archive(url: temp.getURL(path: "installer.jar"), accessMode: .read)
                 let data = try ArchiveUtil.getEntryOrThrow(archive: archive, name: String(value.dropFirst(1)))
@@ -62,9 +70,12 @@ public class ForgeInstaller {
                 let parsed = parseValue(value)
                 values[key] = parsed
             }
+            
+            increaseProgress(step)
         }
     }
     
+    // MARK: - 替换字符串中的占位符
     private func replaceWithValue(_ string: String) -> String {
         let string = parseValue(string)
         // 如果字符串中不存在 { }，直接返回来节省资源
@@ -79,6 +90,7 @@ public class ForgeInstaller {
         return string
     }
     
+    // MARK: - 执行处理器任务
     private func executeProcessor(_ processor: ForgeInstallProfile.Processor) throws {
         let processorPath = minecraftDirectory.librariesURL.appending(path: processor.jarPath)
         guard let mainClass = Util.getMainClass(processorPath) else {
@@ -99,6 +111,7 @@ public class ForgeInstaller {
         process.waitUntilExit()
     }
     
+    // MARK: - 修改 DOWNLOAD_MOJMAPS 任务
     private func patchMojangMappingsDownloadTask(_ processor: ForgeInstallProfile.Processor) async throws -> Bool {
         // 若参数中不存在 --output，或 --output 后没有参数，返回
         guard let index = processor.args.firstIndex(of: "--output"),
@@ -122,11 +135,14 @@ public class ForgeInstaller {
         return true
     }
     
+    // MARK: - 执行所有处理器任务
     private func executeProcessors() async throws {
         guard let installProfile else {
             throw MyLocalizedError(reason: "installProfile 为空")
         }
-        let processors = installProfile.processors.filter { $0.isAvaliableOnClient }
+        
+        let processors = installProfile.processors.filter { $0.isAvailableOnClient }
+        let step = 0.4 / Double(processors.count)
         
         for processor in processors {
             if processor.args.contains("DOWNLOAD_MOJMAPS") {
@@ -138,20 +154,29 @@ public class ForgeInstaller {
                 log("正在执行安装器 \(processor.args[index + 1])")
             }
             try executeProcessor(processor)
+            await increaseProgress(step)
         }
     }
     
+    // MARK: - 下载安装器
     private func downloadInstaller(minecraftVersion: MinecraftVersion, version: String) async throws {
         let installerPath = temp.getURL(path: "installer.jar")
         // 如果 CacheStorage 中不存在安装器，下载
         let name = "\(getGroupId()):installer:\(minecraftVersion.displayName)-\(version)"
         if !CacheStorage.default.copy(name: name, to: installerPath) {
+            let url = getInstallerDownloadURL(minecraftVersion, version)
             let dest = temp.getURL(path: "installer.jar")
-            try await SingleFileDownloader.download(url: getInstallerDownloadURL(minecraftVersion, version), destination: dest)
+            log("正在下载安装器 \(url.lastPathComponent)")
+            try await SingleFileDownloader.download(url: url, destination: dest) { progress in
+                Task { @MainActor in self.setProgress(progress * 0.2) }
+            }
+            log("安装器下载完成")
             CacheStorage.default.add(name: name, path: dest)
         }
+        await setProgress(0.2)
     }
     
+    // MARK: - 加载 install_profile.json
     private func loadInstallProfile() throws {
         let installerPath = temp.getURL(path: "installer.jar")
         let archive = try Archive(url: installerPath, accessMode: .read)
@@ -172,6 +197,7 @@ public class ForgeInstaller {
         }
     }
     
+    // MARK: - 拷贝客户端清单
     private func copyManifest(version: MinecraftVersion) throws {
         try loadInstallProfile()
         let manifestURL = versionPath.appending(path: "\(versionPath.lastPathComponent).json")
@@ -185,9 +211,12 @@ public class ForgeInstaller {
         
         try FileManager.default.removeItem(at: manifestURL)
         try FileManager.default.copyItem(at: temp.getURL(path: "manifest.json"), to: manifestURL)
+        log("客户端清单拷贝完成")
     }
     
+    // MARK: - 下载安装器与加载器依赖
     private func downloadDependencies() async throws {
+        log("正在下载依赖项")
         var libraries: [ClientManifest.Library] = []
         if isOld {
             if let manifest = try ClientManifest.parse(url: temp.getURL(path: "manifest.json")) {
@@ -205,20 +234,28 @@ public class ForgeInstaller {
         let downloader = MultiFileDownloader(
             urls: libraries.compactMap(DownloadSourceManager.shared.getLibraryURL(_:)),
             destinations: artifacts.map { minecraftDirectory.librariesURL.appending(path: $0.path) },
-        )
+            replaceMethod: .skip
+        ) { progress, _ in
+            Task { @MainActor in
+                self.setProgress(0.3 + progress * 0.3)
+            }
+        }
+        
         try await downloader.start()
     }
     
+    // MARK: - 安装函数
     public func install(minecraftVersion: MinecraftVersion, forgeVersion: String) async throws {
         try await downloadInstaller(minecraftVersion: minecraftVersion, version: forgeVersion)
         try copyManifest(version: minecraftVersion)
-        try parseValues()
+        try await parseValues()
         try await downloadDependencies()
         
         if !isOld {
             try await executeProcessors()
         }
         
+        await setProgress(1.0)
         temp.free()
     }
     
@@ -233,4 +270,15 @@ public class ForgeInstaller {
     }
     
     func getGroupId() -> String { "net.minecraftforge" }
+    
+    @MainActor
+    private func increaseProgress(_ value: Double) {
+        setProgress(progress + value)
+    }
+    
+    @MainActor
+    private func setProgress(_ value: Double) {
+        progress = value
+        updateProgress?(progress)
+    }
 }

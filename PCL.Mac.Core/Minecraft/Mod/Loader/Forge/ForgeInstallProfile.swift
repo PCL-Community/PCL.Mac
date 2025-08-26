@@ -20,7 +20,7 @@ public struct ForgeInstallProfile {
     }
     
     public struct Processor {
-        public let isAvaliableOnClient: Bool
+        public let isAvailableOnClient: Bool
         
         /// 已解析过的 processor jar 文件，不是 Maven 坐标
         public let jarPath: String
@@ -33,7 +33,7 @@ public struct ForgeInstallProfile {
         
         fileprivate init(json: JSON) {
             let sides = json["sides"].arrayValue.map { $0.stringValue }
-            self.isAvaliableOnClient = sides.contains("server") && sides.count == 1 ? false : true
+            self.isAvailableOnClient = sides.contains("server") && sides.count == 1 ? false : true
             self.jarPath = Util.toPath(mavenCoordinate: json["jar"].stringValue)
             self.classpath = json["classpath"].arrayValue.map { Util.toPath(mavenCoordinate: $0.stringValue) }.union([jarPath])
             self.args = json["args"].arrayValue.map { $0.stringValue }

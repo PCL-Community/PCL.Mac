@@ -237,7 +237,9 @@ public class ForgeInstallTask: InstallTask {
             state = .inprogress
         }
         do {
-            let installer = ForgeInstaller(task.minecraftDirectory, task.versionURL, task.manifest!)
+            let installer = ForgeInstaller(task.minecraftDirectory, task.versionURL, task.manifest!) { progress in
+                self.currentStagePercentage = progress
+            }
             try await installer.install(minecraftVersion: task.minecraftVersion, forgeVersion: forgeVersion)
             log("Forge 安装完成")
         } catch {
@@ -267,7 +269,9 @@ public class NeoforgeInstallTask: InstallTask {
             state = .inprogress
         }
         do {
-            let installer = NeoforgeInstaller(task.minecraftDirectory, task.versionURL, task.manifest!)
+            let installer = NeoforgeInstaller(task.minecraftDirectory, task.versionURL, task.manifest!) { progress in
+                self.currentStagePercentage = progress
+            }
             try await installer.install(minecraftVersion: task.minecraftVersion, forgeVersion: neoforgeVersion)
             log("NeoForge 安装完成")
         } catch {

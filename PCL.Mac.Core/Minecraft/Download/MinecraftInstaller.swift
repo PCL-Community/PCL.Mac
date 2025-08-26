@@ -39,7 +39,7 @@ public class MinecraftInstaller {
         let url = try DownloadSourceManager.shared.getClientManifestURL(task.minecraftVersion).unwrap("无法获取 \(task.minecraftVersion.displayName) 的 JSON 下载 URL。")
         let destination = task.versionURL.appending(path: "\(task.name).json")
         
-        try await SingleFileDownloader.download(task: task, url: url, destination: destination)
+        try await SingleFileDownloader.download(task: task, url: url, destination: destination, replaceMethod: .replace)
         task.completeOneFile()
         
         if let manifest: ClientManifest = try .parse(url: destination, minecraftDirectory: nil) {
